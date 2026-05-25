@@ -1,21 +1,83 @@
+"use client";
+
 import Link from "next/link";
 
 export default function NotFound() {
   return (
-    <main className="min-h-screen bg-gray-950 text-white flex flex-col items-center
-                     justify-center px-6">
-      <span className="text-6xl mb-6">🔍</span>
-      <h1 className="text-2xl font-bold mb-3">Repo introuvable</h1>
-      <p className="text-gray-400 text-sm mb-8 text-center max-w-sm">
-        Ce repo GitHub n'existe pas ou l'analyse a échoué.
-        Vérifiez l'URL et réessayez.
+    <main
+      style={{
+        minHeight: "calc(100vh - var(--header-h))",
+        background: "var(--bg-base)",
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        justifyContent: "center",
+        padding: "0 24px",
+        textAlign: "center",
+      }}
+    >
+      <div
+        style={{
+          width: 56,
+          height: 56,
+          background: "var(--accent-subtle)",
+          border: "1px solid var(--accent-muted)",
+          borderRadius: "var(--radius-lg)",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          fontSize: 24,
+          marginBottom: 20,
+        }}
+      >
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+        </svg>
+      </div>
+
+      <h1
+        style={{
+          fontSize: 20,
+          fontWeight: 700,
+          color: "var(--text-primary)",
+          letterSpacing: "-0.4px",
+          marginBottom: 8,
+        }}
+      >
+        Repository not found
+      </h1>
+
+      <p
+        style={{
+          fontSize: 14,
+          color: "var(--text-secondary)",
+          lineHeight: 1.6,
+          maxWidth: 320,
+          marginBottom: 28,
+        }}
+      >
+        This GitHub repository does not exist or the analysis failed. Check
+        the URL and try again.
       </p>
+
       <Link
         href="/"
-        className="bg-yellow-500 hover:bg-yellow-400 text-gray-950 font-semibold
-                   px-6 py-3 rounded-lg transition-colors text-sm"
+        style={{
+          display: "inline-flex",
+          alignItems: "center",
+          gap: 6,
+          padding: "8px 18px",
+          background: "var(--accent)",
+          color: "#fff",
+          borderRadius: "var(--radius)",
+          fontSize: 13,
+          fontWeight: 500,
+          textDecoration: "none",
+          transition: "background 0.15s",
+          boxShadow: "0 1px 3px rgba(217,54,54,0.2)",
+        }}
       >
-        ← Retour à l'accueil
+        ← Back to Home
       </Link>
     </main>
   );

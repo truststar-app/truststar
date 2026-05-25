@@ -40,7 +40,7 @@ export async function fetchStargazersSample(
       pageNumbers.push(i);
     }
   } else {
-    // Prendre les dernières pages (stars les plus récentes)
+    // Take the last pages (most recent stars)
     for (let i = 0; i < pagesToFetch; i++) {
       pageNumbers.push(totalPages - i);
     }

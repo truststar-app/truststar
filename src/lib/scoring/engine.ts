@@ -3,8 +3,6 @@ import type {
   TrustLabel,
   GitHubUserDetail,
   RepoInfo,
-  CommitActivity,
-  ContributorStat,
   IssueStats,
 } from "../types";
 
@@ -12,7 +10,7 @@ import { scoreAccounts } from "./accounts";
 import { scoreTemporal } from "./temporal";
 import { scoreHealth } from "./health";
 
-// ─── Pondération des 3 dimensions ────────────────────────────────────────────
+// ─── Weighting of the 3 dimensions ───────────────────────────────────────────
 
 const DIMENSION_WEIGHTS = {
   accounts: 0.35,
@@ -20,7 +18,7 @@ const DIMENSION_WEIGHTS = {
   health: 0.35,
 };
 
-// ─── Seuils labels ────────────────────────────────────────────────────────────
+// ─── Label thresholds ────────────────────────────────────────────────────────
 
 function resolveLabel(score: number): TrustLabel {
   if (score >= 70) return "SAFE";
@@ -28,7 +26,7 @@ function resolveLabel(score: number): TrustLabel {
   return "DANGEROUS";
 }
 
-// ─── Moteur principal ────────────────────────────────────────────────────────
+// ─── Main engine ─────────────────────────────────────────────────────────────
 
 export type EngineInput = {
   owner: string;
@@ -36,8 +34,7 @@ export type EngineInput = {
   users: GitHubUserDetail[];
   starredMap: Map<string, string[]>;
   repoInfo: RepoInfo;
-  commitActivity: CommitActivity[];
-  contributorStats: ContributorStat[];
+  recentCommitData: { commitsPerWeek: number; activeContributorsRatio: number };
   issueStats: IssueStats;
 };
 
@@ -48,23 +45,17 @@ export function computeTrustScore(input: EngineInput): TrustScore {
     users,
     starredMap,
     repoInfo,
-    commitActivity,
-    contributorStats,
+    recentCommitData,
     issueStats,
   } = input;
 
-  // ── Calcul des 3 dimensions ──────────────────────────────────────────────
+  // ── Compute the 3 dimensions ─────────────────────────────────────────────
 
   const accountsResult = scoreAccounts(users, starredMap);
   const temporalResult = scoreTemporal(users);
-  const healthResult = scoreHealth(
-    repoInfo,
-    commitActivity,
-    contributorStats,
-    issueStats
-  );
+  const healthResult = scoreHealth(repoInfo, recentCommitData, issueStats);
 
-  // ── Score final pondéré ──────────────────────────────────────────────────
+  // ── Weighted final score ─────────────────────────────────────────────────
 
   const rawScore =
     accountsResult.score * DIMENSION_WEIGHTS.accounts +
@@ -74,7 +65,7 @@ export function computeTrustScore(input: EngineInput): TrustScore {
   const finalScore = Math.round(Math.max(0, Math.min(100, rawScore)));
   const label = resolveLabel(finalScore);
 
-  // ── Assemblage du rapport ────────────────────────────────────────────────
+  // ── Assemble the report ──────────────────────────────────────────────────
 
   const result: TrustScore = {
     repo,

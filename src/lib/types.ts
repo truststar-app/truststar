@@ -1,118 +1,91 @@
-const GITHUB_API_BASE = "https://api.github.com";
-const GITHUB_TOKEN = process.env.GITHUB_TOKEN;
-
-type FetchOptions = {
-  headers?: Record<string, string>;
-  next?: { revalidate: number };
+export type GitHubUser = {
+  login: string;
+  id: number;
+  avatar_url: string;
+  starred_at: string;
 };
 
-export class GitHubRateLimitError extends Error {
-  constructor() {
-    super("GitHub API rate limit exceeded");
-    this.name = "GitHubRateLimitError";
-  }
-}
+export type GitHubUserDetail = {
+  login: string;
+  id: number;
+  avatar_url: string;
+  created_at: string;
+  public_repos: number;
+  followers: number;
+  following: number;
+  starred_at: string;
+};
 
-export class GitHubNotFoundError extends Error {
-  constructor(resource: string) {
-    super(`GitHub resource not found: ${resource}`);
-    this.name = "GitHubNotFoundError";
-  }
-}
+export type RepoInfo = {
+  name: string;
+  full_name: string;
+  stargazers_count: number;
+  forks_count: number;
+  open_issues_count: number;
+  created_at: string;
+  updated_at: string;
+  pushed_at: string;
+  description: string | null;
+  language: string | null;
+};
 
-function buildHeaders(): Record<string, string> {
-  const headers: Record<string, string> = {
-    Accept: "application/vnd.github+json",
-    "X-GitHub-Api-Version": "2022-11-28",
+export type CommitActivity = {
+  week: number;
+  total: number;
+  days: number[];
+};
+
+export type ContributorStat = {
+  author: {
+    login: string;
+    id: number;
+    avatar_url: string;
   };
+  total: number;
+  weeks: {
+    w: number;
+    a: number;
+    d: number;
+    c: number;
+  }[];
+};
 
-  if (GITHUB_TOKEN) {
-    headers["Authorization"] = `Bearer ${GITHUB_TOKEN}`;
-  }
+export type IssueStats = {
+  open: number;
+  closed: number;
+};
 
-  return headers;
-}
+export type TrustLabel = "SAFE" | "SUSPICIOUS" | "DANGEROUS";
 
-export async function githubFetch<T>(
-  endpoint: string,
-  options: FetchOptions = {}
-): Promise<T> {
-  const url = endpoint.startsWith("http")
-    ? endpoint
-    : `${GITHUB_API_BASE}${endpoint}`;
+export type TrustScore = {
+  repo: string;
+  owner: string;
+  score: number;
+  label: TrustLabel;
+  dimensions: {
+    accounts: number;
+    temporal: number;
+    health: number;
+  };
+  signals: {
+    newAccountsRatio: number;
+    noRepoRatio: number;
+    noFollowersRatio: number;
+    noAvatarRatio: number;
+    lockstepScore: number;
+    zScorePeak: number;
+    velocityScore: number;
+    recentStarsRatio: number;
+    forkStarRatio: number;
+    activeContributorsRatio: number;
+    commitFrequency: number;
+    issueResolutionRatio: number;
+  };
+  analyzedAt: string;
+  sampleSize: number;
+};
 
-  const response = await fetch(url, {
-    headers: {
-      ...buildHeaders(),
-      ...options.headers,
-    },
-    next: options.next ?? { revalidate: 300 },
-  });
-
-  if (response.status === 403) {
-    const rateLimitRemaining = response.headers.get("X-RateLimit-Remaining");
-    if (rateLimitRemaining === "0") {
-      throw new GitHubRateLimitError();
-    }
-    throw new Error(`GitHub API forbidden: ${endpoint}`);
-  }
-
-  if (response.status === 404) {
-    throw new GitHubNotFoundError(endpoint);
-  }
-
-  if (!response.ok) {
-    const body = await response.text();
-    throw new Error(
-      `GitHub API error ${response.status} on ${endpoint}: ${body}`
-    );
-  }
-
-  return response.json() as Promise<T>;
-}
-
-export async function githubFetchWithStarredAt<T>(
-  endpoint: string
-): Promise<T> {
-  const url = endpoint.startsWith("http")
-    ? endpoint
-    : `${GITHUB_API_BASE}${endpoint}`;
-
-  const response = await fetch(url, {
-    headers: {
-      ...buildHeaders(),
-      Accept: "application/vnd.github.star+json",
-    },
-    next: { revalidate: 300 },
-  });
-
-  if (response.status === 403) {
-    const rateLimitRemaining = response.headers.get("X-RateLimit-Remaining");
-    if (rateLimitRemaining === "0") {
-      throw new GitHubRateLimitError();
-    }
-    throw new Error("GitHub API forbidden");
-  }
-
-  if (response.status === 404) {
-    throw new GitHubNotFoundError(endpoint);
-  }
-
-  if (!response.ok) {
-    const body = await response.text();
-    throw new Error(`GitHub API error ${response.status}: ${body}`);
-  }
-
-  return response.json() as Promise<T>;
-}
-
-export async function getRateLimit(): Promise<{
-  remaining: number;
-  limit: number;
-  reset: number;
-}> {
-  const data = await githubFetch<{
-    rate: { remaining: number; limit: number; reset: number };
-  }>("/rate_limit");
-  return data.rate;
-}
+export type ApiError = {
+  error: string;
+  details?: string;
+};

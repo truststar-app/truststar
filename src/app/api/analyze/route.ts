@@ -1,20 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
-import { fetchRepoInfo, fetchCommitActivity, fetchContributorStats } from "@/lib/github/commits";
+import { fetchRepoInfo, fetchRecentCommitData } from "@/lib/github/commits";
 import { fetchStargazersWithDetails, fetchLockstepData } from "@/lib/github/stargazers";
 import { fetchIssueStats } from "@/lib/github/issues";
 import { computeTrustScore } from "@/lib/scoring/engine";
+import { getCached, setCached, trustScoreCache, CACHE_TTL_MS, cacheKey } from "@/lib/trust-score-cache";
+import { addAudit } from "@/lib/recent-audits";
 import type { TrustScore, ApiError } from "@/lib/types";
 
-// Cache en mémoire simple pour la V0
-const analysisCache = new Map<string, { data: TrustScore; cachedAt: number }>();
-const CACHE_TTL_MS = 10 * 60 * 1000; // 10 minutes
-
-function getCacheKey(owner: string, repo: string): string {
-  return `${owner}/${repo}`.toLowerCase();
-}
-
 function parseGitHubUrl(input: string): { owner: string; repo: string } | null {
-  // Accepte : https://github.com/owner/repo ou owner/repo
+  // Accepts: https://github.com/owner/repo or owner/repo
   const urlPattern = /github\.com\/([^/]+)\/([^/\s?#]+)/;
   const shortPattern = /^([^/]+)\/([^/\s]+)$/;
 
@@ -44,12 +38,12 @@ export async function POST(request: NextRequest): Promise<NextResponse<TrustScor
     let owner: string;
     let repo: string;
 
-    // Résolution owner/repo depuis URL ou champs directs
+    // Resolve owner/repo from URL or direct fields
     if (body.url) {
       const parsed = parseGitHubUrl(body.url);
       if (!parsed) {
         return NextResponse.json(
-          { error: "URL GitHub invalide", details: "Format attendu : https://github.com/owner/repo" },
+          { error: "Invalid GitHub URL", details: "Expected format: https://github.com/owner/repo" },
           { status: 400 }
         );
       }
@@ -60,30 +54,25 @@ export async function POST(request: NextRequest): Promise<NextResponse<TrustScor
       repo = body.repo;
     } else {
       return NextResponse.json(
-        { error: "Paramètres manquants", details: "Fournir une URL GitHub ou owner + repo" },
+        { error: "Missing parameters", details: "Provide a GitHub URL or owner + repo" },
         { status: 400 }
       );
     }
 
-    // Vérification cache
-    const cacheKey = getCacheKey(owner, repo);
-    const cached = analysisCache.get(cacheKey);
+    // Cache check
+    const cached = getCached(owner, repo);
+    if (cached) return NextResponse.json(cached);
 
-    if (cached && Date.now() - cached.cachedAt < CACHE_TTL_MS) {
-      return NextResponse.json(cached.data);
-    }
+    // ── Parallel fetch of GitHub data ─────────────────────────────────────────
 
-    // ── Fetch parallèle des données GitHub ───────────────────────────────────
-
-    const [repoInfo, commitActivity, contributorStats, issueStats] =
+    const [repoInfo, recentCommitData, issueStats] =
       await Promise.all([
         fetchRepoInfo(owner, repo),
-        fetchCommitActivity(owner, repo),
-        fetchContributorStats(owner, repo),
+        fetchRecentCommitData(owner, repo),
         fetchIssueStats(owner, repo),
       ]);
 
-    // ── Fetch stargazers (séquentiel car dépend du total) ────────────────────
+    // ── Fetch stargazers (sequential, depends on total) ───────────────────────
 
     const users = await fetchStargazersWithDetails(
       owner,
@@ -91,11 +80,11 @@ export async function POST(request: NextRequest): Promise<NextResponse<TrustScor
       repoInfo.stargazers_count
     );
 
-    // ── Lockstep (échantillon réduit) ────────────────────────────────────────
+    // ── Lockstep (reduced sample) ─────────────────────────────────────────────
 
     const starredMap = await fetchLockstepData(users, owner, repo);
 
-    // ── Calcul du score ──────────────────────────────────────────────────────
+    // ── Score calculation ─────────────────────────────────────────────────────
 
     const trustScore = computeTrustScore({
       owner,
@@ -103,13 +92,20 @@ export async function POST(request: NextRequest): Promise<NextResponse<TrustScor
       users,
       starredMap,
       repoInfo,
-      commitActivity,
-      contributorStats,
+      recentCommitData,
       issueStats,
     });
 
-    // Mise en cache
-    analysisCache.set(cacheKey, { data: trustScore, cachedAt: Date.now() });
+    setCached(owner, repo, trustScore);
+
+    addAudit({
+      id: crypto.randomUUID(),
+      type: "trust-score",
+      slug: `${owner}/${repo}`,
+      score: trustScore.score,
+      label: trustScore.label,
+      analyzedAt: new Date().toISOString(),
+    });
 
     return NextResponse.json(trustScore);
 
@@ -119,20 +115,20 @@ export async function POST(request: NextRequest): Promise<NextResponse<TrustScor
     if (error instanceof Error) {
       if (error.name === "GitHubNotFoundError") {
         return NextResponse.json(
-          { error: "Repo introuvable", details: "Vérifiez l'URL GitHub" },
+          { error: "Repository not found", details: "Check the GitHub URL" },
           { status: 404 }
         );
       }
       if (error.name === "GitHubRateLimitError") {
         return NextResponse.json(
-          { error: "Rate limit GitHub atteint", details: "Réessayez dans quelques minutes" },
+          { error: "GitHub rate limit reached", details: "Please try again in a few minutes" },
           { status: 429 }
         );
       }
     }
 
     return NextResponse.json(
-      { error: "Erreur interne", details: "L'analyse a échoué" },
+      { error: "Internal error", details: "Analysis failed" },
       { status: 500 }
     );
   }
@@ -145,21 +141,17 @@ export async function GET(request: NextRequest): Promise<NextResponse<TrustScore
 
   if (!owner || !repo) {
     return NextResponse.json(
-      { error: "Paramètres owner et repo requis" },
+      { error: "Parameters owner and repo are required" },
       { status: 400 }
     );
   }
 
-  // Vérification cache uniquement pour GET
-  const cacheKey = getCacheKey(owner, repo);
-  const cached = analysisCache.get(cacheKey);
-
-  if (cached && Date.now() - cached.cachedAt < CACHE_TTL_MS) {
-    return NextResponse.json(cached.data);
-  }
+  // Cache check only for GET
+  const cached = getCached(owner, repo);
+  if (cached) return NextResponse.json(cached);
 
   return NextResponse.json(
-    { error: "Aucun résultat en cache", details: "Lancez d'abord une analyse via POST" },
+    { error: "No cached result", details: "Run an analysis via POST first" },
     { status: 404 }
   );
 }

@@ -28,7 +28,7 @@ export default function HomePage() {
 
     const parsed = parseGitHubUrl(url);
     if (!parsed) {
-      setError("URL invalide. Exemple : https://github.com/expressjs/express");
+      setError("Invalid URL. Example: https://github.com/expressjs/express");
       return;
     }
 
@@ -43,12 +43,12 @@ export default function HomePage() {
 
       if (!response.ok) {
         const data = await response.json() as { error: string };
-        throw new Error(data.error ?? "Erreur inconnue");
+        throw new Error(data.error ?? "Unknown error");
       }
 
       router.push(`/report/${parsed.owner}/${parsed.repo}`);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Une erreur est survenue");
+      setError(err instanceof Error ? err.message : "An error occurred");
       setLoading(false);
     }
   }
@@ -59,8 +59,8 @@ export default function HomePage() {
       {/* Header */}
       <header className="border-b border-gray-800 px-6 py-4">
         <div className="max-w-5xl mx-auto flex items-center gap-3">
-          <span className="text-2xl">⭐</span>
-          <span className="font-bold text-lg tracking-tight">StarAudit</span>
+          <span className="text-2xl font-bold text-yellow-400">★</span>
+          <span className="font-bold text-lg tracking-tight">TrustStar</span>
           <span className="ml-auto text-xs text-gray-500 border border-gray-700 rounded px-2 py-1">
             Beta
           </span>
@@ -73,21 +73,20 @@ export default function HomePage() {
 
           <div className="inline-flex items-center gap-2 bg-yellow-500/10 border border-yellow-500/20 rounded-full px-4 py-1.5 text-yellow-400 text-sm mb-8">
             <span className="w-2 h-2 rounded-full bg-yellow-400 animate-pulse" />
-            Détection de fausse popularité GitHub
+            Fake GitHub popularity detection
           </div>
 
           <h1 className="text-5xl font-bold tracking-tight mb-6 leading-tight">
-            Faites confiance aux{" "}
-            <span className="text-yellow-400">vraies étoiles</span>
+            Trust only{" "}
+            <span className="text-yellow-400">real stars</span>
           </h1>
 
           <p className="text-gray-400 text-lg mb-12 leading-relaxed">
-            StarAudit analyse la qualité des stargazers d'un repo GitHub et calcule
-            un Trust Score de 0 à 100. Idéal pour les VCs, DSI et équipes
-            d'acquisition.
+            TrustStar analyzes the quality of a GitHub repo&apos;s stargazers and computes
+            a Trust Score from 0 to 100. Ideal for VCs, CTOs, and acquisition teams.
           </p>
 
-          {/* Formulaire */}
+          {/* Form */}
           <form onSubmit={handleSubmit} className="w-full">
             <div className="flex flex-col sm:flex-row gap-3">
               <input
@@ -117,10 +116,10 @@ export default function HomePage() {
                       <path className="opacity-75" fill="currentColor"
                         d="M4 12a8 8 0 018-8v8H4z" />
                     </svg>
-                    Analyse en cours…
+                    Analyzing…
                   </span>
                 ) : (
-                  "Analyser →"
+                  "Analyze →"
                 )}
               </button>
             </div>
@@ -135,38 +134,38 @@ export default function HomePage() {
           </form>
         </div>
 
-        {/* Métriques expliquées */}
+        {/* Metrics explained */}
         <div className="max-w-4xl w-full mx-auto mt-24 grid grid-cols-1 md:grid-cols-3 gap-6">
           <DimensionCard
-            icon="👤"
-            title="Qualité des comptes"
+            icon="U"
+            title="Account Quality"
             weight="35%"
-            description="Détecte les comptes récents, vides, sans followers ou avec un comportement lockstep."
+            description="Detects recent, empty accounts with no followers or exhibiting lockstep behavior."
           />
           <DimensionCard
-            icon="📈"
-            title="Comportement temporel"
+            icon="↑"
+            title="Temporal Behavior"
             weight="30%"
-            description="Analyse les pics anormaux via Z-score, la vélocité et les bursts de stars récentes."
+            description="Analyzes abnormal peaks via Z-score, velocity, and recent star bursts."
           />
           <DimensionCard
-            icon="🏥"
-            title="Santé du projet"
+            icon="+"
+            title="Project Health"
             weight="35%"
-            description="Évalue le ratio fork/star, l'activité des commits et la résolution des issues."
+            description="Evaluates fork/star ratio, commit activity, and issue resolution rate."
           />
         </div>
 
         {/* Footer note */}
         <p className="mt-16 text-gray-700 text-xs text-center">
-          Analyse basée sur un échantillon de 200 stargazers maximum · API GitHub publique
+          Analysis based on a sample of up to 200 stargazers · Public GitHub API
         </p>
       </section>
     </main>
   );
 }
 
-// ─── Composant carte dimension ────────────────────────────────────────────────
+// ─── Dimension card component ────────────────────────────────────────────────
 
 function DimensionCard({
   icon,

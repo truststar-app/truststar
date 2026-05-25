@@ -10,13 +10,8 @@ const config: Config = {
   theme: {
     extend: {
       fontFamily: {
-        sans: ["var(--font-geist-sans)"],
-        mono: ["var(--font-geist-mono)"],
-      },
-      colors: {
-        gray: {
-          950: "#030712",
-        },
+        sans: ["var(--font-ibm-sans)", "-apple-system", "system-ui", "sans-serif"],
+        mono: ["var(--font-ibm-mono)", "monospace"],
       },
     },
   },

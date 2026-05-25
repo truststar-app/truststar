@@ -20,7 +20,7 @@ async function fetchIssueCount(
 
     if (!response.ok) return 0;
 
-    // Parser le header Link pour extraire le numéro de dernière page
+    // Parse the Link header to extract the last page number
     const linkHeader = response.headers.get("Link") ?? "";
     const lastPageMatch = linkHeader.match(/page=(\d+)>; rel="last"/);
 
@@ -28,7 +28,7 @@ async function fetchIssueCount(
       return parseInt(lastPageMatch[1], 10);
     }
 
-    // Pas de header Link = moins d'une page de résultats
+    // No Link header = less than one page of results
     const data = (await response.json()) as unknown[];
     return data.length;
   } catch {

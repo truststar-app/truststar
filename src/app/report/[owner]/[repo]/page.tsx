@@ -1,26 +1,21 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
+import type { ReactNode } from "react";
+import BadgeShare from "@/components/BadgeShare";
 import type { TrustScore, TrustLabel } from "@/lib/types";
 
-// ─── Fetch côté serveur ───────────────────────────────────────────────────────
+// ─── Data fetching ────────────────────────────────────────────────────────────
 
-async function getReport(
-  owner: string,
-  repo: string
-): Promise<TrustScore | null> {
+async function getReport(owner: string, repo: string): Promise<TrustScore | null> {
   try {
-    const baseUrl =
-      process.env.NEXT_PUBLIC_BASE_URL ?? "http://localhost:3000";
-
+    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL ?? "http://localhost:3000";
     const response = await fetch(`${baseUrl}/api/analyze`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ owner, repo }),
       next: { revalidate: 600 },
     });
-
     if (!response.ok) return null;
-
     return response.json() as Promise<TrustScore>;
   } catch {
     return null;
@@ -36,266 +31,317 @@ export default async function ReportPage({
 }) {
   const { owner, repo } = await params;
   const report = await getReport(owner, repo);
-
   if (!report) notFound();
 
-  return (
-    <main className="min-h-screen bg-gray-950 text-white">
+  const cfg = getLabelConfig(report.label);
 
-      {/* Header */}
-      <header className="border-b border-gray-800 px-6 py-4">
-        <div className="max-w-5xl mx-auto flex items-center gap-3">
+  return (
+    <main style={{ minHeight: "100vh", background: "var(--bg-base)" }}>
+      <div
+        style={{
+          maxWidth: "var(--max-w)",
+          margin: "0 auto",
+          padding: "32px 24px 48px",
+        }}
+      >
+        {/* Breadcrumb */}
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 6,
+            marginBottom: 28,
+            fontSize: 13,
+            color: "var(--text-tertiary)",
+          }}
+        >
           <Link
             href="/"
-            className="flex items-center gap-2 hover:opacity-80 transition-opacity"
+            className="link-accent"
+            style={{ color: "var(--text-tertiary)", textDecoration: "none" }}
           >
-            <span className="text-2xl">⭐</span>
-            <span className="font-bold text-lg tracking-tight">StarAudit</span>
+            Home
           </Link>
-          <span className="text-gray-700">/</span>
-          <span className="text-gray-400 text-sm font-mono">
+          <span>/</span>
+          <span>Trust Score</span>
+          <span>/</span>
+          <span
+            style={{
+              fontFamily: "var(--font-ibm-mono), monospace",
+              color: "var(--text-secondary)",
+            }}
+          >
             {owner}/{repo}
           </span>
-          <Link
-            href="/"
-            className="ml-auto text-xs text-gray-500 hover:text-white transition-colors
-                       border border-gray-700 rounded px-3 py-1.5"
+        </div>
+
+        {/* Score hero */}
+        <div
+          style={{
+            background: cfg.bgCard,
+            border: `1px solid ${cfg.borderCard}`,
+            borderRadius: "var(--radius-xl)",
+            padding: "28px 32px",
+            marginBottom: 20,
+            display: "flex",
+            alignItems: "center",
+            gap: 28,
+          }}
+        >
+          {/* Circle */}
+          <div
+            style={{
+              flexShrink: 0,
+              width: 100,
+              height: 100,
+              borderRadius: "50%",
+              border: `3px solid ${cfg.color}`,
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              justifyContent: "center",
+              boxShadow: `0 0 0 6px ${cfg.ring}`,
+              background: "var(--bg-surface)",
+            }}
           >
-            ← Nouvelle analyse
-          </Link>
-        </div>
-      </header>
-
-      <div className="max-w-5xl mx-auto px-6 py-12 space-y-8">
-
-        {/* Score principal */}
-        <ScoreHero report={report} />
-
-        {/* Dimensions */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <DimensionScore
-            label="Qualité des comptes"
-            score={report.dimensions.accounts}
-            weight="35%"
-            icon="👤"
-          />
-          <DimensionScore
-            label="Comportement temporel"
-            score={report.dimensions.temporal}
-            weight="30%"
-            icon="📈"
-          />
-          <DimensionScore
-            label="Santé du projet"
-            score={report.dimensions.health}
-            weight="35%"
-            icon="🏥"
-          />
-        </div>
-
-        {/* Signaux détaillés */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-
-          <SignalsPanel
-            title="👤 Signaux — Qualité des comptes"
-            signals={[
-              {
-                label: "Comptes créés < 30j avant le star",
-                value: report.signals.newAccountsRatio,
-                format: "percent",
-                danger: report.signals.newAccountsRatio > 0.3,
-              },
-              {
-                label: "Comptes sans repo public",
-                value: report.signals.noRepoRatio,
-                format: "percent",
-                danger: report.signals.noRepoRatio > 0.4,
-              },
-              {
-                label: "Comptes sans followers/following",
-                value: report.signals.noFollowersRatio,
-                format: "percent",
-                danger: report.signals.noFollowersRatio > 0.4,
-              },
-              {
-                label: "Comptes sans avatar personnalisé",
-                value: report.signals.noAvatarRatio,
-                format: "percent",
-                danger: report.signals.noAvatarRatio > 0.4,
-              },
-              {
-                label: "Score lockstep (repos similaires)",
-                value: report.signals.lockstepScore,
-                format: "percent",
-                danger: report.signals.lockstepScore > 0.2,
-              },
-            ]}
-          />
-
-          <SignalsPanel
-            title="📈 Signaux — Comportement temporel"
-            signals={[
-              {
-                label: "Z-score pic maximal détecté",
-                value: report.signals.zScorePeak,
-                format: "zscore",
-                danger: report.signals.zScorePeak > 3,
-              },
-              {
-                label: "Score de vélocité anormale",
-                value: report.signals.velocityScore,
-                format: "percent",
-                danger: report.signals.velocityScore > 0.5,
-              },
-              {
-                label: "Stars sur les 30 derniers jours",
-                value: report.signals.recentStarsRatio,
-                format: "percent",
-                danger: report.signals.recentStarsRatio > 0.6,
-              },
-            ]}
-          />
-
-          <SignalsPanel
-            title="🏥 Signaux — Santé du projet"
-            signals={[
-              {
-                label: "Ratio fork / star",
-                value: report.signals.forkStarRatio,
-                format: "percent",
-                danger: report.signals.forkStarRatio < 0.1,
-              },
-              {
-                label: "Ratio contributeurs actifs",
-                value: report.signals.activeContributorsRatio,
-                format: "percent",
-                danger: report.signals.activeContributorsRatio < 0.2,
-              },
-              {
-                label: "Fréquence commits (par semaine)",
-                value: report.signals.commitFrequency,
-                format: "commits",
-                danger: report.signals.commitFrequency < 1,
-              },
-              {
-                label: "Ratio issues résolues",
-                value: report.signals.issueResolutionRatio,
-                format: "percent",
-                danger: report.signals.issueResolutionRatio < 0.5,
-              },
-            ]}
-          />
-
-          {/* Méta */}
-          <div className="bg-gray-900 border border-gray-800 rounded-xl p-6">
-            <h3 className="font-semibold text-white mb-4 text-sm">
-              ℹ️ Méta — Analyse
-            </h3>
-            <div className="space-y-3">
-              <MetaRow
-                label="Repo analysé"
-                value={`${report.owner}/${report.repo}`}
-              />
-              <MetaRow
-                label="Stargazers analysés"
-                value={`${report.sampleSize}`}
-              />
-              <MetaRow
-                label="Analysé le"
-                value={new Date(report.analyzedAt).toLocaleString("fr-FR")}
-              />
-            </div>
+            <span
+              style={{
+                fontSize: 30,
+                fontWeight: 700,
+                fontFamily: "var(--font-ibm-mono), monospace",
+                color: cfg.color,
+                lineHeight: 1,
+              }}
+            >
+              {report.score}
+            </span>
+            <span style={{ fontSize: 11, color: "var(--text-tertiary)", marginTop: 2 }}>
+              /100
+            </span>
           </div>
 
+          <div style={{ flex: 1 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8 }}>
+              <span
+                style={{
+                  fontSize: 22,
+                  fontWeight: 700,
+                  letterSpacing: "-0.5px",
+                  color: cfg.color,
+                }}
+              >
+                {report.label}
+              </span>
+              <span
+                style={{
+                  fontSize: 11,
+                  fontFamily: "var(--font-ibm-mono), monospace",
+                  background: cfg.bgCard,
+                  border: `1px solid ${cfg.borderCard}`,
+                  borderRadius: "var(--radius)",
+                  padding: "2px 8px",
+                  color: cfg.color,
+                  fontWeight: 600,
+                }}
+              >
+                Trust Score {report.score}
+              </span>
+            </div>
+
+            <p style={{ fontSize: 14, color: "var(--text-secondary)", lineHeight: 1.6, maxWidth: 520 }}>
+              {cfg.description}
+            </p>
+
+            <div
+              style={{
+                marginTop: 12,
+                padding: "10px 14px",
+                background: "var(--bg-base)",
+                borderLeft: "3px solid var(--border)",
+                borderRadius: "0 var(--radius) var(--radius) 0",
+                fontSize: 12,
+                color: "var(--text-secondary)",
+                lineHeight: 1.65,
+              }}
+            >
+              This analysis is based on objective, reproducible criteria. All metrics are
+              open source and auditable. Unexpected score?{" "}
+              <Link href="/how-it-works" style={{ color: "var(--accent)", textDecoration: "none", fontWeight: 500 }}>
+                Check our methodology
+              </Link>
+              {" "}or{" "}
+              <a href="https://github.com/truststar/truststar/issues" target="_blank" rel="noopener noreferrer" style={{ color: "var(--accent)", textDecoration: "none", fontWeight: 500 }}>
+                open an issue on GitHub
+              </a>
+              .
+            </div>
+          </div>
+        </div>
+
+        {/* Dimensions */}
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(3, 1fr)",
+            gap: 12,
+            marginBottom: 20,
+          }}
+        >
+          <DimensionCard label="Account Quality" score={report.dimensions.accounts} weight="35%" icon={<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>} />
+          <DimensionCard label="Temporal Behavior" score={report.dimensions.temporal} weight="30%" icon={<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>} />
+          <DimensionCard label="Project Health" score={report.dimensions.health} weight="35%" icon={<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>} />
+        </div>
+
+        {/* Signals */}
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(2, 1fr)",
+            gap: 12,
+          }}
+        >
+          <SignalsPanel
+            title="Account Quality"
+            signals={[
+              { label: "Accounts created < 30d before starring", value: report.signals.newAccountsRatio, format: "percent", danger: report.signals.newAccountsRatio > 0.3 },
+              { label: "Accounts with no public repo", value: report.signals.noRepoRatio, format: "percent", danger: report.signals.noRepoRatio > 0.4 },
+              { label: "Accounts with no followers/following", value: report.signals.noFollowersRatio, format: "percent", danger: report.signals.noFollowersRatio > 0.4 },
+              { label: "Accounts with no custom avatar", value: report.signals.noAvatarRatio, format: "percent", danger: report.signals.noAvatarRatio > 0.4 },
+              { label: "Lockstep score (similar repos)", value: report.signals.lockstepScore, format: "percent", danger: report.signals.lockstepScore > 0.2 },
+            ]}
+          />
+
+          <SignalsPanel
+            title="Temporal Behavior"
+            signals={[
+              { label: "Maximum Z-score peak detected", value: report.signals.zScorePeak, format: "zscore", danger: report.signals.zScorePeak > 3 },
+              { label: "Abnormal velocity score", value: report.signals.velocityScore, format: "percent", danger: report.signals.velocityScore > 0.5 },
+              { label: "Concentrated stars (time window)", value: report.signals.recentStarsRatio, format: "percent", danger: report.signals.recentStarsRatio > 0.6 },
+            ]}
+          />
+
+          <SignalsPanel
+            title="Project Health"
+            signals={[
+              { label: "Fork / star ratio", value: report.signals.forkStarRatio, format: "percent", danger: report.signals.forkStarRatio < 0.05 },
+              { label: "Active contributors (13 wk.)", value: report.signals.activeContributorsRatio, format: "percent", danger: report.signals.activeContributorsRatio < 0.2 },
+              { label: "Commits per week (13 wk.)", value: report.signals.commitFrequency, format: "commits", danger: report.signals.commitFrequency < 1 },
+              { label: "Issue resolution rate", value: report.signals.issueResolutionRatio, format: "percent", danger: report.signals.issueResolutionRatio < 0.5 },
+            ]}
+          />
+
+          {/* Meta */}
+          <div
+            style={{
+              background: "var(--bg-surface)",
+              border: "1px solid var(--border)",
+              borderRadius: "var(--radius-lg)",
+              padding: 24,
+            }}
+          >
+            <h3
+              style={{
+                fontWeight: 600,
+                fontSize: 13,
+                color: "var(--text-primary)",
+                marginBottom: 16,
+              }}
+            >
+              Analysis Metadata
+            </h3>
+            <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+              <MetaRow label="Analyzed repo" value={`${report.owner}/${report.repo}`} />
+              <MetaRow label="Stargazers analyzed" value={`${report.sampleSize}`} />
+              <MetaRow
+                label="Analyzed on"
+                value={new Date(report.analyzedAt).toLocaleString("en-US")}
+              />
+              <MetaRow label="Score" value={`${report.score}/100 — ${report.label}`} />
+            </div>
+
+            {/* Usage disclaimer */}
+            <div
+              style={{
+                marginTop: 16,
+                paddingTop: 16,
+                borderTop: "1px solid var(--border-subtle)",
+                padding: "10px 0 0",
+                background: "transparent",
+                borderLeft: "3px solid var(--border)",
+                paddingLeft: 10,
+                fontSize: 11,
+                color: "var(--text-secondary)",
+                lineHeight: 1.65,
+              }}
+            >
+              TrustStar is free and open source. Please use responsibly to keep
+              the service available for everyone.
+            </div>
+          </div>
+        </div>
+
+        {/* Badge share */}
+        <BadgeShare owner={owner} repo={repo} />
+
+        {/* Back */}
+        <div style={{ marginTop: 24, textAlign: "center" }}>
+          <Link
+            href="/"
+            className="btn-outline"
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 6,
+              fontSize: 13,
+              fontWeight: 500,
+              color: "var(--text-secondary)",
+              textDecoration: "none",
+              padding: "8px 16px",
+              borderRadius: "var(--radius)",
+              border: "1px solid var(--border)",
+              background: "var(--bg-surface)",
+            }}
+          >
+            ← New Analysis
+          </Link>
         </div>
       </div>
     </main>
   );
 }
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
+// ─── Label config ─────────────────────────────────────────────────────────────
 
-function getLabelConfig(label: TrustLabel): {
-  color: string;
-  bg: string;
-  border: string;
-  ring: string;
-  description: string;
-} {
-  switch (label) {
-    case "SAFE":
-      return {
-        color: "text-emerald-400",
-        bg: "bg-emerald-500/10",
-        border: "border-emerald-500/30",
-        ring: "ring-emerald-500/20",
-        description:
-          "Ce repo présente des signaux sains. La popularité semble organique.",
-      };
-    case "SUSPICIOUS":
-      return {
-        color: "text-yellow-400",
-        bg: "bg-yellow-500/10",
-        border: "border-yellow-500/30",
-        ring: "ring-yellow-500/20",
-        description:
-          "Certains signaux sont préoccupants. Une vérification manuelle est recommandée.",
-      };
-    case "DANGEROUS":
-      return {
-        color: "text-red-400",
-        bg: "bg-red-500/10",
-        border: "border-red-500/30",
-        ring: "ring-red-500/20",
-        description:
-          "Signaux fortement suspects. Ce repo présente des patterns de fausse popularité.",
-      };
-  }
+function getLabelConfig(label: TrustLabel) {
+  const configs = {
+    SAFE: {
+      color: "var(--safe)",
+      bgCard: "var(--safe-bg)",
+      borderCard: "#BBF7D0",
+      ring: "rgba(22,163,74,0.08)",
+      description: "This repo shows healthy signals. Popularity appears organic and health metrics are solid.",
+    },
+    SUSPICIOUS: {
+      color: "var(--suspicious)",
+      bgCard: "var(--suspicious-bg)",
+      borderCard: "#FDE68A",
+      ring: "rgba(217,119,6,0.08)",
+      description: "Some signals are concerning. A manual review is recommended before depending on this project.",
+    },
+    DANGEROUS: {
+      color: "var(--dangerous)",
+      bgCard: "var(--dangerous-bg)",
+      borderCard: "#FECACA",
+      ring: "rgba(220,38,38,0.08)",
+      description: "Strongly suspicious signals. This repo shows patterns consistent with a fake star campaign.",
+    },
+  };
+  return configs[label];
 }
 
-// ─── Composants ───────────────────────────────────────────────────────────────
+// ─── Components ──────────────────────────────────────────────────────────────
 
-function ScoreHero({ report }: { report: TrustScore }) {
-  const config = getLabelConfig(report.label);
-
-  return (
-    <div className={`${config.bg} ${config.border} border rounded-2xl p-8`}>
-      <div className="flex flex-col md:flex-row items-start md:items-center gap-6">
-
-        {/* Cercle score */}
-        <div
-          className={`flex-shrink-0 w-28 h-28 rounded-full border-4 ${config.border}
-                       flex flex-col items-center justify-center ring-4 ${config.ring}`}
-        >
-          <span className={`text-3xl font-bold ${config.color}`}>
-            {report.score}
-          </span>
-          <span className="text-gray-500 text-xs">/100</span>
-        </div>
-
-        <div className="flex-1">
-          <div className="flex items-center gap-3 mb-2">
-            <span className={`text-2xl font-bold ${config.color}`}>
-              {report.label}
-            </span>
-            <span
-              className={`text-xs font-mono ${config.bg} ${config.border}
-                           border rounded px-2 py-1 ${config.color}`}
-            >
-              Trust Score {report.score}
-            </span>
-          </div>
-          <p className="text-gray-400 text-sm leading-relaxed max-w-xl">
-            {config.description}
-          </p>
-        </div>
-
-      </div>
-    </div>
-  );
-}
-
-function DimensionScore({
+function DimensionCard({
   label,
   score,
   weight,
@@ -304,37 +350,87 @@ function DimensionScore({
   label: string;
   score: number;
   weight: string;
-  icon: string;
+  icon: ReactNode;
 }) {
   const color =
-    score >= 70 ? "text-emerald-400" :
-    score >= 40 ? "text-yellow-400" :
-    "text-red-400";
-
+    score >= 70 ? "var(--safe)" : score >= 40 ? "var(--suspicious)" : "var(--dangerous)";
   const barColor =
-    score >= 70 ? "bg-emerald-500" :
-    score >= 40 ? "bg-yellow-500" :
-    "bg-red-500";
+    score >= 70 ? "#16A34A" : score >= 40 ? "#D97706" : "#DC2626";
 
   return (
-    <div className="bg-gray-900 border border-gray-800 rounded-xl p-5">
-      <div className="flex items-center justify-between mb-3">
-        <div className="flex items-center gap-2">
+    <div
+      style={{
+        background: "var(--bg-surface)",
+        border: "1px solid var(--border)",
+        borderRadius: "var(--radius-lg)",
+        padding: 20,
+      }}
+    >
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          marginBottom: 12,
+        }}
+      >
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
           <span>{icon}</span>
-          <span className="text-sm text-gray-300 font-medium">{label}</span>
+          <span style={{ fontSize: 13, color: "var(--text-secondary)", fontWeight: 500 }}>
+            {label}
+          </span>
         </div>
-        <span className="text-xs text-gray-600 font-mono">{weight}</span>
+        <span
+          style={{
+            fontSize: 11,
+            fontFamily: "var(--font-ibm-mono), monospace",
+            color: "var(--text-tertiary)",
+          }}
+        >
+          {weight}
+        </span>
       </div>
 
-      <div className="flex items-end gap-3">
-        <span className={`text-3xl font-bold ${color}`}>{score}</span>
-        <span className="text-gray-600 text-sm mb-1">/100</span>
+      <div style={{ display: "flex", alignItems: "flex-end", gap: 6, marginBottom: 10 }}>
+        <span
+          style={{
+            fontSize: 32,
+            fontWeight: 700,
+            fontFamily: "var(--font-ibm-mono), monospace",
+            color,
+            lineHeight: 1,
+          }}
+        >
+          {score}
+        </span>
+        <span
+          style={{
+            fontSize: 12,
+            color: "var(--text-tertiary)",
+            marginBottom: 4,
+            fontFamily: "var(--font-ibm-mono), monospace",
+          }}
+        >
+          /100
+        </span>
       </div>
 
-      <div className="mt-3 h-1.5 bg-gray-800 rounded-full overflow-hidden">
+      <div
+        style={{
+          height: 4,
+          background: "var(--bg-hover)",
+          borderRadius: 999,
+          overflow: "hidden",
+        }}
+      >
         <div
-          className={`h-full ${barColor} rounded-full transition-all duration-500`}
-          style={{ width: `${score}%` }}
+          style={{
+            height: "100%",
+            width: `${score}%`,
+            background: barColor,
+            borderRadius: 999,
+            transition: "width 0.6s ease",
+          }}
         />
       </div>
     </div>
@@ -348,56 +444,57 @@ type SignalRow = {
   danger: boolean;
 };
 
-function SignalsPanel({
-  title,
-  signals,
-}: {
-  title: string;
-  signals: SignalRow[];
-}) {
+function SignalsPanel({ title, signals }: { title: string; signals: SignalRow[] }) {
   return (
-    <div className="bg-gray-900 border border-gray-800 rounded-xl p-6">
-      <h3 className="font-semibold text-white mb-4 text-sm">{title}</h3>
-      <div className="space-y-4">
-        {signals.map((signal) => (
-          <SignalItem key={signal.label} signal={signal} />
+    <div
+      style={{
+        background: "var(--bg-surface)",
+        border: "1px solid var(--border)",
+        borderRadius: "var(--radius-lg)",
+        padding: 24,
+      }}
+    >
+      <h3
+        style={{
+          fontWeight: 600,
+          fontSize: 13,
+          color: "var(--text-primary)",
+          marginBottom: 16,
+        }}
+      >
+        {title}
+      </h3>
+      <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+        {signals.map((s) => (
+          <SignalItem key={s.label} signal={s} />
         ))}
       </div>
     </div>
   );
 }
 
-function formatSignalValue(
-  value: number,
-  format: SignalRow["format"]
-): string {
-  switch (format) {
-    case "percent":
-      return `${Math.round(value * 100)}%`;
-    case "zscore":
-      return value.toFixed(2);
-    case "commits":
-      return `${value.toFixed(1)} / sem.`;
-  }
-}
-
 function SignalItem({ signal }: { signal: SignalRow }) {
-  const formattedValue = formatSignalValue(signal.value, signal.format);
+  const formatted = formatValue(signal.value, signal.format);
 
   return (
-    <div className="flex items-center justify-between gap-4">
-      <span className="text-gray-400 text-xs leading-relaxed flex-1">
+    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16 }}>
+      <span style={{ fontSize: 12, color: "var(--text-secondary)", lineHeight: 1.5, flex: 1 }}>
         {signal.label}
       </span>
       <span
-        className={`text-xs font-mono font-semibold px-2 py-1 rounded flex-shrink-0
-                    ${
-                      signal.danger
-                        ? "text-red-400 bg-red-500/10 border border-red-500/20"
-                        : "text-emerald-400 bg-emerald-500/10 border border-emerald-500/20"
-                    }`}
+        style={{
+          fontSize: 12,
+          fontFamily: "var(--font-ibm-mono), monospace",
+          fontWeight: 600,
+          padding: "2px 8px",
+          borderRadius: "var(--radius)",
+          flexShrink: 0,
+          background: signal.danger ? "var(--dangerous-bg)" : "var(--safe-bg)",
+          color: signal.danger ? "var(--dangerous)" : "var(--safe)",
+          border: `1px solid ${signal.danger ? "#FECACA" : "#BBF7D0"}`,
+        }}
       >
-        {formattedValue}
+        {formatted}
       </span>
     </div>
   );
@@ -405,11 +502,36 @@ function SignalItem({ signal }: { signal: SignalRow }) {
 
 function MetaRow({ label, value }: { label: string; value: string }) {
   return (
-    <div className="flex items-start justify-between gap-4">
-      <span className="text-gray-500 text-xs">{label}</span>
-      <span className="text-gray-300 text-xs font-mono text-right">
+    <div
+      style={{
+        display: "flex",
+        alignItems: "flex-start",
+        justifyContent: "space-between",
+        gap: 16,
+      }}
+    >
+      <span style={{ fontSize: 12, color: "var(--text-tertiary)" }}>{label}</span>
+      <span
+        style={{
+          fontSize: 12,
+          fontFamily: "var(--font-ibm-mono), monospace",
+          color: "var(--text-secondary)",
+          textAlign: "right",
+        }}
+      >
         {value}
       </span>
     </div>
   );
+}
+
+function formatValue(value: number, format: SignalRow["format"]): string {
+  switch (format) {
+    case "percent":
+      return `${Math.round(value * 100)}%`;
+    case "zscore":
+      return value.toFixed(2);
+    case "commits":
+      return `${value.toFixed(1)}/wk.`;
+  }
 }

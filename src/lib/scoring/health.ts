@@ -1,13 +1,4 @@
-import type {
-  RepoInfo,
-  CommitActivity,
-  ContributorStat,
-  IssueStats,
-} from "../types";
-import {
-  calculateCommitFrequency,
-  calculateActiveContributors,
-} from "../github/commits";
+import type { RepoInfo, IssueStats } from "../types";
 
 export type HealthSignals = {
   forkStarRatio: number;
@@ -16,61 +7,38 @@ export type HealthSignals = {
   issueResolutionRatio: number;
 };
 
-// ─── Ratio fork/star ─────────────────────────────────────────────────────────
+// ─── Fork/star ratio (raw value) ─────────────────────────────────────────────
 
 export function calculateForkStarRatio(repo: RepoInfo): number {
   if (repo.stargazers_count === 0) return 0;
-  const ratio = repo.forks_count / repo.stargazers_count;
-  // Normalise : ratio de 0.1 (10%) = score parfait de 1
-  return Math.min(1, ratio / 0.1);
-}
-
-// ─── Contributeurs actifs ────────────────────────────────────────────────────
-
-export function calculateActiveContributorsRatio(
-  stats: ContributorStat[]
-): { ratio: number; active: number; total: number } {
-  const { active, total } = calculateActiveContributors(stats);
-
-  if (total === 0) return { ratio: 0, active: 0, total: 0 };
-
-  return {
-    ratio: active / total,
-    active,
-    total,
-  };
+  return repo.forks_count / repo.stargazers_count;
 }
 
 // ─── Issue resolution ────────────────────────────────────────────────────────
 
 export function calculateIssueResolutionRatio(issues: IssueStats): number {
   const total = issues.open + issues.closed;
-  if (total === 0) return 1; // Pas d'issues = neutre, on ne pénalise pas
-
+  if (total === 0) return 1;
   return issues.closed / total;
 }
 
-// ─── Score dimension santé ───────────────────────────────────────────────────
+// ─── Health dimension score ──────────────────────────────────────────────────
 
 export function scoreHealth(
   repo: RepoInfo,
-  commitActivity: CommitActivity[],
-  contributorStats: ContributorStat[],
+  recentCommitData: { commitsPerWeek: number; activeContributorsRatio: number },
   issueStats: IssueStats
 ): { score: number; signals: HealthSignals } {
   const forkStarRatio = calculateForkStarRatio(repo);
-
-  const { ratio: activeContributorsRatio } =
-    calculateActiveContributorsRatio(contributorStats);
-
-  const commitFrequency = calculateCommitFrequency(commitActivity);
-
+  const { commitsPerWeek, activeContributorsRatio } = recentCommitData;
   const issueResolutionRatio = calculateIssueResolutionRatio(issueStats);
 
-  // Normalisation commitFrequency : 10 commits/semaine = score max
-  const commitFrequencyNormalized = Math.min(1, commitFrequency / 10);
+  // Normalize the fork/star ratio: 10%+ forks = max score
+  const forkStarNormalized = Math.min(1, forkStarRatio / 0.1);
 
-  // Poids — tous les signaux contribuent positivement à la santé
+  // Normalize commits: 10 commits/wk = max score
+  const commitFrequencyNormalized = Math.min(1, commitsPerWeek / 10);
+
   const weights = {
     forkStar: 0.25,
     activeContributors: 0.25,
@@ -79,7 +47,7 @@ export function scoreHealth(
   };
 
   const healthScore =
-    forkStarRatio * weights.forkStar +
+    forkStarNormalized * weights.forkStar +
     activeContributorsRatio * weights.activeContributors +
     commitFrequencyNormalized * weights.commitFrequency +
     issueResolutionRatio * weights.issueResolution;
@@ -89,9 +57,9 @@ export function scoreHealth(
   return {
     score,
     signals: {
-      forkStarRatio,
-      activeContributorsRatio,
-      commitFrequency,
+      forkStarRatio,             // raw forks/stars ratio (e.g. 0.30 = 30%)
+      activeContributorsRatio,   // min(1, unique_authors / 10)
+      commitFrequency: commitsPerWeek,
       issueResolutionRatio,
     },
   };

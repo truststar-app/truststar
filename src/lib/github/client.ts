@@ -4,6 +4,7 @@ const GITHUB_TOKEN = process.env.GITHUB_TOKEN;
 type FetchOptions = {
   headers?: Record<string, string>;
   next?: { revalidate: number };
+  cache?: RequestCache;
 };
 
 export class GitHubRateLimitError extends Error {
@@ -46,8 +47,14 @@ export async function githubFetch<T>(
       ...buildHeaders(),
       ...options.headers,
     },
-    next: options.next ?? { revalidate: 300 },
+    ...(options.cache
+      ? { cache: options.cache }
+      : { next: options.next ?? { revalidate: 300 } }),
   });
+
+  if (response.status === 401) {
+    throw new Error(`GitHubAuthError: invalid or expired token — ${endpoint}`);
+  }
 
   if (response.status === 403) {
     const rateLimitRemaining = response.headers.get("X-RateLimit-Remaining");
@@ -55,6 +62,11 @@ export async function githubFetch<T>(
       throw new GitHubRateLimitError();
     }
     throw new Error(`GitHub API forbidden: ${endpoint}`);
+  }
+
+  if (response.status === 202) {
+    // GitHub stats API: computation in progress, return null to trigger retry
+    return null as unknown as T;
   }
 
   if (response.status === 404) {

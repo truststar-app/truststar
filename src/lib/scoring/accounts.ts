@@ -1,8 +1,5 @@
 import type { GitHubUserDetail } from "../types";
 
-const DEFAULT_AVATAR_PATTERN =
-  /avatars\.githubusercontent\.com\/u\/\d+\?v=\d+$/;
-
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
 function isNewAccount(user: GitHubUserDetail): boolean {
@@ -20,13 +17,12 @@ function hasNoSocialPresence(user: GitHubUserDetail): boolean {
   return user.followers === 0 && user.following === 0;
 }
 
-function hasDefaultAvatar(user: GitHubUserDetail): boolean {
-  return DEFAULT_AVATAR_PATTERN.test(user.avatar_url);
-}
+// TODO V2: implement avatar detection via GitHub GraphQL API (hasCustomAvatar field)
+// REST API cannot distinguish custom photos from auto-generated identicons — same URL format.
 
 // ─── Lockstep Score ─────────────────────────────────────────────────────────
-// Détecte les comptes ayant starred exactement les mêmes repos
-// Score élevé = beaucoup de comptes partagent un profil de stars identique
+// Detects accounts that starred exactly the same repos
+// High score = many accounts share an identical star profile
 
 export function calculateLockstepScore(
   starredMap: Map<string, string[]>
@@ -53,7 +49,7 @@ export function calculateLockstepScore(
 
       const similarity = intersection.length / minLen;
 
-      // Seuil : 80% de repos en commun = lockstep
+      // Threshold: 80% repos in common = lockstep
       if (similarity >= 0.8) {
         lockstepPairs++;
       }
@@ -64,7 +60,7 @@ export function calculateLockstepScore(
   return lockstepPairs / totalPairs; // 0-1
 }
 
-// ─── Score dimension comptes ─────────────────────────────────────────────────
+// ─── Account dimension score ────────────────────────────────────────────────
 
 export type AccountSignals = {
   newAccountsRatio: number;
@@ -102,18 +98,15 @@ export function scoreAccounts(
   const noFollowersRatio =
     users.filter(hasNoSocialPresence).length / total;
 
-  const noAvatarRatio =
-    users.filter(hasDefaultAvatar).length / total;
+  // Disabled: cannot distinguish custom avatars from identicons via REST API
+  const noAvatarRatio = 0;
 
   const lockstepScore = calculateLockstepScore(starredMap);
 
-  // Chaque signal contribue à la suspicion
-  // On convertit chaque ratio en pénalité (0 = clean, 1 = suspect)
   const weights = {
-    newAccounts: 0.30,
-    noRepo: 0.25,
+    newAccounts: 0.35,
+    noRepo: 0.30,
     noFollowers: 0.20,
-    noAvatar: 0.10,
     lockstep: 0.15,
   };
 
@@ -121,10 +114,9 @@ export function scoreAccounts(
     newAccountsRatio * weights.newAccounts +
     noRepoRatio * weights.noRepo +
     noFollowersRatio * weights.noFollowers +
-    noAvatarRatio * weights.noAvatar +
     lockstepScore * weights.lockstep;
 
-  // Inverser : 0 suspicion = 100 (SAFE), 1 suspicion = 0 (DANGEROUS)
+  // Invert: 0 suspicion = 100 (SAFE), 1 suspicion = 0 (DANGEROUS)
   const score = Math.round(Math.max(0, Math.min(100, (1 - suspicionScore) * 100)));
 
   return {

@@ -1,5 +1,17 @@
 import { githubFetch } from "./client";
-import type { CommitActivity, RepoInfo, ContributorStat } from "../types";
+import type { RepoInfo } from "../types";
+
+const GITHUB_API_BASE = "https://api.github.com";
+
+async function githubFetchPublic<T>(path: string): Promise<T> {
+  const url = path.startsWith("http") ? path : `${GITHUB_API_BASE}${path}`;
+  const res = await fetch(url, {
+    headers: { Accept: "application/vnd.github+json" },
+    next: { revalidate: 300 },
+  });
+  if (!res.ok) throw new Error(`GitHub public fetch ${res.status} on ${path}`);
+  return res.json() as Promise<T>;
+}
 
 export async function fetchRepoInfo(
   owner: string,
@@ -8,76 +20,58 @@ export async function fetchRepoInfo(
   return githubFetch<RepoInfo>(`/repos/${owner}/${repo}`);
 }
 
-export async function fetchCommitActivity(
+type CommitListEntry = {
+  sha: string;
+  author: { login: string } | null;
+};
+
+export async function fetchRecentCommitData(
   owner: string,
-  repo: string
-): Promise<CommitActivity[]> {
-  try {
-    const data = await githubFetch<CommitActivity[]>(
-      `/repos/${owner}/${repo}/stats/commit_activity`
-    );
-    return Array.isArray(data) ? data : [];
-  } catch (error) {
-    console.error("Failed to fetch commit activity:", error);
-    return [];
-  }
-}
+  repo: string,
+): Promise<{ commitsPerWeek: number; activeContributorsRatio: number }> {
+  const DAYS = 90;
+  const WEEKS = DAYS / 7;
+  const windowStart = new Date(Date.now() - DAYS * 24 * 60 * 60 * 1000);
+  const windowEnd = new Date();
+  const since = windowStart.toISOString();
 
-export async function fetchContributorStats(
-  owner: string,
-  repo: string
-): Promise<ContributorStat[]> {
-  try {
-    const url = `/repos/${owner}/${repo}/stats/contributors`;
+  console.log(`[commits] ${owner}/${repo} — window: ${windowStart.toISOString()} → ${windowEnd.toISOString()}`);
 
-    let data = await githubFetch<ContributorStat[] | null>(url);
+  const authors = new Set<string>();
+  let totalCommits = 0;
+  let page = 1;
 
-    if (!data || !Array.isArray(data)) {
-      // GitHub calcule les stats en async → retry après 2s
-      await new Promise((resolve) => setTimeout(resolve, 2000));
-      data = await githubFetch<ContributorStat[] | null>(url);
+  const fetchPage = async (p: number): Promise<CommitListEntry[]> => {
+    const path = `/repos/${owner}/${repo}/commits?since=${since}&per_page=100&page=${p}`;
+    try {
+      return await githubFetch<CommitListEntry[]>(path);
+    } catch (err) {
+      if (err instanceof Error && err.message.startsWith("GitHubAuthError")) {
+        return githubFetchPublic<CommitListEntry[]>(path);
+      }
+      throw err;
     }
+  };
 
-    return Array.isArray(data) ? data : [];
-  } catch (error) {
-    console.error("Failed to fetch contributor stats:", error);
-    return [];
-  }
-}
-
-export function calculateCommitFrequency(
-  activity: CommitActivity[],
-  weeksBack: number = 13
-): number {
-  if (!activity.length) return 0;
-
-  const recent = activity.slice(-weeksBack);
-  const totalCommits = recent.reduce((sum, week) => sum + week.total, 0);
-
-  if (recent.length === 0) return 0;
-
-  return totalCommits / recent.length; // commits/semaine en moyenne
-}
-
-export function calculateActiveContributors(
-  stats: ContributorStat[],
-  weeksBack: number = 13
-): { active: number; total: number } {
-  const cutoffWeek =
-    Math.floor(Date.now() / 1000) - weeksBack * 7 * 24 * 3600;
-
-  let active = 0;
-  const total = stats.length;
-
-  for (const contributor of stats) {
-    const recentCommits = contributor.weeks
-      .filter((w) => w.w >= cutoffWeek)
-      .reduce((sum, w) => sum + w.c, 0);
-
-    if (recentCommits > 0) {
-      active++;
+  try {
+    while (page <= 5) {
+      const commits = await fetchPage(page);
+      if (!Array.isArray(commits) || commits.length === 0) break;
+      totalCommits += commits.length;
+      for (const c of commits) {
+        if (c.author?.login) authors.add(c.author.login);
+      }
+      if (commits.length < 100) break;
+      page++;
     }
+  } catch (err) {
+    console.error(`[commits] fetch failed for ${owner}/${repo}:`, err);
   }
 
-  return { active, total };
+  console.log(`[commits] ${owner}/${repo} — ${totalCommits} commits found over ${WEEKS.toFixed(2)} weeks → ${(totalCommits / WEEKS).toFixed(2)} commits/week`);
+
+  return {
+    commitsPerWeek: totalCommits / WEEKS,
+    activeContributorsRatio: Math.min(1, authors.size / 10),
+  };
 }
