@@ -3,7 +3,6 @@ const GITHUB_TOKEN = process.env.GITHUB_TOKEN;
 
 type FetchOptions = {
   headers?: Record<string, string>;
-  next?: { revalidate: number };
   cache?: RequestCache;
 };
 
@@ -47,9 +46,7 @@ export async function githubFetch<T>(
       ...buildHeaders(),
       ...options.headers,
     },
-    ...(options.cache
-      ? { cache: options.cache }
-      : { next: options.next ?? { revalidate: 300 } }),
+    cache: options.cache ?? "no-store",
   });
 
   if (response.status === 401) {
@@ -90,13 +87,19 @@ export async function githubFetchWithStarredAt<T>(
     ? endpoint
     : `${GITHUB_API_BASE}${endpoint}`;
 
+  const sentHeaders = {
+    ...buildHeaders(),
+    Accept: "application/vnd.github.v3.star+json",
+  };
+  console.log("[stargazers] githubFetchWithStarredAt →", url);
+  console.log("[stargazers] Token present:", !!GITHUB_TOKEN, "| Accept:", sentHeaders.Accept);
+
   const response = await fetch(url, {
-    headers: {
-      ...buildHeaders(),
-      Accept: "application/vnd.github.v3.star+json",
-    },
-    next: { revalidate: 300 },
+    headers: sentHeaders,
+    cache: "no-store",
   });
+
+  console.log("[stargazers] API response status:", response.status);
 
   if (response.status === 403) {
     const rateLimitRemaining = response.headers.get("X-RateLimit-Remaining");

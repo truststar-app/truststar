@@ -7,7 +7,7 @@ async function githubFetchPublic<T>(path: string): Promise<T> {
   const url = path.startsWith("http") ? path : `${GITHUB_API_BASE}${path}`;
   const res = await fetch(url, {
     headers: { Accept: "application/vnd.github+json" },
-    next: { revalidate: 300 },
+    cache: "no-store",
   });
   if (!res.ok) throw new Error(`GitHub public fetch ${res.status} on ${path}`);
   return res.json() as Promise<T>;

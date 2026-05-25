@@ -28,7 +28,12 @@ export async function fetchStargazersSample(
   repo: string,
   totalStars: number
 ): Promise<GitHubUser[]> {
-  if (totalStars === 0) return [];
+  console.log("[stargazers] Starting fetch for", owner, repo, "| totalStars:", totalStars);
+
+  if (totalStars === 0) {
+    console.log("[stargazers] Skipping — 0 stars");
+    return [];
+  }
 
   const sampleSize = Math.min(MAX_SAMPLE_SIZE, totalStars);
   const pagesToFetch = Math.ceil(sampleSize / PER_PAGE);
@@ -41,6 +46,8 @@ export async function fetchStargazersSample(
       const raw = await githubFetchWithStarredAt<RawStargazer[]>(
         `/repos/${owner}/${repo}/stargazers?per_page=${PER_PAGE}&page=${page}`
       );
+
+      console.log(`[stargazers] Page ${page} — received ${raw.length} items | sample[0]:`, JSON.stringify(raw[0]));
 
       const users: GitHubUser[] = raw.map((item) => ({
         login: item.user.login,
@@ -63,6 +70,7 @@ export async function fetchStargazersSample(
     }
   }
 
+  console.log("[stargazers] Fetched count:", allUsers.length);
   return allUsers.slice(0, sampleSize);
 }
 
