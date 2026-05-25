@@ -279,11 +279,11 @@ function PhraseRow({ row }: { row: PhraseRowData }) {
               color:
                 phrase.type === "stat"
                   ? i % 2 === 0
-                    ? "rgba(217, 54, 54, 0.30)"
-                    : "rgba(217, 54, 54, 0.26)"
+                    ? "rgba(217, 54, 54, 0.25)"
+                    : "rgba(217, 54, 54, 0.22)"
                   : i % 2 === 0
-                  ? "rgba(12, 12, 13, 0.22)"
-                  : "rgba(12, 12, 13, 0.19)",
+                  ? "rgba(12, 12, 13, 0.18)"
+                  : "rgba(12, 12, 13, 0.15)",
               whiteSpace: "nowrap",
               flexShrink: 0,
               letterSpacing: phrase.size > 18 ? "-0.4px" : "0",
@@ -627,7 +627,7 @@ export default function HomePage() {
               padding: "12vh 80px 60px",
               maxWidth: 960,
               width: "100%",
-              background: "radial-gradient(ellipse 88% 72% at 50% 62%, rgba(250,250,250,0.97) 0%, rgba(250,250,250,0.94) 45%, rgba(250,250,250,0.5) 72%, transparent 100%)",
+              background: "radial-gradient(ellipse 85% 48% at 50% 70%, rgba(250,250,250,0.97) 0%, rgba(250,250,250,0.95) 40%, rgba(250,250,250,0.65) 70%, transparent 92%)",
             }}
           >
             <div className="hero-row" style={{ marginBottom: 12 }}>

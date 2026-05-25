@@ -350,7 +350,7 @@ export default function Header() {
         <div style={{ width: 1, height: 20, background: "var(--border)", margin: "0 4px" }} />
 
         <Link
-          href="#"
+          href="/coming-soon"
           style={{
             padding: "6px 12px",
             fontSize: 13,
@@ -376,7 +376,7 @@ export default function Header() {
         </Link>
 
         <Link
-          href="#"
+          href="/coming-soon"
           style={{
             padding: "6px 14px",
             fontSize: 13,
