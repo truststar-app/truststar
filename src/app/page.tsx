@@ -572,13 +572,6 @@ export default function HomePage() {
     skill: "owner/repo — e.g. dbalve/fast-io",
   };
 
-  const STATS = [
-    { value: "6M+", label: "fake stars detected on GitHub", sub: "source: CMU ICSE 2026" },
-    { value: "5,500+", label: "skills indexed on ClawHub", sub: "and growing" },
-    { value: "100%", label: "open source methodology", sub: "fully auditable" },
-    { value: "Free", label: "no account required", sub: "always will be" },
-  ];
-
   return (
     <>
       {loading && <LoadingOverlay mode={mode} />}
@@ -750,84 +743,8 @@ export default function HomePage() {
           </div>
         </section>
 
-        {/* ─── STATS BAND ────────────────────────────────────────────────────── */}
-        <section
-          style={{
-            background: "var(--bg-surface)",
-            borderTop: "1px solid var(--border)",
-            borderBottom: "1px solid var(--border)",
-            padding: "56px 24px",
-          }}
-        >
-          <div className="stats-grid" style={{ maxWidth: 900, margin: "0 auto" }}>
-            {STATS.map((stat, i) => (
-              <div
-                key={stat.value}
-                className={`stat-item${i < STATS.length - 1 ? " stat-item-divider" : ""}`}
-                style={{ textAlign: "center", padding: "16px 28px" }}
-              >
-                <div style={{ fontSize: "clamp(28px, 3vw, 40px)", fontWeight: 700, fontFamily: "var(--font-ibm-mono), monospace", color: "var(--text-primary)", letterSpacing: "-1px", lineHeight: 1.15, marginBottom: 6 }}>
-                  {stat.value}
-                </div>
-                <div style={{ fontSize: 13, color: "var(--text-secondary)", lineHeight: 1.4, marginBottom: 3 }}>
-                  {stat.label}
-                </div>
-                <div style={{ fontSize: 11, color: "var(--text-tertiary)" }}>
-                  {stat.sub}
-                </div>
-              </div>
-            ))}
-          </div>
-        </section>
-
-        {/* ─── CTA FINAL ─────────────────────────────────────────────────────── */}
-        <section style={{ background: "var(--bg-surface)", padding: "100px 24px", textAlign: "center" }}>
-          <h2 style={{ fontSize: "clamp(22px, 3vw, 36px)", fontWeight: 700, color: "var(--text-primary)", marginBottom: 14, letterSpacing: "-0.8px" }}>
-            Ready to verify trust?
-          </h2>
-          <p style={{ fontSize: 16, color: "var(--text-secondary)", maxWidth: 460, margin: "0 auto 36px", lineHeight: 1.65 }}>
-            Paste a GitHub repo, npm package, or skill slug. Results in seconds.
-          </p>
-          <CtaButton
-            onClick={() => {
-              const hero = document.getElementById("hero");
-              if (hero) hero.scrollIntoView({ behavior: "smooth" });
-              setTimeout(() => inputRef.current?.focus(), 600);
-            }}
-          />
-          <p style={{ marginTop: 16, fontSize: 12, color: "var(--text-tertiary)" }}>
-            Free, open source, no account required.
-          </p>
-        </section>
-
       </main>
     </>
   );
 }
 
-function CtaButton({ onClick }: { onClick: () => void }) {
-  const [hovered, setHovered] = useState(false);
-  return (
-    <button
-      onClick={onClick}
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
-      style={{
-        background: hovered ? "var(--accent-hover)" : "var(--accent)",
-        color: "#fff",
-        border: "none",
-        borderRadius: 10,
-        padding: "14px 36px",
-        fontSize: 15,
-        fontWeight: 600,
-        cursor: "pointer",
-        fontFamily: "inherit",
-        transition: "background 0.15s",
-        boxShadow: "0 2px 10px rgba(217,54,54,0.25)",
-        letterSpacing: "-0.2px",
-      }}
-    >
-      Start Analyzing →
-    </button>
-  );
-}
