@@ -35,7 +35,7 @@ function parseGitHubUrl(input: string): { owner: string; repo: string } | null {
 
 export async function POST(request: NextRequest): Promise<NextResponse<TrustScore | ApiError>> {
   try {
-    const body = await request.json() as { url?: string; repoUrl?: string; owner?: string; repo?: string };
+    const body = await request.json() as { url?: string; repoUrl?: string; owner?: string; repo?: string; force?: boolean };
 
     let owner: string;
     let repo: string;
@@ -62,9 +62,11 @@ export async function POST(request: NextRequest): Promise<NextResponse<TrustScor
       );
     }
 
-    // Cache check
-    const cached = getCached(owner, repo);
-    if (cached) return NextResponse.json(cached);
+    // Cache check — skipped when force=true
+    if (!body.force) {
+      const cached = getCached(owner, repo);
+      if (cached) return NextResponse.json(cached);
+    }
 
     // ── Parallel fetch of GitHub data ─────────────────────────────────────────
 

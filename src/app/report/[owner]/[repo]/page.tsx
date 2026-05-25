@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import type { ReactNode } from "react";
 import BadgeShare from "@/components/BadgeShare";
+import { ReanalyzeButton } from "@/components/ReanalyzeButton";
 import type { TrustScore, TrustLabel } from "@/lib/types";
 
 // ─── Data fetching ────────────────────────────────────────────────────────────
@@ -13,7 +14,7 @@ async function getReport(owner: string, repo: string): Promise<TrustScore | null
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ owner, repo }),
-      next: { revalidate: 600 },
+      cache: "no-store",
     });
     if (!response.ok) return null;
     return response.json() as Promise<TrustScore>;
@@ -73,6 +74,7 @@ export default async function ReportPage({
           >
             {owner}/{repo}
           </span>
+          <ReanalyzeButton owner={owner} repo={repo} />
         </div>
 
         {/* Score hero */}
