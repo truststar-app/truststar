@@ -21,7 +21,7 @@ const jetbrainsMono = JetBrains_Mono({
 export const metadata: Metadata = {
   title: "TrustStar — Trust starts with transparency",
   description:
-    "TrustStar is the open-source trust engine for GitHub repos and OpenClaw skills. Detect fake stars, analyze code security, and make safe adoption decisions.",
+    "TrustStar is the open-source trust engine for the open source ecosystem. Detect fake GitHub stars, analyze npm packages, and scan code for security risks.",
   icons: {
     icon: "/30px-logo.webp",
     shortcut: "/30px-logo.webp",
@@ -30,11 +30,20 @@ export const metadata: Metadata = {
   openGraph: {
     title: "TrustStar",
     description:
-      "TrustStar is the open-source trust engine for GitHub repos and OpenClaw skills. Detect fake stars, analyze code security, and make safe adoption decisions.",
+      "TrustStar is the open-source trust engine for the open source ecosystem. Detect fake GitHub stars, analyze npm packages, and scan code for security risks.",
     siteName: "TrustStar",
+    url: "https://truststar.co",
     type: "website",
-    images: ["/14619e05-69a1-41be-86dc-5ecda5629b3a-removebg-preview.png"],
+    images: ["https://truststar.co/14619e05-69a1-41be-86dc-5ecda5629b3a-removebg-preview.png"],
   },
+  twitter: {
+    card: "summary_large_image",
+    title: "TrustStar — Trust starts with transparency",
+    description:
+      "TrustStar is the open-source trust engine for the open source ecosystem. Detect fake GitHub stars, analyze npm packages, and scan code for security risks.",
+    images: ["https://truststar.co/14619e05-69a1-41be-86dc-5ecda5629b3a-removebg-preview.png"],
+  },
+  metadataBase: new URL("https://truststar.co"),
 };
 
 export default function RootLayout({

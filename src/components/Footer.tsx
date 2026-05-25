@@ -2,6 +2,8 @@
 
 import Link from "next/link";
 
+const GH = "https://github.com/truststar-app/truststar";
+
 export default function Footer() {
   return (
     <footer
@@ -71,29 +73,19 @@ export default function Footer() {
 
         <FooterCol title="Product">
           <FooterLink href="/">Trust Score</FooterLink>
-          <FooterLink href="#">Skill Audit</FooterLink>
-          <FooterLink href="#">RepoShield</FooterLink>
-          <FooterLink href="#">npm Check</FooterLink>
-          <FooterLink href="#">Pricing</FooterLink>
-          <FooterLink href="#">Changelog</FooterLink>
+          <FooterLink href="/npm/express">npm Check</FooterLink>
+          <FooterLink href="/skill/expressjs/express">Code Scan</FooterLink>
+          <FooterLink href="/badge">Badge</FooterLink>
         </FooterCol>
 
         <FooterCol title="Resources">
-          <FooterLink href="#">Documentation</FooterLink>
-          <FooterLink href="#">API Reference</FooterLink>
-          <FooterLink href="#">Blog</FooterLink>
-          <FooterLink href="#">Dev Blog</FooterLink>
-          <FooterLink href="#">Community</FooterLink>
-          <FooterLink href="#">GitHub</FooterLink>
+          <FooterLink href="/how-it-works">How it Works</FooterLink>
+          <FooterLink href="/discover">Discover</FooterLink>
+          <FooterLink href="/recent">Recent Audits</FooterLink>
         </FooterCol>
 
-        <FooterCol title="Company">
-          <FooterLink href="#">About</FooterLink>
-          <FooterLink href="#">News</FooterLink>
-          <FooterLink href="#">Contact</FooterLink>
-          <FooterLink href="#">Careers</FooterLink>
-          <FooterLink href="#">Legal</FooterLink>
-          <FooterLink href="#">Privacy</FooterLink>
+        <FooterCol title="Open Source">
+          <FooterLink href={GH} external>GitHub</FooterLink>
         </FooterCol>
       </div>
 
@@ -111,28 +103,25 @@ export default function Footer() {
         <span style={{ fontSize: 12, color: "var(--text-tertiary)" }}>
           © 2026 TrustStar — Open source under MIT.
         </span>
-        <div style={{ display: "flex", gap: 16 }}>
-          {["GitHub", "Twitter", "Discord"].map((label) => (
-            <Link
-              key={label}
-              href="#"
-              style={{
-                fontSize: 12,
-                color: "var(--text-tertiary)",
-                textDecoration: "none",
-                transition: "color 0.12s",
-              }}
-              onMouseEnter={(e) => {
-                (e.currentTarget as HTMLElement).style.color = "var(--accent)";
-              }}
-              onMouseLeave={(e) => {
-                (e.currentTarget as HTMLElement).style.color = "var(--text-tertiary)";
-              }}
-            >
-              {label}
-            </Link>
-          ))}
-        </div>
+        <a
+          href={GH}
+          target="_blank"
+          rel="noopener noreferrer"
+          style={{
+            fontSize: 12,
+            color: "var(--text-tertiary)",
+            textDecoration: "none",
+            transition: "color 0.12s",
+          }}
+          onMouseEnter={(e) => {
+            (e.currentTarget as HTMLElement).style.color = "var(--accent)";
+          }}
+          onMouseLeave={(e) => {
+            (e.currentTarget as HTMLElement).style.color = "var(--text-tertiary)";
+          }}
+        >
+          GitHub
+        </a>
       </div>
     </footer>
   );
@@ -158,18 +147,47 @@ function FooterCol({ title, children }: { title: string; children: React.ReactNo
   );
 }
 
-function FooterLink({ href, children }: { href: string; children: React.ReactNode }) {
+function FooterLink({
+  href,
+  external,
+  children,
+}: {
+  href: string;
+  external?: boolean;
+  children: React.ReactNode;
+}) {
+  const style: React.CSSProperties = {
+    display: "block",
+    fontSize: 13,
+    color: "var(--text-tertiary)",
+    textDecoration: "none",
+    padding: "3px 0",
+    transition: "color 0.12s",
+  };
+
+  if (external) {
+    return (
+      <a
+        href={href}
+        target="_blank"
+        rel="noopener noreferrer"
+        style={style}
+        onMouseEnter={(e) => {
+          (e.currentTarget as HTMLElement).style.color = "var(--text-primary)";
+        }}
+        onMouseLeave={(e) => {
+          (e.currentTarget as HTMLElement).style.color = "var(--text-tertiary)";
+        }}
+      >
+        {children}
+      </a>
+    );
+  }
+
   return (
     <Link
       href={href}
-      style={{
-        display: "block",
-        fontSize: 13,
-        color: "var(--text-tertiary)",
-        textDecoration: "none",
-        padding: "3px 0",
-        transition: "color 0.12s",
-      }}
+      style={style}
       onMouseEnter={(e) => {
         (e.currentTarget as HTMLElement).style.color = "var(--text-primary)";
       }}

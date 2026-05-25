@@ -142,7 +142,7 @@ export default function HowItWorksPage() {
 
           <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
             <a
-              href="https://github.com/truststar/truststar"
+              href="https://github.com/truststar-app/truststar"
               target="_blank"
               rel="noopener noreferrer"
               style={{

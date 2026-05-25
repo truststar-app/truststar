@@ -312,13 +312,13 @@ export default function Header() {
               desc="GitHub fake star detection"
             />
             <DropdownItem
-              href="#"
+              href="/npm/express"
               icon={<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="16.5" y1="9.4" x2="7.5" y2="4.21"/><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>}
               title="npm Check"
               desc="Downloads vs stars consistency"
             />
             <DropdownItem
-              href="#"
+              href="/skill/expressjs/express"
               icon={<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>}
               title="Code Scan"
               desc="Static security analysis"
@@ -339,7 +339,7 @@ export default function Header() {
             />
             <DropdownDivider />
             <DropdownItem
-              href="https://github.com/truststar/truststar"
+              href="https://github.com/truststar-app/truststar"
               icon={<GitHubIcon />}
               title="GitHub"
               desc="Open source — contribute"
