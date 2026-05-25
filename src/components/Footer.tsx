@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 
 const GH = "https://github.com/truststar-app/truststar";
@@ -34,26 +35,13 @@ export default function Footer() {
               color: "var(--text-primary)",
             }}
           >
-            <div
-              style={{
-                width: 24,
-                height: 24,
-                background: "var(--accent)",
-                borderRadius: 6,
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                boxShadow: "0 1px 3px rgba(217,54,54,0.25)",
-                flexShrink: 0,
-              }}
-            >
-              <svg viewBox="0 0 16 16" fill="none" width={14} height={14}>
-                <path
-                  d="M8 1L10.5 5.5L15 6.5L11.5 10L12.5 15L8 12.5L3.5 15L4.5 10L1 6.5L5.5 5.5L8 1Z"
-                  fill="white"
-                />
-              </svg>
-            </div>
+            <Image
+              src="/30px-logo.webp"
+              alt="TrustStar"
+              width={24}
+              height={24}
+              style={{ flexShrink: 0 }}
+            />
             <span style={{ fontWeight: 600, fontSize: 14, letterSpacing: "-0.4px" }}>
               TrustStar
             </span>

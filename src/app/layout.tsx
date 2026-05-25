@@ -23,9 +23,12 @@ export const metadata: Metadata = {
   description:
     "TrustStar is the open-source trust engine for the open source ecosystem. Detect fake GitHub stars, analyze npm packages, and scan code for security risks.",
   icons: {
-    icon: "/30px-logo.webp",
-    shortcut: "/30px-logo.webp",
-    apple: "/30px-logo.webp",
+    icon: [
+      { url: "/favicon-32.png", sizes: "32x32", type: "image/png" },
+      { url: "/icon-192.png", sizes: "192x192", type: "image/png" },
+    ],
+    shortcut: "/favicon-32.png",
+    apple: "/apple-touch-icon.png",
   },
   openGraph: {
     title: "TrustStar",
