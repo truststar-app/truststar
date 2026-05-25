@@ -1,4 +1,4 @@
-import { githubFetchWithStarredAt, githubFetch, GitHubRateLimitError } from "./client";
+import { fetchStargazers, githubFetch } from "./client";
 import type { GitHubUser, GitHubUserDetail } from "../types";
 
 const MAX_SAMPLE_SIZE = 200;
@@ -35,43 +35,17 @@ export async function fetchStargazersSample(
     return [];
   }
 
-  const sampleSize = Math.min(MAX_SAMPLE_SIZE, totalStars);
-  const pagesToFetch = Math.ceil(sampleSize / PER_PAGE);
-  const allUsers: GitHubUser[] = [];
+  const maxPages = totalStars > 200 ? 2 : Math.ceil(totalStars / PER_PAGE);
+  const raw: RawStargazer[] = await fetchStargazers(owner, repo, maxPages);
 
-  // Always fetch from page 1 — high page numbers (e.g. page 2300 for react)
-  // are unreliable and often return errors or empty results from GitHub.
-  for (let page = 1; page <= pagesToFetch; page++) {
-    try {
-      const raw = await githubFetchWithStarredAt<RawStargazer[]>(
-        `/repos/${owner}/${repo}/stargazers?per_page=${PER_PAGE}&page=${page}`
-      );
+  console.log("[stargazers] Fetched count:", raw.length, "| sample[0]:", JSON.stringify(raw[0]));
 
-      console.log(`[stargazers] Page ${page} — received ${raw.length} items | sample[0]:`, JSON.stringify(raw[0]));
-
-      const users: GitHubUser[] = raw.map((item) => ({
-        login: item.user.login,
-        id: item.user.id,
-        avatar_url: item.user.avatar_url,
-        starred_at: item.starred_at,
-      }));
-
-      allUsers.push(...users);
-
-      if (raw.length < PER_PAGE) break; // reached last page early
-    } catch (error) {
-      if (error instanceof GitHubRateLimitError) {
-        console.warn(`[stargazers] Rate limited on page ${page}, using ${allUsers.length} collected`);
-        break;
-      }
-      console.error(`[stargazers] Failed to fetch page ${page}:`, error);
-      if (allUsers.length === 0) throw error; // propagate if we have nothing at all
-      break;
-    }
-  }
-
-  console.log("[stargazers] Fetched count:", allUsers.length);
-  return allUsers.slice(0, sampleSize);
+  return raw.slice(0, MAX_SAMPLE_SIZE).map((item) => ({
+    login: item.user.login,
+    id: item.user.id,
+    avatar_url: item.user.avatar_url,
+    starred_at: item.starred_at,
+  }));
 }
 
 export async function fetchUserDetails(

@@ -35,14 +35,15 @@ function parseGitHubUrl(input: string): { owner: string; repo: string } | null {
 
 export async function POST(request: NextRequest): Promise<NextResponse<TrustScore | ApiError>> {
   try {
-    const body = await request.json() as { url?: string; owner?: string; repo?: string };
+    const body = await request.json() as { url?: string; repoUrl?: string; owner?: string; repo?: string };
 
     let owner: string;
     let repo: string;
 
-    // Resolve owner/repo from URL or direct fields
-    if (body.url) {
-      const parsed = parseGitHubUrl(body.url);
+    // Resolve owner/repo from URL or direct fields (accepts both "url" and "repoUrl")
+    const rawUrl = body.url ?? body.repoUrl;
+    if (rawUrl) {
+      const parsed = parseGitHubUrl(rawUrl);
       if (!parsed) {
         return NextResponse.json(
           { error: "Invalid GitHub URL", details: "Expected format: https://github.com/owner/repo" },

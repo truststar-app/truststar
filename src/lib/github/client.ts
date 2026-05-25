@@ -121,6 +121,33 @@ export async function githubFetchWithStarredAt<T>(
   return response.json() as Promise<T>;
 }
 
+export async function fetchStargazers(
+  owner: string,
+  repo: string,
+  maxPages: number = 3
+): Promise<any[]> {
+  const allStargazers: any[] = [];
+  for (let page = 1; page <= maxPages; page++) {
+    console.log(`[stargazers] Fetching page ${page} for ${owner}/${repo}`);
+    const response = await fetch(
+      `https://api.github.com/repos/${owner}/${repo}/stargazers?per_page=100&page=${page}`,
+      {
+        headers: {
+          Authorization: `token ${process.env.GITHUB_TOKEN}`,
+          Accept: "application/vnd.github.v3.star+json",
+        },
+      }
+    );
+    console.log(`[stargazers] Page ${page} status: ${response.status}`);
+    if (!response.ok) break;
+    const data = await response.json();
+    if (data.length === 0) break;
+    allStargazers.push(...data);
+    console.log(`[stargazers] Total so far: ${allStargazers.length}`);
+  }
+  return allStargazers;
+}
+
 export async function getRateLimit(): Promise<{
   remaining: number;
   limit: number;
