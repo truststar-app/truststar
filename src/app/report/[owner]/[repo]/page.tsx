@@ -132,7 +132,7 @@ export default async function ReportPage({
                   color: cfg.color,
                 }}
               >
-                {report.label}
+                {cfg.displayLabel ?? report.label}
               </span>
               <span
                 style={{
@@ -146,7 +146,7 @@ export default async function ReportPage({
                   fontWeight: 600,
                 }}
               >
-                Trust Score {report.score}
+                {report.label === "NEW" ? "NEW" : `Trust Score ${report.score}`}
               </span>
             </div>
 
@@ -179,6 +179,28 @@ export default async function ReportPage({
             </div>
           </div>
         </div>
+
+        {/* NEW info card */}
+        {report.label === "NEW" && (
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 12,
+              background: "var(--bg-surface)",
+              border: "1px solid var(--border)",
+              borderRadius: "var(--radius-lg)",
+              padding: "14px 18px",
+              marginBottom: 20,
+              fontSize: 13,
+              color: "var(--text-secondary)",
+              lineHeight: 1.6,
+            }}
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--text-tertiary)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" style={{ flexShrink: 0 }}><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+            This project has fewer than 50 stars. Trust Score becomes more accurate as community activity grows.
+          </div>
+        )}
 
         {/* Dimensions */}
         <div
@@ -357,8 +379,17 @@ export default async function ReportPage({
 
 // ─── Label config ─────────────────────────────────────────────────────────────
 
-function getLabelConfig(label: TrustLabel) {
-  const configs = {
+type LabelConfig = {
+  color: string;
+  bgCard: string;
+  borderCard: string;
+  ring: string;
+  description: string;
+  displayLabel?: string;
+};
+
+function getLabelConfig(label: TrustLabel): LabelConfig {
+  const configs: Record<TrustLabel, LabelConfig> = {
     SAFE: {
       color: "var(--safe)",
       bgCard: "var(--safe-bg)",
@@ -379,6 +410,14 @@ function getLabelConfig(label: TrustLabel) {
       borderCard: "#FECACA",
       ring: "rgba(220,38,38,0.08)",
       description: "Strongly suspicious signals. This repo shows patterns consistent with a fake star campaign.",
+    },
+    NEW: {
+      color: "var(--text-secondary)",
+      bgCard: "var(--bg-hover)",
+      borderCard: "var(--border)",
+      ring: "rgba(107,107,118,0.08)",
+      description: "This repository is too new or has too few stars for a reliable trust analysis. The score is based on limited data.",
+      displayLabel: "NEW REPOSITORY",
     },
   };
   return configs[label];

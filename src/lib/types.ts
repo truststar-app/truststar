@@ -55,7 +55,7 @@ export type IssueStats = {
   closed: number;
 };
 
-export type TrustLabel = "SAFE" | "SUSPICIOUS" | "DANGEROUS";
+export type TrustLabel = "SAFE" | "SUSPICIOUS" | "DANGEROUS" | "NEW";
 
 export type TrustScore = {
   repo: string;

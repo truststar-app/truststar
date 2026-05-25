@@ -20,7 +20,10 @@ const DIMENSION_WEIGHTS = {
 
 // ─── Label thresholds ────────────────────────────────────────────────────────
 
-function resolveLabel(score: number): TrustLabel {
+function resolveLabel(score: number, stars: number, repoCreatedAt: string): TrustLabel {
+  const ageInDays = (Date.now() - new Date(repoCreatedAt).getTime()) / (1000 * 60 * 60 * 24);
+  if (stars < 50) return "NEW";
+  if (stars < 200 && ageInDays < 90) return "NEW";
   if (score >= 70) return "SAFE";
   if (score >= 40) return "SUSPICIOUS";
   return "DANGEROUS";
@@ -63,7 +66,7 @@ export function computeTrustScore(input: EngineInput): TrustScore {
     healthResult.score * DIMENSION_WEIGHTS.health;
 
   const finalScore = Math.round(Math.max(0, Math.min(100, rawScore)));
-  const label = resolveLabel(finalScore);
+  const label = resolveLabel(finalScore, repoInfo.stargazers_count, repoInfo.created_at);
 
   // ── Assemble the report ──────────────────────────────────────────────────
 

@@ -3,7 +3,7 @@ export type RecentAudit = {
   type: "trust-score" | "skill-audit" | "npm-check";
   slug: string;
   score: number;
-  label: "SAFE" | "SUSPICIOUS" | "DANGEROUS";
+  label: "SAFE" | "SUSPICIOUS" | "DANGEROUS" | "NEW";
   analyzedAt: string;
 };
 

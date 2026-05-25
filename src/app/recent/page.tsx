@@ -48,6 +48,8 @@ function ScoreBadge({ score, label }: { score: number; label: string }) {
       ? { bg: "var(--safe-bg)", color: "var(--safe)" }
       : label === "SUSPICIOUS"
       ? { bg: "var(--suspicious-bg)", color: "var(--suspicious)" }
+      : label === "NEW"
+      ? { bg: "var(--bg-hover)", color: "var(--text-secondary)" }
       : { bg: "var(--dangerous-bg)", color: "var(--dangerous)" };
 
   return (
@@ -476,6 +478,8 @@ export default function RecentAuditsPage() {
                           ? "var(--safe)"
                           : audit.label === "SUSPICIOUS"
                           ? "var(--suspicious)"
+                          : audit.label === "NEW"
+                          ? "var(--text-secondary)"
                           : "var(--dangerous)",
                     }}
                   >
