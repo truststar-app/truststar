@@ -7,6 +7,8 @@ import { getCached, setCached, trustScoreCache, CACHE_TTL_MS, cacheKey } from "@
 import { addAudit } from "@/lib/recent-audits";
 import type { TrustScore, ApiError } from "@/lib/types";
 
+export const maxDuration = 30;
+
 function parseGitHubUrl(input: string): { owner: string; repo: string } | null {
   // Accepts: https://github.com/owner/repo or owner/repo
   const urlPattern = /github\.com\/([^/]+)\/([^/\s?#]+)/;

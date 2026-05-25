@@ -1,4 +1,4 @@
-import { githubFetchWithStarredAt, githubFetch } from "./client";
+import { githubFetchWithStarredAt, githubFetch, GitHubRateLimitError } from "./client";
 import type { GitHubUser, GitHubUserDetail } from "../types";
 
 const MAX_SAMPLE_SIZE = 200;
@@ -28,28 +28,15 @@ export async function fetchStargazersSample(
   repo: string,
   totalStars: number
 ): Promise<GitHubUser[]> {
-  const pagesToFetch = Math.ceil(
-    Math.min(MAX_SAMPLE_SIZE, totalStars) / PER_PAGE
-  );
-  const totalPages = Math.ceil(totalStars / PER_PAGE);
+  if (totalStars === 0) return [];
 
-  const pageNumbers: number[] = [];
-
-  if (totalPages <= pagesToFetch) {
-    for (let i = 1; i <= totalPages; i++) {
-      pageNumbers.push(i);
-    }
-  } else {
-    // Take the last pages (most recent stars)
-    for (let i = 0; i < pagesToFetch; i++) {
-      pageNumbers.push(totalPages - i);
-    }
-    pageNumbers.reverse();
-  }
-
+  const sampleSize = Math.min(MAX_SAMPLE_SIZE, totalStars);
+  const pagesToFetch = Math.ceil(sampleSize / PER_PAGE);
   const allUsers: GitHubUser[] = [];
 
-  for (const page of pageNumbers) {
+  // Always fetch from page 1 — high page numbers (e.g. page 2300 for react)
+  // are unreliable and often return errors or empty results from GitHub.
+  for (let page = 1; page <= pagesToFetch; page++) {
     try {
       const raw = await githubFetchWithStarredAt<RawStargazer[]>(
         `/repos/${owner}/${repo}/stargazers?per_page=${PER_PAGE}&page=${page}`
@@ -63,13 +50,20 @@ export async function fetchStargazersSample(
       }));
 
       allUsers.push(...users);
+
+      if (raw.length < PER_PAGE) break; // reached last page early
     } catch (error) {
-      console.error(`Failed to fetch stargazers page ${page}:`, error);
+      if (error instanceof GitHubRateLimitError) {
+        console.warn(`[stargazers] Rate limited on page ${page}, using ${allUsers.length} collected`);
+        break;
+      }
+      console.error(`[stargazers] Failed to fetch page ${page}:`, error);
+      if (allUsers.length === 0) throw error; // propagate if we have nothing at all
       break;
     }
   }
 
-  return allUsers.slice(0, MAX_SAMPLE_SIZE);
+  return allUsers.slice(0, sampleSize);
 }
 
 export async function fetchUserDetails(
@@ -114,7 +108,7 @@ export async function fetchStargazersWithDetails(
 ): Promise<GitHubUserDetail[]> {
   const sample = await fetchStargazersSample(owner, repo, totalStars);
 
-  const BATCH_SIZE = 10;
+  const BATCH_SIZE = 50;
   const details: GitHubUserDetail[] = [];
 
   for (let i = 0; i < sample.length; i += BATCH_SIZE) {

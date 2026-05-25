@@ -93,7 +93,7 @@ export async function githubFetchWithStarredAt<T>(
   const response = await fetch(url, {
     headers: {
       ...buildHeaders(),
-      Accept: "application/vnd.github.star+json",
+      Accept: "application/vnd.github.v3.star+json",
     },
     next: { revalidate: 300 },
   });
