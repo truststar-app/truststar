@@ -55,7 +55,10 @@ export function computeTrustScore(input: EngineInput): TrustScore {
   // ── Compute the 3 dimensions ─────────────────────────────────────────────
 
   const accountsResult = scoreAccounts(users, starredMap);
-  const temporalResult = scoreTemporal(users);
+  const temporalResult = scoreTemporal(users, {
+    totalStars: repoInfo.stargazers_count,
+    createdAt: repoInfo.created_at,
+  });
   const healthResult = scoreHealth(repoInfo, recentCommitData, issueStats);
 
   // ── Weighted final score ─────────────────────────────────────────────────

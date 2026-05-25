@@ -35,12 +35,29 @@ export async function fetchStargazersSample(
     return [];
   }
 
-  const maxPages = totalStars > 200 ? 2 : Math.ceil(totalStars / PER_PAGE);
-  const raw: RawStargazer[] = await fetchStargazers(owner, repo, maxPages);
+  const totalPages = Math.ceil(totalStars / PER_PAGE);
+  let pagesToFetch: number[];
+
+  if (totalPages <= 5) {
+    pagesToFetch = Array.from({ length: totalPages }, (_, i) => i + 1);
+  } else {
+    // Fetch pages distributed across the full history to avoid temporal bias
+    const p25 = Math.max(2, Math.floor(totalPages * 0.25));
+    const p50 = Math.max(3, Math.floor(totalPages * 0.5));
+    const p75 = Math.max(4, Math.floor(totalPages * 0.75));
+    pagesToFetch = [...new Set([1, p25, p50, p75, totalPages])];
+  }
+
+  console.log("[stargazers] Pages to fetch:", pagesToFetch);
+  const raw: RawStargazer[] = await fetchStargazers(owner, repo, pagesToFetch);
 
   console.log("[stargazers] Fetched count:", raw.length, "| sample[0]:", JSON.stringify(raw[0]));
 
-  return raw.slice(0, MAX_SAMPLE_SIZE).map((item) => ({
+  // Evenly subsample across all fetched pages to preserve temporal distribution
+  const step = Math.max(1, Math.floor(raw.length / MAX_SAMPLE_SIZE));
+  const distributed = raw.filter((_, i) => i % step === 0).slice(0, MAX_SAMPLE_SIZE);
+
+  return distributed.map((item) => ({
     login: item.user.login,
     id: item.user.id,
     avatar_url: item.user.avatar_url,

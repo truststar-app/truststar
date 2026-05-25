@@ -22,6 +22,39 @@ export function calculateIssueResolutionRatio(issues: IssueStats): number {
   return issues.closed / total;
 }
 
+// ─── Scoring helpers (return 0–100) ─────────────────────────────────────────
+
+function forkRatioScore(forks: number, stars: number): number {
+  if (stars === 0) return 50;
+  const ratio = forks / stars;
+  if (ratio >= 0.2) return 95;   // 1:5 or better — excellent
+  if (ratio >= 0.1) return 85;   // 1:10 — very good
+  if (ratio >= 0.05) return 70;  // 1:20 — good
+  if (ratio >= 0.03) return 55;  // 1:33 — acceptable
+  if (stars > 1000) return 30;   // many stars but few forks — suspect
+  return 50;
+}
+
+function commitScore(commitsPerWeek: number, repoAgeDays: number): number {
+  if (repoAgeDays < 30) return 50;
+  if (commitsPerWeek >= 10) return 100;
+  if (commitsPerWeek >= 3) return 85;
+  if (commitsPerWeek >= 1) return 70;
+  if (commitsPerWeek >= 0.5) return 55;
+  if (commitsPerWeek >= 0.1) return 35;
+  return 10;
+}
+
+function issueResolutionScore(closedIssues: number, totalIssues: number): number {
+  if (totalIssues === 0) return 60;
+  const rate = closedIssues / totalIssues;
+  if (rate >= 0.8) return 95;
+  if (rate >= 0.6) return 75;
+  if (rate >= 0.4) return 55;
+  if (rate >= 0.2) return 35;
+  return 15;
+}
+
 // ─── Health dimension score ──────────────────────────────────────────────────
 
 export function scoreHealth(
@@ -33,11 +66,15 @@ export function scoreHealth(
   const { commitsPerWeek, activeContributorsRatio } = recentCommitData;
   const issueResolutionRatio = calculateIssueResolutionRatio(issueStats);
 
-  // Normalize the fork/star ratio: 10%+ forks = max score
-  const forkStarNormalized = Math.min(1, forkStarRatio / 0.1);
+  const repoAgeDays =
+    (Date.now() - new Date(repo.created_at).getTime()) / (1000 * 60 * 60 * 24);
 
-  // Normalize commits: 10 commits/wk = max score
-  const commitFrequencyNormalized = Math.min(1, commitsPerWeek / 10);
+  const forkScore = forkRatioScore(repo.forks_count, repo.stargazers_count);
+  const commitScoreVal = commitScore(commitsPerWeek, repoAgeDays);
+  const issueScore = issueResolutionScore(
+    issueStats.closed,
+    issueStats.open + issueStats.closed
+  );
 
   const weights = {
     forkStar: 0.25,
@@ -47,18 +84,18 @@ export function scoreHealth(
   };
 
   const healthScore =
-    forkStarNormalized * weights.forkStar +
+    (forkScore / 100) * weights.forkStar +
     activeContributorsRatio * weights.activeContributors +
-    commitFrequencyNormalized * weights.commitFrequency +
-    issueResolutionRatio * weights.issueResolution;
+    (commitScoreVal / 100) * weights.commitFrequency +
+    (issueScore / 100) * weights.issueResolution;
 
   const score = Math.round(Math.max(0, Math.min(100, healthScore * 100)));
 
   return {
     score,
     signals: {
-      forkStarRatio,             // raw forks/stars ratio (e.g. 0.30 = 30%)
-      activeContributorsRatio,   // min(1, unique_authors / 10)
+      forkStarRatio,
+      activeContributorsRatio,
       commitFrequency: commitsPerWeek,
       issueResolutionRatio,
     },

@@ -70,6 +70,7 @@ export default function Footer() {
           <FooterLink href="/how-it-works">How it Works</FooterLink>
           <FooterLink href="/discover">Discover</FooterLink>
           <FooterLink href="/recent">Recent Audits</FooterLink>
+          <FooterLink href="/api-docs">API</FooterLink>
         </FooterCol>
 
         <FooterCol title="Open Source">

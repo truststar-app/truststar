@@ -37,56 +37,58 @@ export function detectZScorePeak(users: GitHubUserDetail[]): number {
   const zScores = calculateZScores(counts);
   const maxZ = Math.max(...zScores);
 
-  return Math.max(0, maxZ); // Returns the max positive Z-score
+  return Math.max(0, maxZ);
 }
 
-// ─── Abnormal velocity ───────────────────────────────────────────────────────
-// Detects whether many stars were given within less than 24h
+// ─── Velocity anomaly ─────────────────────────────────────────────────────────
+// Detects whether any day in the sample received 10x+ the repo's average rate.
+// Returns 0 (normal) to 1 (peak is 10x the average).
 
-export function calculateVelocityScore(users: GitHubUserDetail[]): number {
+export function calculateVelocityScore(
+  users: GitHubUserDetail[],
+  totalStars: number,
+  createdAt: string
+): number {
   if (users.length === 0) return 0;
+
+  const ageInDays =
+    (Date.now() - new Date(createdAt).getTime()) / (1000 * 60 * 60 * 24);
+  if (ageInDays <= 0) return 0;
+
+  const avgStarsPerDay = totalStars / ageInDays;
+  if (avgStarsPerDay <= 0) return 0;
 
   const curve = buildDailyStarCurve(users);
   const counts = Array.from(curve.values());
-
   if (counts.length === 0) return 0;
 
   const maxDayCount = Math.max(...counts);
-  const totalInSample = users.length;
-
-  // Ratio of the busiest day vs total sample
-  const velocityRatio = maxDayCount / totalInSample;
-
-  // If 50%+ of stars arrive in 1 day → very suspicious
-  return Math.min(1, velocityRatio);
+  // Normalize: 0 = at or below average, 1 = 10x the average or more
+  return Math.min(1, Math.max(0, maxDayCount / (avgStarsPerDay * 10)));
 }
 
-// ─── Recent stars ratio ───────────────────────────────────────────────────────
-// Concentration of stars in the last quarter of the sample time window.
-// Avoids false positives from comparing against Date.now() when we always
-// sample the most recent stars.
+// ─── Concentration in densest 48h window ─────────────────────────────────────
+// Returns the fraction of the sample that falls within any 48-hour window.
+// A repo with stars spread over years will have near-zero concentration.
 
-export function calculateRecentStarsRatio(
-  users: GitHubUserDetail[]
-): number {
+export function calculateRecentStarsRatio(users: GitHubUserDetail[]): number {
   if (users.length < 2) return 0;
 
   const timestamps = users
     .map((u) => new Date(u.starred_at).getTime())
     .sort((a, b) => a - b);
 
-  const oldest = timestamps[0];
-  const newest = timestamps[timestamps.length - 1];
-  const spanMs = newest - oldest;
+  const windowMs = 48 * 60 * 60 * 1000;
+  let maxInWindow = 0;
 
-  // All stars within less than one hour = maximum concentration, suspicious
-  if (spanMs < 60 * 60 * 1000) return 1;
+  for (let i = 0; i < timestamps.length; i++) {
+    const windowEnd = timestamps[i] + windowMs;
+    let j = i;
+    while (j < timestamps.length && timestamps[j] <= windowEnd) j++;
+    maxInWindow = Math.max(maxInWindow, j - i);
+  }
 
-  // Fraction of stars in the last quarter of the time window
-  const lastQuarterStart = newest - spanMs * 0.25;
-  const recentCount = timestamps.filter((t) => t >= lastQuarterStart).length;
-
-  return recentCount / users.length;
+  return maxInWindow / users.length;
 }
 
 // ─── Temporal dimension score ────────────────────────────────────────────────
@@ -97,7 +99,15 @@ export type TemporalSignals = {
   recentStarsRatio: number;
 };
 
-export function scoreTemporal(users: GitHubUserDetail[]): {
+export type RepoContext = {
+  totalStars: number;
+  createdAt: string;
+};
+
+export function scoreTemporal(
+  users: GitHubUserDetail[],
+  repoContext: RepoContext
+): {
   score: number;
   signals: TemporalSignals;
 } {
@@ -109,30 +119,21 @@ export function scoreTemporal(users: GitHubUserDetail[]): {
   }
 
   const zScorePeak = detectZScorePeak(users);
-  const velocityScore = calculateVelocityScore(users);
+  const velocityScore = calculateVelocityScore(
+    users,
+    repoContext.totalStars,
+    repoContext.createdAt
+  );
   const recentStarsRatio = calculateRecentStarsRatio(users);
 
-  // Z-score normalization: Z > 3 = very suspicious, capped at 10
-  const zScoreNormalized = Math.min(1, Math.max(0, (zScorePeak - 1) / 9));
-
-  // Weights
-  const weights = {
-    zScore: 0.40,
-    velocity: 0.35,
-    recentStars: 0.25,
-  };
-
-  const suspicionScore =
-    zScoreNormalized * weights.zScore +
-    velocityScore * weights.velocity +
-    recentStarsRatio * weights.recentStars;
-
-  const score = Math.round(
-    Math.max(0, Math.min(100, (1 - suspicionScore) * 100))
-  );
+  // Each factor penalizes from 100 downward
+  let score = 100;
+  score -= velocityScore * 40;                      // max -40 if peak is 10x+ avg
+  score -= recentStarsRatio * 35;                   // max -35 if all stars in 48h
+  score -= Math.min(zScorePeak / 10, 1) * 25;      // max -25 if z-score > 10
 
   return {
-    score,
+    score: Math.max(0, Math.round(score)),
     signals: { zScorePeak, velocityScore, recentStarsRatio },
   };
 }

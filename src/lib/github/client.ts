@@ -124,10 +124,10 @@ export async function githubFetchWithStarredAt<T>(
 export async function fetchStargazers(
   owner: string,
   repo: string,
-  maxPages: number = 3
+  pages: number[]
 ): Promise<any[]> {
   const allStargazers: any[] = [];
-  for (let page = 1; page <= maxPages; page++) {
+  for (const page of pages) {
     console.log(`[stargazers] Fetching page ${page} for ${owner}/${repo}`);
     const response = await fetch(
       `https://api.github.com/repos/${owner}/${repo}/stargazers?per_page=100&page=${page}`,
