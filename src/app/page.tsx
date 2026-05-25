@@ -580,25 +580,6 @@ function LiveAudits() {
         padding: "0 24px",
       }}
     >
-      <style>{`
-        @keyframes audit-fadein {
-          from { opacity: 0; transform: translateY(-4px); }
-          to   { opacity: 1; transform: translateY(0); }
-        }
-        .live-dot {
-          width: 7px;
-          height: 7px;
-          border-radius: 50%;
-          background: #16A34A;
-          display: inline-block;
-          animation: pulse-dot 2s ease-in-out infinite;
-        }
-        @keyframes pulse-dot {
-          0%, 100% { opacity: 1; transform: scale(1); }
-          50%       { opacity: 0.5; transform: scale(0.75); }
-        }
-      `}</style>
-
       {/* Header */}
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 7 }}>
@@ -632,13 +613,13 @@ function LiveAudits() {
           return (
             <div
               key={audit.id}
+              className={isNew ? "audit-fadein" : undefined}
               style={{
                 display: "flex",
                 alignItems: "center",
                 gap: 10,
                 padding: "9px 0",
                 borderBottom: i < audits.length - 1 ? "1px solid var(--border)" : "none",
-                animation: isNew ? "audit-fadein 0.4s ease forwards" : "none",
               }}
             >
               {/* Type pill */}
@@ -798,6 +779,7 @@ export default function HomePage() {
           style={{
             position: "relative",
             overflow: "hidden",
+            minHeight: "85vh",
             display: "flex",
             flexDirection: "column",
             alignItems: "center",

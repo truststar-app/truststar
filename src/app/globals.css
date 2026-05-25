@@ -327,6 +327,32 @@ body {
   }
 }
 
+/* ─── Live audits feed ────────────────────────────────────────────────────── */
+
+@keyframes audit-fadein {
+  from { opacity: 0; transform: translateY(-4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes live-dot-pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%       { opacity: 0.5; transform: scale(0.75); }
+}
+
+.live-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #16A34A;
+  display: inline-block;
+  flex-shrink: 0;
+  animation: live-dot-pulse 2s ease-in-out infinite;
+}
+
+.audit-fadein {
+  animation: audit-fadein 0.4s ease forwards;
+}
+
 /* ─── Reduced motion ──────────────────────────────────────────────────────── */
 
 @media (prefers-reduced-motion: reduce) {
