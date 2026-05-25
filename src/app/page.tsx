@@ -3,7 +3,6 @@
 import { useState, useRef, useEffect, FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
-import Link from "next/link";
 
 type Mode = "repo" | "npm" | "skill";
 
@@ -155,12 +154,7 @@ function LoadingOverlay({ mode }: { mode: Mode }) {
       }}
     >
       <div
-        style={{
-          maxWidth: 400,
-          width: "100%",
-          padding: "0 24px",
-          textAlign: "center",
-        }}
+        style={{ maxWidth: 400, width: "100%", padding: "0 24px", textAlign: "center" }}
         className="sa-fade-in"
       >
         <div
@@ -174,36 +168,14 @@ function LoadingOverlay({ mode }: { mode: Mode }) {
           }}
           className="sa-spin"
         />
-        <h3
-          style={{
-            fontWeight: 600,
-            fontSize: 16,
-            color: "var(--text-primary)",
-            marginBottom: 6,
-            letterSpacing: "-0.3px",
-          }}
-        >
+        <h3 style={{ fontWeight: 600, fontSize: 16, color: "var(--text-primary)", marginBottom: 6, letterSpacing: "-0.3px" }}>
           Analysis in progress…
         </h3>
-        <p
-          style={{
-            fontSize: 13,
-            color: "var(--text-tertiary)",
-            marginBottom: 32,
-            minHeight: 20,
-          }}
-        >
+        <p style={{ fontSize: 13, color: "var(--text-tertiary)", marginBottom: 32, minHeight: 20 }}>
           {currentSteps[step]}
         </p>
         <div style={{ display: "flex", flexDirection: "column", gap: 10, textAlign: "left" }}>
-          <div
-            style={{
-              background: "var(--accent-subtle)",
-              border: "1px solid var(--accent-muted)",
-              borderRadius: "var(--radius-lg)",
-              padding: "12px 14px",
-            }}
-          >
+          <div style={{ background: "var(--accent-subtle)", border: "1px solid var(--accent-muted)", borderRadius: "var(--radius-lg)", padding: "12px 14px" }}>
             <div style={{ display: "flex", alignItems: "flex-start", gap: 10 }}>
               <span style={{ flexShrink: 0, marginTop: 2, color: "var(--accent)", display: "flex" }}>
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
@@ -211,23 +183,12 @@ function LoadingOverlay({ mode }: { mode: Mode }) {
                 </svg>
               </span>
               <p style={{ fontSize: 12, lineHeight: 1.6, color: "var(--accent-hover)" }}>
-                <strong>Objective analysis</strong> — All metrics are open source and
-                auditable.{" "}
-                <a href="/how-it-works" style={{ color: "var(--accent)", textDecoration: "underline" }}>
-                  Check our methodology
-                </a>
-                .
+                <strong>Objective analysis</strong> — All metrics are open source and auditable.{" "}
+                <a href="/how-it-works" style={{ color: "var(--accent)", textDecoration: "underline" }}>Check our methodology</a>.
               </p>
             </div>
           </div>
-          <div
-            style={{
-              background: "var(--bg-hover)",
-              border: "1px solid var(--border)",
-              borderRadius: "var(--radius-lg)",
-              padding: "12px 14px",
-            }}
-          >
+          <div style={{ background: "var(--bg-hover)", border: "1px solid var(--border)", borderRadius: "var(--radius-lg)", padding: "12px 14px" }}>
             <div style={{ display: "flex", alignItems: "flex-start", gap: 10 }}>
               <span style={{ flexShrink: 0, marginTop: 2, color: "var(--text-tertiary)", display: "flex" }}>
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
@@ -238,8 +199,7 @@ function LoadingOverlay({ mode }: { mode: Mode }) {
                 </svg>
               </span>
               <p style={{ fontSize: 12, lineHeight: 1.6, color: "var(--text-secondary)" }}>
-                <strong>Free service</strong> — Please use responsibly to preserve
-                API quotas and ensure availability for everyone.
+                <strong>Free service</strong> — Please use responsibly to preserve API quotas for everyone.
               </p>
             </div>
           </div>
@@ -254,10 +214,7 @@ function LoadingOverlay({ mode }: { mode: Mode }) {
 function PhraseRow({ row }: { row: PhraseRowData }) {
   const doubled = [...row.phrases, ...row.phrases];
   return (
-    <div
-      style={{ overflow: "hidden" }}
-      className={row.mobileHide ? "phrase-row-mobile-hide" : ""}
-    >
+    <div style={{ overflow: "hidden" }} className={row.mobileHide ? "phrase-row-mobile-hide" : ""}>
       <div
         className="phrase-marquee"
         style={{
@@ -279,12 +236,8 @@ function PhraseRow({ row }: { row: PhraseRowData }) {
               fontFamily: "var(--font-ibm-sans), sans-serif",
               color:
                 phrase.type === "stat"
-                  ? i % 2 === 0
-                    ? "rgba(217, 54, 54, 0.25)"
-                    : "rgba(217, 54, 54, 0.22)"
-                  : i % 2 === 0
-                  ? "rgba(12, 12, 13, 0.18)"
-                  : "rgba(12, 12, 13, 0.15)",
+                  ? i % 2 === 0 ? "rgba(217,54,54,0.25)" : "rgba(217,54,54,0.22)"
+                  : i % 2 === 0 ? "rgba(12,12,13,0.18)" : "rgba(12,12,13,0.15)",
               whiteSpace: "nowrap",
               flexShrink: 0,
               letterSpacing: phrase.size > 18 ? "-0.4px" : "0",
@@ -308,15 +261,11 @@ function ScoreArc({ score, color, label }: { score: number; color: string; label
     <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 4, flexShrink: 0 }}>
       <svg width="60" height="60" viewBox="0 0 60 60" aria-hidden="true">
         <circle cx="30" cy="30" r={r} fill="none" stroke="var(--border)" strokeWidth="5" />
-        <circle
-          cx="30" cy="30" r={r} fill="none" stroke={color} strokeWidth="5"
+        <circle cx="30" cy="30" r={r} fill="none" stroke={color} strokeWidth="5"
           strokeDasharray={circumference} strokeDashoffset={offset}
-          strokeLinecap="round" transform="rotate(-90 30 30)"
-        />
-        <text
-          x="30" y="35" textAnchor="middle"
-          style={{ fontSize: 14, fontWeight: "bold", fill: color, fontFamily: "monospace" }}
-        >
+          strokeLinecap="round" transform="rotate(-90 30 30)" />
+        <text x="30" y="35" textAnchor="middle"
+          style={{ fontSize: 14, fontWeight: "bold", fill: color, fontFamily: "monospace" }}>
           {score}
         </text>
       </svg>
@@ -342,10 +291,7 @@ function PreviewBar({ label, pct }: { label: string; pct: number }) {
 
 type DotColor = "orange" | "green" | "red" | "gray";
 const DOT_COLORS: Record<DotColor, string> = {
-  orange: "#D97706",
-  green: "#16A34A",
-  red: "#DC2626",
-  gray: "#A0A0AB",
+  orange: "#D97706", green: "#16A34A", red: "#DC2626", gray: "#A0A0AB",
 };
 
 function PreviewFinding({ dot, text }: { dot: DotColor; text: string }) {
@@ -501,200 +447,6 @@ function PreviewBlock({ mode }: { mode: Mode }) {
   );
 }
 
-// ─── Live Audits ───────────────────────────────────────────────────────────────
-
-type AuditItem = {
-  id: string;
-  type: "trust-score" | "skill-audit" | "npm-check";
-  slug: string;
-  score: number;
-  label: "SAFE" | "SUSPICIOUS" | "DANGEROUS" | "NEW";
-  analyzedAt: string;
-};
-
-const TYPE_LABEL: Record<string, string> = {
-  "trust-score": "Repo",
-  "npm-check": "npm",
-  "skill-audit": "Code",
-};
-
-const LABEL_COLORS: Record<string, { bg: string; color: string; border: string }> = {
-  SAFE:       { bg: "var(--safe-bg)",       color: "var(--safe)",       border: "#BBF7D0" },
-  SUSPICIOUS: { bg: "var(--suspicious-bg)", color: "var(--suspicious)", border: "#FDE68A" },
-  DANGEROUS:  { bg: "var(--dangerous-bg)",  color: "var(--dangerous)",  border: "#FECACA" },
-  NEW:        { bg: "var(--bg-hover)",      color: "var(--text-tertiary)", border: "var(--border)" },
-};
-
-function auditHref(audit: AuditItem): string {
-  if (audit.type === "npm-check") return `/npm/${audit.slug}`;
-  if (audit.type === "skill-audit") return `/skill/${audit.slug}`;
-  return `/report/${audit.slug}`;
-}
-
-function relativeTime(iso: string): string {
-  const diff = (Date.now() - new Date(iso).getTime()) / 1000;
-  if (diff < 60) return "just now";
-  if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
-  if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
-  return `${Math.floor(diff / 86400)}d ago`;
-}
-
-function LiveAudits() {
-  const [audits, setAudits] = useState<AuditItem[]>([]);
-  const [fadingIn, setFadingIn] = useState<Set<string>>(new Set());
-  const seenIds = useRef<Set<string>>(new Set());
-
-  async function fetchAudits() {
-    try {
-      const res = await fetch("/api/recent-audits?limit=5");
-      if (!res.ok) return;
-      const data = (await res.json()) as { audits: AuditItem[] };
-      const fresh = data.audits.slice(0, 5);
-      const freshNew = fresh.filter((a) => !seenIds.current.has(a.id));
-      if (freshNew.length > 0) {
-        const newSet = new Set(freshNew.map((a) => a.id));
-        setFadingIn(newSet);
-        fresh.forEach((a) => seenIds.current.add(a.id));
-        setTimeout(() => setFadingIn(new Set()), 600);
-      }
-      setAudits(fresh);
-    } catch {
-      // silently ignore network errors
-    }
-  }
-
-  useEffect(() => {
-    fetchAudits();
-    const id = setInterval(fetchAudits, 30_000);
-    return () => clearInterval(id);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  if (audits.length === 0) return null;
-
-  return (
-    <section
-      style={{
-        maxWidth: 700,
-        margin: "32px auto 24px",
-        padding: "0 24px",
-      }}
-    >
-      {/* Header */}
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 7 }}>
-          <span className="live-dot" />
-          <span style={{ fontSize: 13, fontWeight: 600, color: "var(--text-primary)" }}>
-            Live Audits
-          </span>
-        </div>
-        <Link
-          href="/recent"
-          style={{ fontSize: 12, color: "var(--text-tertiary)", textDecoration: "none", transition: "color 0.12s" }}
-          onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.color = "var(--accent)")}
-          onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.color = "var(--text-tertiary)")}
-        >
-          View all →
-        </Link>
-      </div>
-
-      {/* Rows */}
-      <div
-        style={{
-          background: "var(--bg-surface)",
-          border: "1px solid var(--border)",
-          borderRadius: 10,
-          padding: "4px 20px",
-        }}
-      >
-        {audits.map((audit, i) => {
-          const ls = LABEL_COLORS[audit.label] ?? LABEL_COLORS.NEW;
-          const isNew = fadingIn.has(audit.id);
-          return (
-            <div
-              key={audit.id}
-              className={isNew ? "audit-fadein" : undefined}
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: 10,
-                padding: "9px 0",
-                borderBottom: i < audits.length - 1 ? "1px solid var(--border)" : "none",
-              }}
-            >
-              {/* Type pill */}
-              <span
-                style={{
-                  fontSize: 10,
-                  fontWeight: 600,
-                  color: "var(--text-tertiary)",
-                  background: "var(--bg-hover)",
-                  padding: "2px 6px",
-                  borderRadius: 4,
-                  flexShrink: 0,
-                  textTransform: "uppercase",
-                  letterSpacing: "0.4px",
-                }}
-              >
-                {TYPE_LABEL[audit.type]}
-              </span>
-
-              {/* Slug */}
-              <Link
-                href={auditHref(audit)}
-                style={{
-                  flex: 1,
-                  fontSize: 13,
-                  fontFamily: "var(--font-ibm-mono, monospace)",
-                  color: "var(--text-primary)",
-                  textDecoration: "none",
-                  overflow: "hidden",
-                  textOverflow: "ellipsis",
-                  whiteSpace: "nowrap",
-                  transition: "color 0.12s",
-                }}
-                onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.color = "var(--accent)")}
-                onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.color = "var(--text-primary)")}
-              >
-                {audit.slug}
-              </Link>
-
-              {/* Score + label badge */}
-              <span
-                style={{
-                  fontSize: 11,
-                  fontWeight: 600,
-                  padding: "2px 8px",
-                  borderRadius: 4,
-                  flexShrink: 0,
-                  background: ls.bg,
-                  color: ls.color,
-                  border: `1px solid ${ls.border}`,
-                }}
-              >
-                {audit.score} · {audit.label}
-              </span>
-
-              {/* Relative time */}
-              <span
-                style={{
-                  fontSize: 11,
-                  color: "var(--text-tertiary)",
-                  flexShrink: 0,
-                  minWidth: 56,
-                  textAlign: "right",
-                }}
-              >
-                {relativeTime(audit.analyzedAt)}
-              </span>
-            </div>
-          );
-        })}
-      </div>
-    </section>
-  );
-}
-
 // ─── Main Page ─────────────────────────────────────────────────────────────────
 
 export default function HomePage() {
@@ -771,22 +523,21 @@ export default function HomePage() {
     <>
       {loading && <LoadingOverlay mode={mode} />}
 
-      <main style={{ background: "var(--bg-base)", minHeight: "100vh" }}>
+      <main style={{ background: "var(--bg-base)" }}>
 
-        {/* ─── HERO ──────────────────────────────────────────────────────────── */}
+        {/* ─── HERO + breathing space ────────────────────────────────────────── */}
         <section
           id="hero"
           style={{
             position: "relative",
             overflow: "hidden",
-            minHeight: "85vh",
             display: "flex",
             flexDirection: "column",
             alignItems: "center",
-            justifyContent: "flex-start",
             background: "var(--bg-base)",
           }}
         >
+          {/* Animated phrase rows — full section background */}
           <div
             aria-hidden="true"
             style={{
@@ -798,8 +549,8 @@ export default function HomePage() {
               pointerEvents: "none",
               userSelect: "none",
               overflow: "hidden",
-              maskImage: "linear-gradient(to bottom, transparent 0%, black 5%, black 95%, transparent 100%)",
-              WebkitMaskImage: "linear-gradient(to bottom, transparent 0%, black 5%, black 95%, transparent 100%)",
+              maskImage: "linear-gradient(to bottom, transparent 0%, black 8%, black 88%, transparent 100%)",
+              WebkitMaskImage: "linear-gradient(to bottom, transparent 0%, black 8%, black 88%, transparent 100%)",
             }}
           >
             {PHRASE_ROWS.map((row, i) => (
@@ -807,18 +558,19 @@ export default function HomePage() {
             ))}
           </div>
 
+          {/* Main content — radial gradient fades phrases behind it */}
           <div
             style={{
               position: "relative",
               zIndex: 2,
               textAlign: "center",
-              padding: "8vh 24px 32px",
+              padding: "8vh 24px 0",
               maxWidth: 960,
               width: "100%",
-              background: "radial-gradient(ellipse 85% 48% at 50% 70%, rgba(250,250,250,0.97) 0%, rgba(250,250,250,0.95) 40%, rgba(250,250,250,0.65) 70%, transparent 92%)",
+              background: "radial-gradient(ellipse 90% 55% at 50% 60%, rgba(250,250,250,0.98) 0%, rgba(250,250,250,0.96) 35%, rgba(250,250,250,0.70) 65%, transparent 90%)",
             }}
           >
-            <div className="hero-row" style={{ marginBottom: 12 }}>
+            <div className="hero-row" style={{ marginBottom: 10 }}>
               <Image
                 src="/14619e05-69a1-41be-86dc-5ecda5629b3a-removebg-preview.png"
                 alt="TrustStar"
@@ -843,7 +595,7 @@ export default function HomePage() {
               </h1>
             </div>
 
-            <p style={{ fontSize: 17, color: "var(--text-secondary)", lineHeight: 1.6, maxWidth: 480, margin: "12px auto 24px" }}>
+            <p style={{ fontSize: 17, color: "var(--text-secondary)", lineHeight: 1.6, maxWidth: 480, margin: "10px auto 20px" }}>
               Verify any open source project before you depend on it.
             </p>
 
@@ -936,10 +688,11 @@ export default function HomePage() {
             <PreviewBlock mode={mode} />
 
           </div>
-        </section>
 
-        {/* ─── LIVE AUDITS ───────────────────────────────────────────────────── */}
-        <LiveAudits />
+          {/* 120px breathing space — phrase rows visible through transparent gap */}
+          <div style={{ height: 120, width: "100%", position: "relative", zIndex: 1, flexShrink: 0 }} />
+
+        </section>
 
       </main>
     </>
