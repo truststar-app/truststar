@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect, FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
+import Link from "next/link";
 
 type Mode = "repo" | "npm" | "skill";
 
@@ -477,7 +478,7 @@ function PreviewBlock({ mode }: { mode: Mode }) {
       style={{
         maxWidth: 700,
         width: "100%",
-        margin: "28px auto 0",
+        margin: "16px auto 0",
         textAlign: "left",
         background: "rgba(255,255,255,0.92)",
         backdropFilter: "blur(10px)",
@@ -497,6 +498,219 @@ function PreviewBlock({ mode }: { mode: Mode }) {
       {displayedMode === "npm" && <NpmPreview />}
       {displayedMode === "skill" && <CodePreview />}
     </div>
+  );
+}
+
+// ─── Live Audits ───────────────────────────────────────────────────────────────
+
+type AuditItem = {
+  id: string;
+  type: "trust-score" | "skill-audit" | "npm-check";
+  slug: string;
+  score: number;
+  label: "SAFE" | "SUSPICIOUS" | "DANGEROUS" | "NEW";
+  analyzedAt: string;
+};
+
+const TYPE_LABEL: Record<string, string> = {
+  "trust-score": "Repo",
+  "npm-check": "npm",
+  "skill-audit": "Code",
+};
+
+const LABEL_COLORS: Record<string, { bg: string; color: string; border: string }> = {
+  SAFE:       { bg: "var(--safe-bg)",       color: "var(--safe)",       border: "#BBF7D0" },
+  SUSPICIOUS: { bg: "var(--suspicious-bg)", color: "var(--suspicious)", border: "#FDE68A" },
+  DANGEROUS:  { bg: "var(--dangerous-bg)",  color: "var(--dangerous)",  border: "#FECACA" },
+  NEW:        { bg: "var(--bg-hover)",      color: "var(--text-tertiary)", border: "var(--border)" },
+};
+
+function auditHref(audit: AuditItem): string {
+  if (audit.type === "npm-check") return `/npm/${audit.slug}`;
+  if (audit.type === "skill-audit") return `/skill/${audit.slug}`;
+  return `/report/${audit.slug}`;
+}
+
+function relativeTime(iso: string): string {
+  const diff = (Date.now() - new Date(iso).getTime()) / 1000;
+  if (diff < 60) return "just now";
+  if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
+  if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
+  return `${Math.floor(diff / 86400)}d ago`;
+}
+
+function LiveAudits() {
+  const [audits, setAudits] = useState<AuditItem[]>([]);
+  const [fadingIn, setFadingIn] = useState<Set<string>>(new Set());
+  const seenIds = useRef<Set<string>>(new Set());
+
+  async function fetchAudits() {
+    try {
+      const res = await fetch("/api/recent-audits?limit=5");
+      if (!res.ok) return;
+      const data = (await res.json()) as { audits: AuditItem[] };
+      const fresh = data.audits.slice(0, 5);
+      const freshNew = fresh.filter((a) => !seenIds.current.has(a.id));
+      if (freshNew.length > 0) {
+        const newSet = new Set(freshNew.map((a) => a.id));
+        setFadingIn(newSet);
+        fresh.forEach((a) => seenIds.current.add(a.id));
+        setTimeout(() => setFadingIn(new Set()), 600);
+      }
+      setAudits(fresh);
+    } catch {
+      // silently ignore network errors
+    }
+  }
+
+  useEffect(() => {
+    fetchAudits();
+    const id = setInterval(fetchAudits, 30_000);
+    return () => clearInterval(id);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  if (audits.length === 0) return null;
+
+  return (
+    <section
+      style={{
+        maxWidth: 700,
+        margin: "32px auto 24px",
+        padding: "0 24px",
+      }}
+    >
+      <style>{`
+        @keyframes audit-fadein {
+          from { opacity: 0; transform: translateY(-4px); }
+          to   { opacity: 1; transform: translateY(0); }
+        }
+        .live-dot {
+          width: 7px;
+          height: 7px;
+          border-radius: 50%;
+          background: #16A34A;
+          display: inline-block;
+          animation: pulse-dot 2s ease-in-out infinite;
+        }
+        @keyframes pulse-dot {
+          0%, 100% { opacity: 1; transform: scale(1); }
+          50%       { opacity: 0.5; transform: scale(0.75); }
+        }
+      `}</style>
+
+      {/* Header */}
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 7 }}>
+          <span className="live-dot" />
+          <span style={{ fontSize: 13, fontWeight: 600, color: "var(--text-primary)" }}>
+            Live Audits
+          </span>
+        </div>
+        <Link
+          href="/recent"
+          style={{ fontSize: 12, color: "var(--text-tertiary)", textDecoration: "none", transition: "color 0.12s" }}
+          onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.color = "var(--accent)")}
+          onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.color = "var(--text-tertiary)")}
+        >
+          View all →
+        </Link>
+      </div>
+
+      {/* Rows */}
+      <div
+        style={{
+          background: "var(--bg-surface)",
+          border: "1px solid var(--border)",
+          borderRadius: 10,
+          padding: "4px 20px",
+        }}
+      >
+        {audits.map((audit, i) => {
+          const ls = LABEL_COLORS[audit.label] ?? LABEL_COLORS.NEW;
+          const isNew = fadingIn.has(audit.id);
+          return (
+            <div
+              key={audit.id}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 10,
+                padding: "9px 0",
+                borderBottom: i < audits.length - 1 ? "1px solid var(--border)" : "none",
+                animation: isNew ? "audit-fadein 0.4s ease forwards" : "none",
+              }}
+            >
+              {/* Type pill */}
+              <span
+                style={{
+                  fontSize: 10,
+                  fontWeight: 600,
+                  color: "var(--text-tertiary)",
+                  background: "var(--bg-hover)",
+                  padding: "2px 6px",
+                  borderRadius: 4,
+                  flexShrink: 0,
+                  textTransform: "uppercase",
+                  letterSpacing: "0.4px",
+                }}
+              >
+                {TYPE_LABEL[audit.type]}
+              </span>
+
+              {/* Slug */}
+              <Link
+                href={auditHref(audit)}
+                style={{
+                  flex: 1,
+                  fontSize: 13,
+                  fontFamily: "var(--font-ibm-mono, monospace)",
+                  color: "var(--text-primary)",
+                  textDecoration: "none",
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                  whiteSpace: "nowrap",
+                  transition: "color 0.12s",
+                }}
+                onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.color = "var(--accent)")}
+                onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.color = "var(--text-primary)")}
+              >
+                {audit.slug}
+              </Link>
+
+              {/* Score + label badge */}
+              <span
+                style={{
+                  fontSize: 11,
+                  fontWeight: 600,
+                  padding: "2px 8px",
+                  borderRadius: 4,
+                  flexShrink: 0,
+                  background: ls.bg,
+                  color: ls.color,
+                  border: `1px solid ${ls.border}`,
+                }}
+              >
+                {audit.score} · {audit.label}
+              </span>
+
+              {/* Relative time */}
+              <span
+                style={{
+                  fontSize: 11,
+                  color: "var(--text-tertiary)",
+                  flexShrink: 0,
+                  minWidth: 56,
+                  textAlign: "right",
+                }}
+              >
+                {relativeTime(audit.analyzedAt)}
+              </span>
+            </div>
+          );
+        })}
+      </div>
+    </section>
   );
 }
 
@@ -584,7 +798,6 @@ export default function HomePage() {
           style={{
             position: "relative",
             overflow: "hidden",
-            minHeight: "85vh",
             display: "flex",
             flexDirection: "column",
             alignItems: "center",
@@ -617,7 +830,7 @@ export default function HomePage() {
               position: "relative",
               zIndex: 2,
               textAlign: "center",
-              padding: "12vh 80px 60px",
+              padding: "8vh 24px 32px",
               maxWidth: 960,
               width: "100%",
               background: "radial-gradient(ellipse 85% 48% at 50% 70%, rgba(250,250,250,0.97) 0%, rgba(250,250,250,0.95) 40%, rgba(250,250,250,0.65) 70%, transparent 92%)",
@@ -648,7 +861,7 @@ export default function HomePage() {
               </h1>
             </div>
 
-            <p style={{ fontSize: 17, color: "var(--text-secondary)", lineHeight: 1.6, maxWidth: 480, margin: "12px auto 32px" }}>
+            <p style={{ fontSize: 17, color: "var(--text-secondary)", lineHeight: 1.6, maxWidth: 480, margin: "12px auto 24px" }}>
               Verify any open source project before you depend on it.
             </p>
 
@@ -703,7 +916,7 @@ export default function HomePage() {
               )}
             </form>
 
-            <p style={{ marginTop: 14, fontSize: 12, color: "var(--text-tertiary)" }}>
+            <p style={{ marginTop: 10, fontSize: 12, color: "var(--text-tertiary)" }}>
               Try:{" "}
               {[
                 { label: "facebook/react", value: "facebook/react", m: "repo" as Mode },
@@ -743,8 +956,10 @@ export default function HomePage() {
           </div>
         </section>
 
+        {/* ─── LIVE AUDITS ───────────────────────────────────────────────────── */}
+        <LiveAudits />
+
       </main>
     </>
   );
 }
-
