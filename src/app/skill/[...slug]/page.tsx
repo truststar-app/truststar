@@ -239,6 +239,49 @@ export default async function SkillReportPage({
 
         {/* Files */}
         <FilesPanel report={report} />
+
+        {/* Go Further */}
+        <div style={{ marginTop: 16, background: "var(--bg-surface)", border: "1px solid var(--border)", borderRadius: 12, padding: 24, boxShadow: "var(--shadow-xs)" }}>
+          <h3 style={{ fontSize: 14, fontWeight: 600, color: "var(--text-primary)", marginBottom: 4, letterSpacing: "-0.2px" }}>
+            Want to go deeper?
+          </h3>
+          <p style={{ fontSize: 12, color: "var(--text-tertiary)", marginBottom: 16 }}>
+            Complement this Code Scan with a reputation check or npm analysis.
+          </p>
+          <div className="go-further-grid">
+            <div style={{ background: "var(--bg-base)", border: "1px solid var(--border)", borderRadius: 8, padding: 16 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                <span style={{ fontSize: 13, fontWeight: 600, color: "var(--text-primary)" }}>Check this repo&apos;s reputation</span>
+              </div>
+              <p style={{ fontSize: 12, color: "var(--text-secondary)", lineHeight: 1.6, marginBottom: 14 }}>
+                Verify that the popularity is genuine — detect fake stars, bot accounts, and artificial engagement.
+              </p>
+              <Link
+                href={`/report/${owner}/${repo}`}
+                style={{ display: "inline-flex", alignItems: "center", fontSize: 12, fontWeight: 500, padding: "7px 14px", borderRadius: "var(--radius)", background: "var(--accent)", color: "#fff", textDecoration: "none", boxShadow: "0 1px 3px rgba(217,54,54,0.2)" }}
+              >
+                Run Trust Score →
+              </Link>
+            </div>
+            <div style={{ background: "var(--bg-base)", border: "1px solid var(--border)", borderRadius: 8, padding: 16 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--text-secondary)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><line x1="16.5" y1="9.4" x2="7.5" y2="4.21"/><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
+                <span style={{ fontSize: 13, fontWeight: 600, color: "var(--text-primary)" }}>Check npm package</span>
+              </div>
+              <p style={{ fontSize: 12, color: "var(--text-secondary)", lineHeight: 1.6, marginBottom: 14 }}>
+                Cross-reference downloads, stars, and maintainer signals for the npm package.
+              </p>
+              <Link
+                href={`/npm/${repo}`}
+                className="btn-outline"
+                style={{ display: "inline-flex", alignItems: "center", fontSize: 12, fontWeight: 500, padding: "7px 14px", borderRadius: "var(--radius)", background: "none", color: "var(--text-secondary)", textDecoration: "none", border: "1px solid var(--border)" }}
+              >
+                Run npm Check →
+              </Link>
+            </div>
+          </div>
+        </div>
       </div>
     </main>
   );

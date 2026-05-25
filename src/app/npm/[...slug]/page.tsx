@@ -43,6 +43,12 @@ function fmtDate(iso: string): string {
   }
 }
 
+function parseGithubRepo(url: string): { owner: string; repo: string } | null {
+  const m = url.match(/github\.com\/([^/]+)\/([^/\s?#]+)/);
+  if (!m) return null;
+  return { owner: m[1], repo: m[2].replace(/\.git$/, "") };
+}
+
 // ─── Sparkline SVG ────────────────────────────────────────────────────────────
 
 function Sparkline({ data }: { data: { day: string; downloads: number }[] }) {
@@ -266,6 +272,8 @@ export default async function NpmReportPage({
   const packageName = slug.join("/");
   const report = await getNpmReport(packageName);
   if (!report) notFound();
+
+  const githubRepo = report.repositoryUrl ? parseGithubRepo(report.repositoryUrl) : null;
 
   const positiveCount = report.signals.filter((s) => s.type === "positive").length;
   const warningCount = report.signals.filter((s) => s.type === "warning").length;
@@ -807,6 +815,51 @@ export default async function NpmReportPage({
             )}
           </div>
         </div>
+
+        {/* Go Further */}
+        {githubRepo && (
+          <div style={{ marginBottom: 20, background: "var(--bg-surface)", border: "1px solid var(--border)", borderRadius: 12, padding: 24 }}>
+            <h3 style={{ fontSize: 14, fontWeight: 600, color: "var(--text-primary)", marginBottom: 4, letterSpacing: "-0.2px" }}>
+              Want to go deeper?
+            </h3>
+            <p style={{ fontSize: 12, color: "var(--text-tertiary)", marginBottom: 16 }}>
+              Complement this npm analysis with a reputation check or code scan.
+            </p>
+            <div className="go-further-grid">
+              <div style={{ background: "var(--bg-base)", border: "1px solid var(--border)", borderRadius: 8, padding: 16 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                  <span style={{ fontSize: 13, fontWeight: 600, color: "var(--text-primary)" }}>Check repo reputation</span>
+                </div>
+                <p style={{ fontSize: 12, color: "var(--text-secondary)", lineHeight: 1.6, marginBottom: 14 }}>
+                  Verify that the popularity is genuine — detect fake stars, bot accounts, and artificial engagement.
+                </p>
+                <Link
+                  href={`/report/${githubRepo.owner}/${githubRepo.repo}`}
+                  style={{ display: "inline-flex", alignItems: "center", fontSize: 12, fontWeight: 500, padding: "7px 14px", borderRadius: "var(--radius)", background: "var(--accent)", color: "#fff", textDecoration: "none", boxShadow: "0 1px 3px rgba(217,54,54,0.2)" }}
+                >
+                  Run Trust Score →
+                </Link>
+              </div>
+              <div style={{ background: "var(--bg-base)", border: "1px solid var(--border)", borderRadius: 8, padding: 16 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--text-secondary)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                  <span style={{ fontSize: 13, fontWeight: 600, color: "var(--text-primary)" }}>Scan source code</span>
+                </div>
+                <p style={{ fontSize: 12, color: "var(--text-secondary)", lineHeight: 1.6, marginBottom: 14 }}>
+                  Analyze source code for dangerous patterns — network calls, file access, obfuscation, and supply chain risks.
+                </p>
+                <Link
+                  href={`/skill/${githubRepo.owner}/${githubRepo.repo}`}
+                  className="btn-outline"
+                  style={{ display: "inline-flex", alignItems: "center", fontSize: 12, fontWeight: 500, padding: "7px 14px", borderRadius: "var(--radius)", background: "none", color: "var(--text-secondary)", textDecoration: "none", border: "1px solid var(--border)" }}
+                >
+                  Run Code Scan →
+                </Link>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Disclaimers */}
         <div

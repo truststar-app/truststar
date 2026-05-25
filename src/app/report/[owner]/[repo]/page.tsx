@@ -283,6 +283,49 @@ export default async function ReportPage({
         {/* Badge share */}
         <BadgeShare owner={owner} repo={repo} />
 
+        {/* Go Further */}
+        <div style={{ marginTop: 24, background: "var(--bg-surface)", border: "1px solid var(--border)", borderRadius: 12, padding: 24 }}>
+          <h3 style={{ fontSize: 14, fontWeight: 600, color: "var(--text-primary)", marginBottom: 4, letterSpacing: "-0.2px" }}>
+            Want to go deeper?
+          </h3>
+          <p style={{ fontSize: 12, color: "var(--text-tertiary)", marginBottom: 16 }}>
+            Complement this Trust Score with a code analysis or npm check.
+          </p>
+          <div className="go-further-grid">
+            <div style={{ background: "var(--bg-base)", border: "1px solid var(--border)", borderRadius: 8, padding: 16 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                <span style={{ fontSize: 13, fontWeight: 600, color: "var(--text-primary)" }}>Scan this repo&apos;s code</span>
+              </div>
+              <p style={{ fontSize: 12, color: "var(--text-secondary)", lineHeight: 1.6, marginBottom: 14 }}>
+                Analyze source code for dangerous patterns — network calls, file access, obfuscation, and supply chain risks.
+              </p>
+              <Link
+                href={`/skill/${owner}/${repo}`}
+                style={{ display: "inline-flex", alignItems: "center", fontSize: 12, fontWeight: 500, padding: "7px 14px", borderRadius: "var(--radius)", background: "var(--accent)", color: "#fff", textDecoration: "none", boxShadow: "0 1px 3px rgba(217,54,54,0.2)" }}
+              >
+                Run Code Scan →
+              </Link>
+            </div>
+            <div style={{ background: "var(--bg-base)", border: "1px solid var(--border)", borderRadius: 8, padding: 16 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--text-secondary)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><line x1="16.5" y1="9.4" x2="7.5" y2="4.21"/><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
+                <span style={{ fontSize: 13, fontWeight: 600, color: "var(--text-primary)" }}>Check npm package</span>
+              </div>
+              <p style={{ fontSize: 12, color: "var(--text-secondary)", lineHeight: 1.6, marginBottom: 14 }}>
+                Cross-reference downloads, stars, and maintainer signals for the npm package.
+              </p>
+              <Link
+                href={`/npm/${repo}`}
+                className="btn-outline"
+                style={{ display: "inline-flex", alignItems: "center", fontSize: 12, fontWeight: 500, padding: "7px 14px", borderRadius: "var(--radius)", background: "none", color: "var(--text-secondary)", textDecoration: "none", border: "1px solid var(--border)" }}
+              >
+                Run npm Check →
+              </Link>
+            </div>
+          </div>
+        </div>
+
         {/* Back */}
         <div style={{ marginTop: 24, textAlign: "center" }}>
           <Link

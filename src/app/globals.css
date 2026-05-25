@@ -313,6 +313,20 @@ body {
   border-right: 1px solid var(--border);
 }
 
+/* ─── Go Further grid ────────────────────────────────────────────────────── */
+
+.go-further-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+}
+
+@media (max-width: 640px) {
+  .go-further-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
 /* ─── Reduced motion ──────────────────────────────────────────────────────── */
 
 @media (prefers-reduced-motion: reduce) {
