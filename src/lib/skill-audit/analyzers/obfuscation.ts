@@ -6,6 +6,15 @@ const BASE64_PATTERN = /[A-Za-z0-9+/]{200,}={0,2}/g;
 const HEX_ESCAPE_PATTERN = /\\x[0-9a-fA-F]{2}/g;
 const FROM_CHAR_CODE_PATTERN = /String\.fromCharCode\s*\(([^)]+)\)/g;
 
+function isInStringContext(line: string, pattern: RegExp): boolean {
+  const match = line.search(pattern);
+  if (match < 0) return false;
+  const before = line.slice(0, match);
+  const dq = (before.match(/(?<!\\)"/g) ?? []).length;
+  const sq = (before.match(/(?<!\\)'/g) ?? []).length;
+  return dq % 2 !== 0 || sq % 2 !== 0;
+}
+
 export function analyzeObfuscation(files: SkillFile[]): SkillFinding[] {
   const findings: SkillFinding[] = [];
   let counter = 1;
@@ -24,46 +33,60 @@ export function analyzeObfuscation(files: SkillFile[]): SkillFinding[] {
     const isJsTs = ext === "js" || ext === "ts";
 
     // 1. eval(atob(...)) or eval(Buffer.from(..., 'base64'))
-    // Strip single-line comments before checking to avoid false positives from comment docs
-    const contentNoComments = file.content
-      .split("\n")
-      .filter((l) => !l.trim().startsWith("//") && !l.trim().startsWith("*"))
-      .join("\n");
-    if (
-      /eval\s*\(\s*atob\s*\(/.test(contentNoComments) ||
-      /eval\s*\(\s*Buffer\.from\s*\([^)]+,\s*['"]base64['"]\s*\)/.test(contentNoComments)
-    ) {
-      const lineNum = lines.findIndex(
-        (l) =>
-          /eval\s*\(\s*atob\s*\(/.test(l) ||
-          /eval\s*\(\s*Buffer\.from/.test(l)
-      ) + 1;
+    // Per-line check: skip comment lines and string literal occurrences
+    const EVAL_ATOB = /eval\s*\(\s*atob\s*\(/;
+    const EVAL_BUFFER = /eval\s*\(\s*Buffer\.from\s*\([^)]+,\s*['"]base64['"]\s*\)/;
+    const evalAtobLine = lines.findIndex((l) => {
+      const t = l.trim();
+      if (t.startsWith("//") || t.startsWith("*")) return false;
+      if ((EVAL_ATOB.test(l) && !isInStringContext(l, EVAL_ATOB)) ||
+          (EVAL_BUFFER.test(l) && !isInStringContext(l, EVAL_BUFFER))) {
+        return true;
+      }
+      return false;
+    });
+    if (evalAtobLine >= 0) {
       findings.push({
         id: id(),
         severity: "CRITICAL",
         category: "obfuscation",
-        title: "eval(atob()) or eval(Buffer.from(..., 'base64')) detected",
+        title: "Base64-decoded dynamic execution detected",
         description:
-          "Base64 code is decoded and executed dynamically — classic technique for hiding malicious code.",
+          "eval() is called on base64-decoded content — classic technique for hiding malicious code.",
         file: file.path,
-        line: lineNum > 0 ? lineNum : undefined,
-        evidence: file.content
-          .split("\n")
-          .find(
-            (l) =>
-              /eval\s*\(\s*atob\s*\(/.test(l) ||
-              /eval\s*\(\s*Buffer\.from/.test(l)
-          )
-          ?.trim()
-          .slice(0, 200) ?? "eval(atob/Buffer.from detected)",
+        line: evalAtobLine + 1,
+        evidence: lines[evalAtobLine].trim().slice(0, 200),
         recommendation:
           "Remove all obfuscated code. Rewrite in plain text with comments.",
       });
     }
 
+    // 1b. Hardcoded PEM private key (in code or string literal — both are CRITICAL)
+    const PEM_PRIVATE_KEY = /-----BEGIN (?:RSA |EC |DSA )?PRIVATE KEY-----/;
+    const pemLineIdx = lines.findIndex((l) => {
+      const t = l.trim();
+      return !t.startsWith("//") && !t.startsWith("*") && !t.startsWith("#") &&
+             PEM_PRIVATE_KEY.test(l);
+    });
+    if (pemLineIdx >= 0) {
+      findings.push({
+        id: id(),
+        severity: "CRITICAL",
+        category: "obfuscation",
+        title: "Hardcoded private key in source code",
+        description:
+          "A PEM-formatted private key is hardcoded in the source — exposes cryptographic secrets.",
+        file: file.path,
+        line: pemLineIdx + 1,
+        evidence: lines[pemLineIdx].trim().slice(0, 200),
+        recommendation:
+          "Remove the private key from source code. Store it via environment variables or a secrets manager.",
+      });
+    }
+
     // 2. Long base64 strings — skip test/fixture files (test snapshots, fixtures have many hashes)
     const isTestFile =
-      /[\\/](?:test|tests|__tests__|spec|specs|fixtures|__fixtures__|mocks|__mocks__)[\\/]/.test(file.path) ||
+      /(?:^|[\\/])(?:test|tests|__tests__|spec|specs|fixtures|__fixtures__|mocks|__mocks__)[\\/]/.test(file.path) ||
       /\.(?:test|spec)\.[jt]sx?$/.test(file.path);
     const base64Matches = isTestFile ? [] : [...file.content.matchAll(BASE64_PATTERN)];
     for (const match of base64Matches) {

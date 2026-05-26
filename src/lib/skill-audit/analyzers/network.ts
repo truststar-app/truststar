@@ -14,7 +14,7 @@ const KNOWN_SAFE_DOMAINS = [
   "digitalocean.com", "digitaloceanspaces.com",
   // CDNs and registries
   "cdn.jsdelivr.net", "cdnjs.cloudflare.com", "unpkg.com",
-  "registry.npmjs.org", "npmjs.com",
+  "registry.npmjs.org", "npmjs.com", "api.npmjs.org", "npmjs.org",
   "pypi.org", "files.pythonhosted.org",
   "packagist.org", "rubygems.org", "crates.io", "pkg.go.dev",
   "raw.githubusercontent.com",
@@ -64,6 +64,8 @@ const KNOWN_SAFE_DOMAINS = [
   "stackoverflow.com", "stackexchange.com",
   "medium.com", "dev.to",
   "discord.com", "discord.gg",
+  // OpenClaw skill registry
+  "topclawhubskills.com",
   // Local targets
   "localhost",
 ];
@@ -90,9 +92,10 @@ function isDynamic(line: string): boolean {
 
 function isTestFilePath(path: string): boolean {
   return (
-    /[\\/](?:test|tests|__tests__|spec|specs|fixtures|__fixtures__|mocks|__mocks__|examples?)[\\/]/.test(path) ||
+    // Match /test/ anywhere in path OR test/ at the start
+    /(?:^|[\\/])(?:test|tests|__tests__|spec|specs|fixtures|__fixtures__|mocks|__mocks__|examples?)[\\/]/.test(path) ||
     /\.(?:test|spec)(?:-d)?\.[jt]sx?$/.test(path) ||
-    /[\\/]@types[\\/]/.test(path)
+    /(?:^|[\\/])@types[\\/]/.test(path)
   );
 }
 
@@ -180,26 +183,30 @@ export function analyzeNetwork(files: SkillFile[]): SkillFinding[] {
           }
         }
 
-        // Hardcoded IP → HIGH
-        if (HARDCODED_IP_REGEX.test(line)) {
+        // Hardcoded IP → HIGH (skip test files, loopback/broadcast ranges)
+        if (HARDCODED_IP_REGEX.test(line) && !isTestFilePath(file.path)) {
           const ipMatch = line.match(HARDCODED_IP_REGEX);
-          if (
-            ipMatch &&
-            !["127.0.0.1", "0.0.0.0", "255.255.255.255"].includes(ipMatch[0])
-          ) {
-            findings.push({
-              id: id(),
-              severity: "HIGH",
-              category: "network",
-              title: "Hardcoded IP address",
-              description:
-                "An IP address is hardcoded in the code — impossible to audit and potentially malicious.",
-              file: file.path,
-              line: lineNum,
-              evidence: trimmed.slice(0, 200),
-              recommendation:
-                "Use a documented domain name rather than a raw IP address.",
-            });
+          if (ipMatch) {
+            const ip = ipMatch[0];
+            const parts = ip.split(".").map(Number);
+            const isLoopback = parts[0] === 127;
+            const isBroadcast = ip === "255.255.255.255";
+            const isUnspecified = ip === "0.0.0.0";
+            if (!isLoopback && !isBroadcast && !isUnspecified) {
+              findings.push({
+                id: id(),
+                severity: "HIGH",
+                category: "network",
+                title: "Hardcoded IP address",
+                description:
+                  "An IP address is hardcoded in the code — impossible to audit and potentially malicious.",
+                file: file.path,
+                line: lineNum,
+                evidence: trimmed.slice(0, 200),
+                recommendation:
+                  "Use a documented domain name rather than a raw IP address.",
+              });
+            }
           }
         }
       }
@@ -293,24 +300,27 @@ export function analyzeNetwork(files: SkillFile[]): SkillFinding[] {
           if (pyAsyncLine < 0) pyAsyncLine = lineNum;
         }
 
-        if (HARDCODED_IP_REGEX.test(line)) {
+        if (HARDCODED_IP_REGEX.test(line) && !isTestFilePath(file.path)) {
           const ipMatch = line.match(HARDCODED_IP_REGEX);
-          if (
-            ipMatch &&
-            !["127.0.0.1", "0.0.0.0", "255.255.255.255"].includes(ipMatch[0])
-          ) {
-            findings.push({
-              id: id(),
-              severity: "HIGH",
-              category: "network",
-              title: "Hardcoded IP address",
-              description: "An IP address is hardcoded in the code.",
-              file: file.path,
-              line: lineNum,
-              evidence: trimmed.slice(0, 200),
-              recommendation:
-                "Use a documented domain name rather than a raw IP address.",
-            });
+          if (ipMatch) {
+            const parts = ipMatch[0].split(".").map(Number);
+            const isLoopback = parts[0] === 127;
+            const isBroadcast = ipMatch[0] === "255.255.255.255";
+            const isUnspecified = ipMatch[0] === "0.0.0.0";
+            if (!isLoopback && !isBroadcast && !isUnspecified) {
+              findings.push({
+                id: id(),
+                severity: "HIGH",
+                category: "network",
+                title: "Hardcoded IP address",
+                description: "An IP address is hardcoded in the code.",
+                file: file.path,
+                line: lineNum,
+                evidence: trimmed.slice(0, 200),
+                recommendation:
+                  "Use a documented domain name rather than a raw IP address.",
+              });
+            }
           }
         }
       }
@@ -401,22 +411,25 @@ export function analyzeNetwork(files: SkillFile[]): SkillFinding[] {
 
         if (HARDCODED_IP_REGEX.test(line)) {
           const ipMatch = line.match(HARDCODED_IP_REGEX);
-          if (
-            ipMatch &&
-            !["127.0.0.1", "0.0.0.0", "255.255.255.255"].includes(ipMatch[0])
-          ) {
-            findings.push({
-              id: id(),
-              severity: "HIGH",
-              category: "network",
-              title: "Hardcoded IP address",
-              description: "An IP address is hardcoded in the code.",
-              file: file.path,
-              line: lineNum,
-              evidence: trimmed.slice(0, 200),
-              recommendation:
-                "Use a documented domain name rather than a raw IP address.",
-            });
+          if (ipMatch) {
+            const parts = ipMatch[0].split(".").map(Number);
+            const isLoopback = parts[0] === 127;
+            const isBroadcast = ipMatch[0] === "255.255.255.255";
+            const isUnspecified = ipMatch[0] === "0.0.0.0";
+            if (!isLoopback && !isBroadcast && !isUnspecified) {
+              findings.push({
+                id: id(),
+                severity: "HIGH",
+                category: "network",
+                title: "Hardcoded IP address",
+                description: "An IP address is hardcoded in the code.",
+                file: file.path,
+                line: lineNum,
+                evidence: trimmed.slice(0, 200),
+                recommendation:
+                  "Use a documented domain name rather than a raw IP address.",
+              });
+            }
           }
         }
       }

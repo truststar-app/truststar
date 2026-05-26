@@ -76,7 +76,7 @@ export function analyzeExecution(files: SkillFile[]): SkillFinding[] {
         }
 
         // new Function(
-        if (/\bnew\s+Function\s*\(/.test(line) && once("new-function")) {
+        if (/\bnew\s+Function\s*\(/.test(line) && !isInStringContext(line, /\bnew\s+Function\s*\(/) && once("new-function")) {
           findings.push({
             id: id(),
             severity: "HIGH",
@@ -93,7 +93,10 @@ export function analyzeExecution(files: SkillFile[]): SkillFinding[] {
         }
 
         // child_process.exec / execSync
-        if (/\bchild_process\.exec\b|\bexecSync\b/.test(line)) {
+        if (
+          /\bchild_process\.exec\b|\bexecSync\b/.test(line) &&
+          !isInStringContext(line, /\bchild_process\.exec\b|\bexecSync\b/)
+        ) {
           const dyn = hasVariableArg(line, "(?:child_process\\.exec|execSync)");
           const key = dyn ? "exec-dynamic" : "exec-static";
           if (once(key)) {
@@ -119,7 +122,11 @@ export function analyzeExecution(files: SkillFile[]): SkillFinding[] {
         }
 
         // child_process.spawn
-        if (/\bchild_process\.spawn\b|\bspawn\s*\(/.test(line) && once("spawn")) {
+        if (
+          /\bchild_process\.spawn\b|\bspawn\s*\(/.test(line) &&
+          !isInStringContext(line, /\bchild_process\.spawn\b|\bspawn\s*\(/) &&
+          once("spawn")
+        ) {
           findings.push({
             id: id(),
             severity: "MEDIUM",

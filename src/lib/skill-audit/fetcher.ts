@@ -110,7 +110,8 @@ function parseInput(input: string): { owner: string; repo: string } {
 function isRelevantFile(path: string): boolean {
   const filename = path.split("/").pop() ?? "";
 
-  if (filename === "SKILL.md") return true;
+  // Only fetch root-level SKILL.md — nested ones waste file slots in large repos
+  if (path === "SKILL.md") return true;
   if (filename === "package.json") return true;
   if (filename === "requirements.txt") return true;
   if (filename === "pyproject.toml") return true;
@@ -199,6 +200,14 @@ export async function fetchSkillData(input: string): Promise<FetchedSkillData> {
         isRelevantFile(node.path) &&
         (node.size ?? 0) <= MAX_FILE_SIZE
     )
+    // Prioritize shallow files (depth = slash count): root and first-level dirs first.
+    // Within the same depth, keep alphabetical order.
+    .sort((a, b) => {
+      const da = (a.path.match(/\//g) ?? []).length;
+      const db = (b.path.match(/\//g) ?? []).length;
+      if (da !== db) return da - db;
+      return a.path.localeCompare(b.path);
+    })
     .slice(0, MAX_FILES);
 
   const fetchedFiles = await Promise.all(

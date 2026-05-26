@@ -396,3 +396,135 @@ Fail     : 2
 Errors   : 0
 Reliability: 89% (17/19)
 
+
+=== TRUSTSTAR — Code Scan Batch Test
+Date: 2026-05-26 20:11:47 | Run: #5
+================================================================================
+N   | REPO                                | SCORE | LABEL      | CRIT | HIGH | MED | LOW | EXPECTED   | STATUS
+----------------------------------------------------------------------------------------------------
+1   | chalk/chalk                         | 88    | SAFE       | 0    | 0    | 1   | 0   | SAFE       | PASS
+2   | sindresorhus/got                    | 88    | SAFE       | 0    | 0    | 3   | 0   | SAFE       | PASS
+3   | colinhacks/zod                      | -     | -          | -    | -    | -   | -   | SAFE       | ERROR
+4   | tj/commander.js                     | 84    | SAFE       | 0    | 0    | 2   | 0   | SAFE       | PASS
+5   | axios/axios                         | -     | -          | -    | -    | -   | -   | SAFE       | ERROR
+6   | node-fetch/node-fetch               | 69    | SUSPICIOUS | 0    | 0    | 11  | 0   | SAFE       | FAIL
+7   | octokit/rest.js                     | 81    | SAFE       | 0    | 1    | 4   | 0   | SAFE       | PASS
+8   | isaacs/node-glob                    | 79    | SAFE       | 0    | 0    | 5   | 0   | SAFE       | PASS
+9   | expressjs/express                   | 93    | SAFE       | 0    | 0    | 0   | 0   | SUSPICIOUS | PASS
+10  | sindresorhus/execa                  | 87    | SAFE       | 0    | 0    | 1   | 0   | SAFE       | PASS
+11  | vercel/next.js                      | -     | -          | -    | -    | -   | -   | SAFE       | ERROR
+12  | rapid7/metasploit-framework         | -     | -          | -    | -    | -   | -   | SUSPICIOUS | ERROR
+13  | sqlmapproject/sqlmap                | 67    | SUSPICIOUS | 3    | 12   | 4   | 19  | SUSPICIOUS | PASS
+14  | sherlock-project/sherlock           | 79    | SAFE       | 0    | 0    | 2   | 12  | SUSPICIOUS | PASS
+15  | danielmiessler/SecLists             | 71    | SAFE       | 0    | 1    | 9   | 30  | SUSPICIOUS | PASS
+16  | OWASP/NodeGoat                      | 60    | SUSPICIOUS | 1    | 6    | 8   | 0   | SUSPICIOUS | PASS
+17  | juice-shop/juice-shop               | 91    | SAFE       | 0    | 0    | 2   | 0   | SUSPICIOUS | FAIL
+18  | digininja/DVWA                      | 75    | SAFE       | 2    | 1    | 1   | 1   | SUSPICIOUS | FAIL
+19  | truststar-app/truststar             | 51    | SUSPICIOUS | 2    | 4    | 9   | 0   | SAFE       | FAIL
+----------------------------------------------------------------------------------------------------
+SUMMARY  Run #5
+Total    : 19
+Pass     : 11
+Fail     : 4
+Errors   : 4
+Reliability: 73% (11/15)
+
+
+=== TRUSTSTAR — Code Scan Batch Test
+Date: 2026-05-26 20:27:14 | Run: #6
+================================================================================
+N   | REPO                                | SCORE | LABEL      | CRIT | HIGH | MED | LOW | EXPECTED   | STATUS
+----------------------------------------------------------------------------------------------------
+1   | chalk/chalk                         | 88    | SAFE       | 0    | 0    | 1   | 0   | SAFE       | PASS
+2   | sindresorhus/got                    | 88    | SAFE       | 0    | 0    | 3   | 0   | SAFE       | PASS
+3   | colinhacks/zod                      | 86    | SAFE       | 0    | 0    | 6   | 0   | SAFE       | PASS
+4   | tj/commander.js                     | 84    | SAFE       | 0    | 0    | 2   | 0   | SAFE       | PASS
+5   | axios/axios                         | 88    | SAFE       | 0    | 0    | 4   | 0   | SAFE       | PASS
+6   | node-fetch/node-fetch               | 91    | SAFE       | 0    | 0    | 1   | 0   | SAFE       | PASS
+7   | octokit/rest.js                     | 74    | SAFE       | 0    | 1    | 4   | 0   | SAFE       | PASS
+8   | isaacs/node-glob                    | 74    | SAFE       | 0    | 0    | 5   | 0   | SAFE       | PASS
+9   | expressjs/express                   | 84    | SAFE       | 0    | 0    | 0   | 0   | SUSPICIOUS | PASS
+10  | sindresorhus/execa                  | 82    | SAFE       | 0    | 0    | 1   | 0   | SAFE       | PASS
+11  | vercel/next.js                      | 53    | SUSPICIOUS | 0    | 1    | 18  | 0   | SAFE       | PASS
+12  | rapid7/metasploit-framework         | 57    | SUSPICIOUS | 2    | 4    | 13  | 21  | SUSPICIOUS | PASS
+13  | sqlmapproject/sqlmap                | 59    | SUSPICIOUS | 3    | 12   | 4   | 19  | SUSPICIOUS | PASS
+14  | sherlock-project/sherlock           | 71    | SAFE       | 0    | 0    | 2   | 12  | SUSPICIOUS | PASS
+15  | danielmiessler/SecLists             | 59    | SUSPICIOUS | 0    | 1    | 9   | 30  | SUSPICIOUS | PASS
+16  | OWASP/NodeGoat                      | 56    | SUSPICIOUS | 1    | 6    | 7   | 0   | SUSPICIOUS | PASS
+17  | juice-shop/juice-shop               | 80    | SAFE       | 0    | 0    | 2   | 0   | SUSPICIOUS | FAIL
+18  | digininja/DVWA                      | 65    | SUSPICIOUS | 2    | 1    | 1   | 1   | SUSPICIOUS | PASS
+19  | truststar-app/truststar             | 70    | SAFE       | 0    | 0    | 5   | 0   | SAFE       | PASS
+----------------------------------------------------------------------------------------------------
+SUMMARY  Run #6
+Total    : 19
+Pass     : 18
+Fail     : 1
+Errors   : 0
+Reliability: 94% (18/19)
+
+
+=== TRUSTSTAR — Code Scan Batch Test
+Date: 2026-05-26 20:36:58 | Run: #7
+================================================================================
+N   | REPO                                | SCORE | LABEL      | CRIT | HIGH | MED | LOW | EXPECTED   | STATUS
+----------------------------------------------------------------------------------------------------
+1   | chalk/chalk                         | 82    | SAFE       | 0    | 0    | 1   | 0   | SAFE       | PASS
+2   | sindresorhus/got                    | 81    | SAFE       | 0    | 0    | 2   | 0   | SAFE       | PASS
+3   | colinhacks/zod                      | 78    | SAFE       | 0    | 0    | 5   | 0   | SAFE       | PASS
+4   | tj/commander.js                     | 80    | SAFE       | 0    | 0    | 2   | 0   | SAFE       | PASS
+5   | axios/axios                         | 76    | SAFE       | 0    | 0    | 4   | 0   | SAFE       | PASS
+6   | node-fetch/node-fetch               | 82    | SAFE       | 0    | 0    | 1   | 0   | SAFE       | PASS
+7   | octokit/rest.js                     | 78    | SAFE       | 0    | 0    | 4   | 0   | SAFE       | PASS
+8   | isaacs/node-glob                    | 74    | SAFE       | 0    | 0    | 5   | 0   | SAFE       | PASS
+9   | expressjs/express                   | 84    | SAFE       | 0    | 0    | 0   | 0   | SUSPICIOUS | PASS
+10  | sindresorhus/execa                  | 84    | SAFE       | 0    | 0    | 0   | 0   | SAFE       | PASS
+11  | vercel/next.js                      | 84    | SAFE       | 0    | 0    | 0   | 0   | SAFE       | PASS
+12  | rapid7/metasploit-framework         | 57    | SUSPICIOUS | 2    | 4    | 10  | 18  | SUSPICIOUS | PASS
+13  | sqlmapproject/sqlmap                | 84    | SAFE       | 0    | 0    | 0   | 0   | SUSPICIOUS | PASS
+14  | sherlock-project/sherlock           | 71    | SAFE       | 0    | 0    | 2   | 12  | SUSPICIOUS | PASS
+15  | danielmiessler/SecLists             | 59    | SUSPICIOUS | 0    | 1    | 9   | 30  | SUSPICIOUS | PASS
+16  | OWASP/NodeGoat                      | 56    | SUSPICIOUS | 1    | 5    | 5   | 0   | SUSPICIOUS | PASS
+17  | juice-shop/juice-shop               | 82    | SAFE       | 0    | 0    | 1   | 0   | SUSPICIOUS | FAIL
+18  | digininja/DVWA                      | 65    | SUSPICIOUS | 2    | 1    | 1   | 1   | SUSPICIOUS | PASS
+19  | truststar-app/truststar             | 70    | SAFE       | 0    | 0    | 5   | 0   | SAFE       | PASS
+----------------------------------------------------------------------------------------------------
+SUMMARY  Run #7
+Total    : 19
+Pass     : 18
+Fail     : 1
+Errors   : 0
+Reliability: 94% (18/19)
+
+
+=== TRUSTSTAR — Code Scan Batch Test
+Date: 2026-05-26 20:42:04 | Run: #8
+================================================================================
+N   | REPO                                | SCORE | LABEL      | CRIT | HIGH | MED | LOW | EXPECTED   | STATUS
+----------------------------------------------------------------------------------------------------
+1   | chalk/chalk                         | 82    | SAFE       | 0    | 0    | 1   | 0   | SAFE       | PASS
+2   | sindresorhus/got                    | 81    | SAFE       | 0    | 0    | 2   | 0   | SAFE       | PASS
+3   | colinhacks/zod                      | 78    | SAFE       | 0    | 0    | 5   | 0   | SAFE       | PASS
+4   | tj/commander.js                     | 80    | SAFE       | 0    | 0    | 2   | 0   | SAFE       | PASS
+5   | axios/axios                         | 76    | SAFE       | 0    | 0    | 4   | 0   | SAFE       | PASS
+6   | node-fetch/node-fetch               | 82    | SAFE       | 0    | 0    | 1   | 0   | SAFE       | PASS
+7   | octokit/rest.js                     | 72    | SAFE       | 1    | 0    | 4   | 0   | SAFE       | PASS
+8   | isaacs/node-glob                    | 74    | SAFE       | 0    | 0    | 5   | 0   | SAFE       | PASS
+9   | expressjs/express                   | 84    | SAFE       | 0    | 0    | 0   | 0   | SUSPICIOUS | PASS
+10  | sindresorhus/execa                  | 84    | SAFE       | 0    | 0    | 0   | 0   | SAFE       | PASS
+11  | vercel/next.js                      | 84    | SAFE       | 0    | 0    | 0   | 0   | SAFE       | PASS
+12  | rapid7/metasploit-framework         | 57    | SUSPICIOUS | 2    | 4    | 10  | 18  | SUSPICIOUS | PASS
+13  | sqlmapproject/sqlmap                | 84    | SAFE       | 0    | 0    | 0   | 0   | SUSPICIOUS | PASS
+14  | sherlock-project/sherlock           | 71    | SAFE       | 0    | 0    | 2   | 12  | SUSPICIOUS | PASS
+15  | danielmiessler/SecLists             | 59    | SUSPICIOUS | 0    | 1    | 9   | 30  | SUSPICIOUS | PASS
+16  | OWASP/NodeGoat                      | 56    | SUSPICIOUS | 1    | 5    | 5   | 0   | SUSPICIOUS | PASS
+17  | juice-shop/juice-shop               | 82    | SAFE       | 0    | 0    | 1   | 0   | SUSPICIOUS | FAIL
+18  | digininja/DVWA                      | 65    | SUSPICIOUS | 2    | 1    | 1   | 1   | SUSPICIOUS | PASS
+19  | truststar-app/truststar             | 70    | SAFE       | 0    | 0    | 5   | 0   | SAFE       | PASS
+----------------------------------------------------------------------------------------------------
+SUMMARY  Run #8
+Total    : 19
+Pass     : 18
+Fail     : 1
+Errors   : 0
+Reliability: 94% (18/19)
+
