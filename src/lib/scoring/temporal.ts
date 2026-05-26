@@ -104,6 +104,19 @@ export type RepoContext = {
   createdAt: string;
 };
 
+// Only penalize concentration that exceeds the adaptive threshold for the repo's size.
+// A small repo with all stars in 48h is normal; a large repo with 25% in 48h is suspect.
+function concentrationPenalty(recentStarsRatio: number, totalStars: number): number {
+  const threshold =
+    totalStars > 10000 ? 0.20 :
+    totalStars > 1000  ? 0.30 :
+    totalStars > 100   ? 0.50 :
+    2; // < 100 stars: never penalize concentration
+
+  if (recentStarsRatio <= threshold) return 0;
+  return (recentStarsRatio - threshold) / (1 - threshold);
+}
+
 export function scoreTemporal(
   users: GitHubUserDetail[],
   repoContext: RepoContext
@@ -128,9 +141,9 @@ export function scoreTemporal(
 
   // Each factor penalizes from 100 downward
   let score = 100;
-  score -= velocityScore * 40;                      // max -40 if peak is 10x+ avg
-  score -= recentStarsRatio * 35;                   // max -35 if all stars in 48h
-  score -= Math.min(zScorePeak / 10, 1) * 25;      // max -25 if z-score > 10
+  score -= velocityScore * 40;                                                       // max -40 if peak is 10x+ avg
+  score -= concentrationPenalty(recentStarsRatio, repoContext.totalStars) * 35;     // adaptive: only above size threshold
+  score -= Math.min(zScorePeak / 10, 1) * 25;                                       // max -25 if z-score > 10
 
   return {
     score: Math.max(0, Math.round(score)),

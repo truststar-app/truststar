@@ -1,7 +1,7 @@
 import { fetchStargazers, githubFetch } from "./client";
 import type { GitHubUser, GitHubUserDetail } from "../types";
 
-const MAX_SAMPLE_SIZE = 500;
+const MAX_SAMPLE_SIZE = 150;
 const PER_PAGE = 100;
 
 type RawStargazer = {
@@ -128,7 +128,7 @@ export async function fetchLockstepData(
   owner: string,
   repo: string
 ): Promise<Map<string, string[]>> {
-  const LOCKSTEP_SAMPLE = 30;
+  const LOCKSTEP_SAMPLE = 15;
   const sample = users.slice(0, LOCKSTEP_SAMPLE);
 
   const starredMap = new Map<string, string[]>();

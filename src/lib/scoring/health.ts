@@ -31,8 +31,11 @@ function forkRatioScore(forks: number, stars: number): number {
   if (ratio >= 0.1) return 85;   // 1:10 — very good
   if (ratio >= 0.05) return 70;  // 1:20 — good
   if (ratio >= 0.03) return 55;  // 1:33 — acceptable
-  if (stars > 1000) return 30;   // many stars but few forks — suspect
-  return 50;
+  // < 3% forks: tiered by star count (utility libs have inherently low fork ratios)
+  if (stars > 50000) return 30;  // large repo — suspect
+  if (stars > 10000) return 40;  // mid-large — mildly suspect
+  if (stars > 1000) return 50;   // utility lib range — neutral
+  return 55;
 }
 
 function commitScore(commitsPerWeek: number, repoAgeDays: number): number {
@@ -42,7 +45,19 @@ function commitScore(commitsPerWeek: number, repoAgeDays: number): number {
   if (commitsPerWeek >= 1) return 70;
   if (commitsPerWeek >= 0.5) return 55;
   if (commitsPerWeek >= 0.1) return 35;
-  return 10;
+  // Very low activity: raise floor — stable "done" libraries shouldn't score 10
+  return 25;
+}
+
+// activeContributorsRatio comes in as Math.min(1, authorCount / 10)
+// Map it back to a proper score per CLAUDE.md spec instead of using it raw (0-1)
+function contributorScore(ratio: number): number {
+  if (ratio >= 1.0) return 100; // 10+ contributors
+  const count = Math.round(ratio * 10);
+  if (count === 0) return 15;
+  if (count === 1) return 40;
+  if (count <= 4) return 65;
+  return 85; // 5-9
 }
 
 function issueResolutionScore(closedIssues: number, totalIssues: number): number {
@@ -85,7 +100,7 @@ export function scoreHealth(
 
   const healthScore =
     (forkScore / 100) * weights.forkStar +
-    activeContributorsRatio * weights.activeContributors +
+    (contributorScore(activeContributorsRatio) / 100) * weights.activeContributors +
     (commitScoreVal / 100) * weights.commitFrequency +
     (issueScore / 100) * weights.issueResolution;
 
