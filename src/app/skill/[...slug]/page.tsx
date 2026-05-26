@@ -113,6 +113,7 @@ export default async function SkillReportPage({
 
         {/* Score hero */}
         <div
+          className="rpt-score-hero"
           style={{
             background: cfg.bgCard,
             border: `1px solid ${cfg.borderCard}`,
@@ -219,6 +220,7 @@ export default async function SkillReportPage({
 
         {/* Dimension bars */}
         <div
+          className="rpt-4col-grid"
           style={{
             display: "grid",
             gridTemplateColumns: "repeat(4, 1fr)",

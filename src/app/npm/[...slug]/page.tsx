@@ -549,6 +549,7 @@ export default async function NpmReportPage({
 
         {/* Stats */}
         <div
+          className="rpt-4col-grid"
           style={{
             display: "grid",
             gridTemplateColumns: "repeat(4, 1fr)",
@@ -650,6 +651,7 @@ export default async function NpmReportPage({
 
         {/* Package Details + Metadata grid */}
         <div
+          className="rpt-2col-grid"
           style={{
             display: "grid",
             gridTemplateColumns: "1fr 1fr",

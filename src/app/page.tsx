@@ -421,6 +421,7 @@ function PreviewBlock({ mode }: { mode: Mode }) {
 
   return (
     <div
+      className="preview-block"
       style={{
         maxWidth: 700,
         width: "100%",
@@ -513,11 +514,17 @@ export default function HomePage() {
     }
   }
 
-  const PLACEHOLDERS: Record<Mode, string> = {
-    repo: "github.com/owner/repo or owner/repo",
-    npm: "package name — e.g. express, lodash",
-    skill: "owner/repo — e.g. dbalve/fast-io",
-  };
+  const [isMobile, setIsMobile] = useState(false);
+  useEffect(() => {
+    const check = () => setIsMobile(window.innerWidth < 600);
+    check();
+    window.addEventListener("resize", check);
+    return () => window.removeEventListener("resize", check);
+  }, []);
+
+  const PLACEHOLDERS: Record<Mode, string> = isMobile
+    ? { repo: "owner/repo", npm: "package name", skill: "owner/repo" }
+    : { repo: "github.com/owner/repo or owner/repo", npm: "package name — e.g. express, lodash", skill: "owner/repo — e.g. dbalve/fast-io" };
 
   return (
     <>
@@ -580,6 +587,7 @@ export default function HomePage() {
                 className="hero-logo"
               />
               <h1
+                className="hero-title"
                 style={{
                   fontSize: "clamp(26px, 4vw, 44px)",
                   fontWeight: 700,
@@ -587,7 +595,6 @@ export default function HomePage() {
                   lineHeight: 1.1,
                   color: "var(--text-primary)",
                   margin: 0,
-                  whiteSpace: "nowrap",
                 }}
               >
                 Trust starts with{" "}

@@ -200,8 +200,8 @@ body {
   }
 
   .hero-logo {
-    width: 56px;
-    height: 56px;
+    width: 40px;
+    height: 40px;
   }
 
   .mini-mode-badges {
@@ -404,5 +404,103 @@ body {
   /* Add right border to left column items */
   .stats-grid .stat-item:nth-child(odd) {
     border-right: 1px solid var(--border-subtle);
+  }
+}
+
+/* ─── No horizontal overflow ─────────────────────────────────────────────────── */
+
+body { overflow-x: hidden; }
+
+/* ─── Header mobile hamburger ────────────────────────────────────────────────── */
+
+.header-nav-desktop { display: flex; align-items: center; gap: 1px; }
+.header-right-desktop { display: flex; align-items: center; gap: 3px; }
+.header-burger {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 6px 8px;
+  background: none;
+  border: none;
+  border-radius: var(--radius);
+  cursor: pointer;
+  color: var(--text-primary);
+  transition: background 0.12s;
+}
+.header-burger:hover { background: var(--bg-hover); }
+
+@media (max-width: 767px) {
+  .header-nav-desktop { display: none !important; }
+  .header-right-desktop { display: none !important; }
+  .header-burger { display: flex; }
+}
+
+/* ─── Hero title ─────────────────────────────────────────────────────────────── */
+
+.hero-title { white-space: nowrap; }
+
+@media (max-width: 600px) {
+  .hero-title {
+    white-space: normal !important;
+    font-size: 24px !important;
+    letter-spacing: -0.5px !important;
+  }
+}
+
+/* ─── Preview block mobile ────────────────────────────────────────────────────── */
+
+@media (max-width: 640px) {
+  .preview-block {
+    padding: 16px !important;
+    margin-left: -4px !important;
+    margin-right: -4px !important;
+  }
+  .preview-block .preview-bar-label {
+    font-size: 11px;
+  }
+}
+
+/* ─── Footer grid ────────────────────────────────────────────────────────────── */
+
+.footer-grid {
+  max-width: var(--max-w);
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: 1.6fr 1fr 1fr 1fr;
+  gap: 40px;
+}
+
+@media (max-width: 640px) {
+  .footer-grid {
+    grid-template-columns: 1fr;
+    gap: 24px;
+  }
+  footer { padding: 32px 20px 24px !important; }
+}
+
+/* ─── Report page responsive grids ───────────────────────────────────────────── */
+
+@media (max-width: 640px) {
+  /* Trust Score: 3-col dims → 1-col */
+  .rpt-dims-grid { grid-template-columns: 1fr !important; }
+
+  /* Trust Score + npm: 2-col signals/details → 1-col */
+  .rpt-2col-grid { grid-template-columns: 1fr !important; }
+
+  /* Skill + npm: 4-col dims/stats → 2-col */
+  .rpt-4col-grid { grid-template-columns: repeat(2, 1fr) !important; }
+
+  /* Score hero: side-by-side → stacked */
+  .rpt-score-hero {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    padding: 20px !important;
+    gap: 16px !important;
+  }
+
+  /* Make score circle smaller on mobile */
+  .rpt-score-hero .score-circle {
+    width: 80px !important;
+    height: 80px !important;
   }
 }

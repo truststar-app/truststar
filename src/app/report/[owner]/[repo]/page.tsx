@@ -79,6 +79,7 @@ export default async function ReportPage({
 
         {/* Score hero */}
         <div
+          className="rpt-score-hero"
           style={{
             background: cfg.bgCard,
             border: `1px solid ${cfg.borderCard}`,
@@ -204,6 +205,7 @@ export default async function ReportPage({
 
         {/* Dimensions */}
         <div
+          className="rpt-dims-grid"
           style={{
             display: "grid",
             gridTemplateColumns: "repeat(3, 1fr)",
@@ -218,6 +220,7 @@ export default async function ReportPage({
 
         {/* Signals */}
         <div
+          className="rpt-2col-grid"
           style={{
             display: "grid",
             gridTemplateColumns: "repeat(2, 1fr)",
