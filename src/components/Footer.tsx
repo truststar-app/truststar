@@ -11,7 +11,6 @@ export default function Footer() {
       style={{
         borderTop: "1px solid var(--border)",
         padding: "48px 24px 32px",
-        marginTop: 48,
       }}
     >
       <div className="footer-grid">

@@ -413,10 +413,7 @@ body { overflow-x: hidden; }
 
 /* ─── Header mobile hamburger ────────────────────────────────────────────────── */
 
-.header-nav-desktop { display: flex; align-items: center; gap: 1px; }
-.header-right-desktop { display: flex; align-items: center; gap: 3px; }
 .header-burger {
-  display: none;
   align-items: center;
   justify-content: center;
   padding: 6px 8px;
@@ -426,14 +423,9 @@ body { overflow-x: hidden; }
   cursor: pointer;
   color: var(--text-primary);
   transition: background 0.12s;
+  font-family: inherit;
 }
 .header-burger:hover { background: var(--bg-hover); }
-
-@media (max-width: 767px) {
-  .header-nav-desktop { display: none !important; }
-  .header-right-desktop { display: none !important; }
-  .header-burger { display: flex; }
-}
 
 /* ─── Hero title ─────────────────────────────────────────────────────────────── */
 

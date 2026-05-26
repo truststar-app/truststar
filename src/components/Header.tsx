@@ -190,7 +190,7 @@ export default function Header() {
           <Link href="/" style={{ display: "flex", alignItems: "center", gap: 8, textDecoration: "none", color: "var(--text-primary)" }}>
             <LogoContent />
           </Link>
-          <nav className="header-nav-desktop">
+          <nav className="hidden lg:flex" style={{ alignItems: "center", gap: 1 }}>
             {navLink("/", "Analyze")}
             {navLink("/discover", "Discover", true)}
             {navLink("/recent", "Recent")}
@@ -199,8 +199,8 @@ export default function Header() {
           </nav>
         </div>
 
-        {/* Right: desktop actions + mobile hamburger */}
-        <div className="header-right-desktop">
+        {/* Right: desktop actions */}
+        <div className="hidden lg:flex" style={{ alignItems: "center", gap: 3 }}>
           {/* More dropdown */}
           <div style={{ position: "relative" }}>
             <button
@@ -261,12 +261,11 @@ export default function Header() {
           </Link>
         </div>
 
-        {/* Mobile hamburger button */}
+        {/* Mobile hamburger button — hidden on desktop */}
         <button
-          className="header-burger"
+          className="header-burger lg:hidden flex"
           onClick={() => setMenuOpen(true)}
           aria-label="Open menu"
-          style={{ fontFamily: "inherit" }}
         >
           <HamburgerIcon />
         </button>
