@@ -7,7 +7,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "seed": "npx tsx scripts/seed-audits.ts"
+    "seed": "npx tsx scripts/seed-audits.ts",
+    "seed:direct": "npx tsx scripts/seed-redis-direct.ts"
   },
   "dependencies": {
     "@types/qrcode": "^1.5.6",
