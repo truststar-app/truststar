@@ -42,3 +42,5 @@ next-env.d.ts
 .env.local
 CLAUDE.md
 CLAUDE.md
+CLAUDE.md
+scripts/trust-score-results.log
