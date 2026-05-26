@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { analyzeNpmPackage, type NpmCheckResult } from "@/lib/npm/analyzer";
 import { addAudit } from "@/lib/recent-audits";
+import { rateLimit, getClientIp } from "@/lib/rate-limit";
 
 const cache = new Map<string, { data: NpmCheckResult; cachedAt: number }>();
 const CACHE_TTL = 10 * 60 * 1000;
@@ -24,6 +25,13 @@ function roughScore(result: NpmCheckResult): number {
 export async function POST(
   request: NextRequest
 ): Promise<NextResponse<NpmCheckResult | { error: string; details?: string }>> {
+  if (!rateLimit(getClientIp(request), 30, 60_000)) {
+    return NextResponse.json(
+      { error: "Too many requests. Please try again in a minute." },
+      { status: 429 }
+    );
+  }
+
   try {
     const body = (await request.json()) as { package?: string };
     const packageName = body.package?.trim().toLowerCase();

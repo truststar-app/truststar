@@ -28,10 +28,7 @@ export async function fetchStargazersSample(
   repo: string,
   totalStars: number
 ): Promise<GitHubUser[]> {
-  console.log("[stargazers] Starting fetch for", owner, repo, "| totalStars:", totalStars);
-
   if (totalStars === 0) {
-    console.log("[stargazers] Skipping — 0 stars");
     return [];
   }
 
@@ -48,10 +45,7 @@ export async function fetchStargazersSample(
     pagesToFetch = [...new Set([1, p25, p50, p75, totalPages])];
   }
 
-  console.log("[stargazers] Pages to fetch:", pagesToFetch);
   const raw: RawStargazer[] = await fetchStargazers(owner, repo, pagesToFetch);
-
-  console.log("[stargazers] Fetched count:", raw.length, "| sample[0]:", JSON.stringify(raw[0]));
 
   // Evenly subsample across all fetched pages to preserve temporal distribution
   const step = Math.max(1, Math.floor(raw.length / MAX_SAMPLE_SIZE));

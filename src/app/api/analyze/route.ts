@@ -5,6 +5,7 @@ import { fetchIssueStats } from "@/lib/github/issues";
 import { computeTrustScore } from "@/lib/scoring/engine";
 import { getCached, setCached, trustScoreCache, CACHE_TTL_MS, cacheKey } from "@/lib/trust-score-cache";
 import { addAudit } from "@/lib/recent-audits";
+import { rateLimit, getClientIp } from "@/lib/rate-limit";
 import type { TrustScore, ApiError } from "@/lib/types";
 
 export const maxDuration = 30;
@@ -34,8 +35,21 @@ function parseGitHubUrl(input: string): { owner: string; repo: string } | null {
 }
 
 export async function POST(request: NextRequest): Promise<NextResponse<TrustScore | ApiError>> {
+  if (!rateLimit(getClientIp(request), 30, 60_000)) {
+    return NextResponse.json(
+      { error: "Too many requests. Please try again in a minute." } as ApiError,
+      { status: 429 }
+    );
+  }
+
   try {
     const body = await request.json() as { url?: string; repoUrl?: string; owner?: string; repo?: string; force?: boolean };
+
+    // Input length guard
+    const rawCheck = body.url ?? body.repoUrl ?? "";
+    if (rawCheck.length > 500) {
+      return NextResponse.json({ error: "Input too long" } as ApiError, { status: 400 });
+    }
 
     let owner: string;
     let repo: string;

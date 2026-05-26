@@ -35,7 +35,6 @@ export async function fetchRecentCommitData(
   const windowEnd = new Date();
   const since = windowStart.toISOString();
 
-  console.log(`[commits] ${owner}/${repo} — window: ${windowStart.toISOString()} → ${windowEnd.toISOString()}`);
 
   const authors = new Set<string>();
   let totalCommits = 0;
@@ -68,7 +67,6 @@ export async function fetchRecentCommitData(
     console.error(`[commits] fetch failed for ${owner}/${repo}:`, err);
   }
 
-  console.log(`[commits] ${owner}/${repo} — ${totalCommits} commits found over ${WEEKS.toFixed(2)} weeks → ${(totalCommits / WEEKS).toFixed(2)} commits/week`);
 
   return {
     commitsPerWeek: totalCommits / WEEKS,

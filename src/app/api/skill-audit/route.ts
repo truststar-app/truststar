@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { rateLimit, getClientIp } from "@/lib/rate-limit";
 import { fetchSkillData } from "@/lib/skill-audit/fetcher";
 import { parseSkillMdOptional } from "@/lib/skill-audit/parser";
 import { analyzeNetwork } from "@/lib/skill-audit/analyzers/network";
@@ -105,6 +106,13 @@ async function runPipeline(
 export async function POST(
   request: NextRequest
 ): Promise<NextResponse<SkillSafetyScore | { error: string; details?: string }>> {
+  if (!rateLimit(getClientIp(request), 30, 60_000)) {
+    return NextResponse.json(
+      { error: "Too many requests. Please try again in a minute." },
+      { status: 429 }
+    );
+  }
+
   try {
     const body = (await request.json()) as {
       repoUrl?: string;

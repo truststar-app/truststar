@@ -91,15 +91,11 @@ export async function githubFetchWithStarredAt<T>(
     ...buildHeaders(),
     Accept: "application/vnd.github.v3.star+json",
   };
-  console.log("[stargazers] githubFetchWithStarredAt →", url);
-  console.log("[stargazers] Token present:", !!GITHUB_TOKEN, "| Accept:", sentHeaders.Accept);
 
   const response = await fetch(url, {
     headers: sentHeaders,
     cache: "no-store",
   });
-
-  console.log("[stargazers] API response status:", response.status);
 
   if (response.status === 403) {
     const rateLimitRemaining = response.headers.get("X-RateLimit-Remaining");
@@ -128,7 +124,6 @@ export async function fetchStargazers(
 ): Promise<any[]> {
   const allStargazers: any[] = [];
   for (const page of pages) {
-    console.log(`[stargazers] Fetching page ${page} for ${owner}/${repo}`);
     const response = await fetch(
       `https://api.github.com/repos/${owner}/${repo}/stargazers?per_page=100&page=${page}`,
       {
@@ -138,12 +133,10 @@ export async function fetchStargazers(
         },
       }
     );
-    console.log(`[stargazers] Page ${page} status: ${response.status}`);
     if (!response.ok) break;
     const data = await response.json();
     if (data.length === 0) break;
     allStargazers.push(...data);
-    console.log(`[stargazers] Total so far: ${allStargazers.length}`);
   }
   return allStargazers;
 }

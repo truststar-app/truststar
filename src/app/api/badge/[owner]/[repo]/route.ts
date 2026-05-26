@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getCached } from "@/lib/trust-score-cache";
+import { rateLimit, getClientIp } from "@/lib/rate-limit";
 
 // Approximate Verdana 11px character width
 function textPx(text: string): number {
@@ -44,6 +45,10 @@ export async function GET(
   _req: NextRequest,
   { params }: { params: Promise<{ owner: string; repo: string }> }
 ) {
+  if (!rateLimit(getClientIp(_req), 60, 60_000)) {
+    return new NextResponse("Too many requests", { status: 429 });
+  }
+
   const { owner, repo } = await params;
 
   const cached = getCached(owner, repo);

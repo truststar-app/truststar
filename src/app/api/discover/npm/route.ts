@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { rateLimit, getClientIp } from "@/lib/rate-limit";
 
 interface CacheEntry { data: unknown; ts: number }
 const cache = new Map<string, CacheEntry>();
@@ -26,7 +27,10 @@ interface NpmLatest {
   description?: string;
 }
 
-export async function GET() {
+export async function GET(req: Request) {
+  if (!rateLimit(getClientIp(req), 30, 60_000)) {
+    return NextResponse.json({ error: "Too many requests. Please try again in a minute." }, { status: 429 });
+  }
   const hit = cache.get("npm");
   if (hit && Date.now() - hit.ts < CACHE_TTL) {
     return NextResponse.json(hit.data);
