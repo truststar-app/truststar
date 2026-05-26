@@ -187,10 +187,23 @@ function computeSignals(p: {
     });
   }
 
+  // High download volume relative to community size: common for deep transitive deps
+  // stars > 0 guards against GitHub fetch failures (which return 0)
+  if (p.weeklyDownloads > 500_000 && p.stars > 0 && p.stars < 500) {
+    signals.push({
+      id: "N-05",
+      type: "neutral",
+      label: "High download-to-community ratio",
+      detail: `${fmt(p.weeklyDownloads)} weekly downloads but only ${p.stars} GitHub stars — typical of micro-utility packages that are deep transitive dependencies.`,
+    });
+  }
+
   // ── Warning (conservative — only clear anomalies) ────────────────────────────
 
-  // Very high downloads with almost zero community presence
-  if (p.weeklyDownloads > 100_000 && p.stars < 50 && p.forks < 10) {
+  // Very high downloads with confirmed low community presence
+  // Requires stars > 0: zero stars means either no repo or a failed GitHub fetch —
+  // N-03 already surfaces the "no repository" concern; avoid double-signalling
+  if (p.weeklyDownloads > 100_000 && p.stars > 0 && p.stars < 50 && p.forks < 10) {
     signals.push({
       id: "W-01",
       type: "warning",
@@ -200,7 +213,8 @@ function computeSignals(p: {
   }
 
   // Very high stars with almost no actual downloads
-  if (p.stars > 10_000 && p.weeklyDownloads < 500) {
+  // Require weeklyDownloads > 0 to exclude npm API errors (failed fetch returns 0)
+  if (p.stars > 10_000 && p.weeklyDownloads > 0 && p.weeklyDownloads < 500) {
     signals.push({
       id: "W-02",
       type: "warning",
