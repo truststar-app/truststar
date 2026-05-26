@@ -3,6 +3,7 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 import BadgeShare from "@/components/BadgeShare";
 import { ReanalyzeButton } from "@/components/ReanalyzeButton";
+import QRShare from "@/components/QRShare";
 import type { TrustScore, TrustLabel } from "@/lib/types";
 
 // ─── Data fetching ────────────────────────────────────────────────────────────
@@ -306,6 +307,12 @@ export default async function ReportPage({
 
         {/* Badge share */}
         <BadgeShare owner={owner} repo={repo} />
+
+        {/* QR share */}
+        <QRShare
+          url={`https://truststar.co/report/${owner}/${repo}`}
+          filename={`${owner}-${repo}`}
+        />
 
         {/* Go Further */}
         <div style={{ marginTop: 24, background: "var(--bg-surface)", border: "1px solid var(--border)", borderRadius: 12, padding: 24 }}>

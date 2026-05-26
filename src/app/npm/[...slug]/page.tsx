@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import type { ReactNode } from "react";
 import type { NpmCheckResult, NpmSignal } from "@/lib/npm/analyzer";
+import QRShare from "@/components/QRShare";
 
 // ─── Data fetching ─────────────────────────────────────────────────────────────
 
@@ -900,8 +901,14 @@ export default async function NpmReportPage({
           </div>
         </div>
 
+        {/* QR share */}
+        <QRShare
+          url={`https://truststar.co/npm/${packageName}`}
+          filename={packageName.replace(/\//g, "-")}
+        />
+
         {/* Back */}
-        <div style={{ textAlign: "center" }}>
+        <div style={{ marginTop: 24, textAlign: "center" }}>
           <Link
             href="/"
             className="btn-outline"
