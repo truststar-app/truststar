@@ -17,12 +17,18 @@ const SENSITIVE_PATHS_HIGH = [
   { pattern: /~\/\.pypirc/i, label: "~/.pypirc" },
   { pattern: /~\/\.bashrc/i, label: "~/.bashrc" },
   { pattern: /~\/\.zshrc/i, label: "~/.zshrc" },
-  { pattern: /history\b/i, label: "shell history" },
+  // Specific shell history file paths only (not the generic word "history")
+  { pattern: /\.(?:bash|zsh|sh|fish)_history\b|HISTFILE\b/, label: "shell history" },
 ];
 
 const SENSITIVE_PATHS_MEDIUM = [
   { pattern: /~\/\.config/i, label: "~/.config" },
 ];
+
+// For JS/TS: require a file-access or command-execution keyword on the same line.
+// This prevents false positives from pattern-definition code that contains the paths as data.
+const JS_FILE_ACCESS_CONTEXT =
+  /\b(?:readFile|writeFile|readdir|appendFile|openFile|createReadStream|createWriteStream|fs\s*\.|exec(?:Sync)?|spawn|child_process)\b/i;
 
 const SECRET_ENV_REGEX =
   /process\.env\.(?:.*(?:TOKEN|SECRET|KEY|PASSWORD|CREDENTIALS|API_KEY|PRIVATE))/i;
@@ -60,60 +66,67 @@ export function analyzeFilesystem(files: SkillFile[]): SkillFinding[] {
         continue;
       }
 
-      // Check critical sensitive paths
-      for (const { pattern, label } of SENSITIVE_PATHS_CRITICAL) {
-        if (pattern.test(line) && !seenCriticalPaths.has(label)) {
-          seenCriticalPaths.add(label);
-          findings.push({
-            id: id(),
-            severity: "CRITICAL",
-            category: "filesystem",
-            title: `Access to sensitive path ${label}`,
-            description: `The code accesses ${label}, a directory containing critical keys or secrets.`,
-            file: file.path,
-            line: lineNum,
-            evidence: trimmed.slice(0, 200),
-            recommendation: `Remove all access to ${label}. Use environment variables instead.`,
-          });
-          break;
-        }
-      }
+      // For JS/TS: only flag sensitive paths when there's a file-access context on the same line.
+      // Shell and Python scripts are checked unconditionally (their syntax is direct enough).
+      const requiresContext = isJS && !isSh;
+      const hasContext = !requiresContext || JS_FILE_ACCESS_CONTEXT.test(line);
 
-      // Check high sensitive paths
-      for (const { pattern, label } of SENSITIVE_PATHS_HIGH) {
-        if (pattern.test(line) && !seenHighPaths.has(label)) {
-          seenHighPaths.add(label);
-          findings.push({
-            id: id(),
-            severity: "HIGH",
-            category: "filesystem",
-            title: `Access to sensitive configuration file ${label}`,
-            description: `The code accesses ${label}, which may contain credentials or sensitive configurations.`,
-            file: file.path,
-            line: lineNum,
-            evidence: trimmed.slice(0, 200),
-            recommendation: `Justify access to ${label} in SKILL.md.`,
-          });
-          break;
+      if (hasContext) {
+        // Check critical sensitive paths
+        for (const { pattern, label } of SENSITIVE_PATHS_CRITICAL) {
+          if (pattern.test(line) && !seenCriticalPaths.has(label)) {
+            seenCriticalPaths.add(label);
+            findings.push({
+              id: id(),
+              severity: "CRITICAL",
+              category: "filesystem",
+              title: `Access to sensitive path ${label}`,
+              description: `The code accesses ${label}, a directory containing critical keys or secrets.`,
+              file: file.path,
+              line: lineNum,
+              evidence: trimmed.slice(0, 200),
+              recommendation: `Remove all access to ${label}. Use environment variables instead.`,
+            });
+            break;
+          }
         }
-      }
 
-      // Check medium sensitive paths
-      for (const { pattern, label } of SENSITIVE_PATHS_MEDIUM) {
-        if (pattern.test(line) && !seenMediumPaths.has(label)) {
-          seenMediumPaths.add(label);
-          findings.push({
-            id: id(),
-            severity: "MEDIUM",
-            category: "filesystem",
-            title: `Access to configuration directory ${label}`,
-            description: `The code accesses ${label}, which may contain application configurations.`,
-            file: file.path,
-            line: lineNum,
-            evidence: trimmed.slice(0, 200),
-            recommendation: `Document why access to ${label} is necessary.`,
-          });
-          break;
+        // Check high sensitive paths
+        for (const { pattern, label } of SENSITIVE_PATHS_HIGH) {
+          if (pattern.test(line) && !seenHighPaths.has(label)) {
+            seenHighPaths.add(label);
+            findings.push({
+              id: id(),
+              severity: "HIGH",
+              category: "filesystem",
+              title: `Access to sensitive configuration file ${label}`,
+              description: `The code accesses ${label}, which may contain credentials or sensitive configurations.`,
+              file: file.path,
+              line: lineNum,
+              evidence: trimmed.slice(0, 200),
+              recommendation: `Justify access to ${label} in SKILL.md.`,
+            });
+            break;
+          }
+        }
+
+        // Check medium sensitive paths
+        for (const { pattern, label } of SENSITIVE_PATHS_MEDIUM) {
+          if (pattern.test(line) && !seenMediumPaths.has(label)) {
+            seenMediumPaths.add(label);
+            findings.push({
+              id: id(),
+              severity: "MEDIUM",
+              category: "filesystem",
+              title: `Access to configuration directory ${label}`,
+              description: `The code accesses ${label}, which may contain application configurations.`,
+              file: file.path,
+              line: lineNum,
+              evidence: trimmed.slice(0, 200),
+              recommendation: `Document why access to ${label} is necessary.`,
+            });
+            break;
+          }
         }
       }
 

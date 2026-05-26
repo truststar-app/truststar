@@ -1,6 +1,8 @@
 import type { SkillFile, SkillFinding } from "../types";
 
-const BASE64_PATTERN = /[A-Za-z0-9+/]{50,}={0,2}/g;
+// Threshold of 200 chars avoids false positives on SHA hashes (64 chars in hex ≈ 88 in base64)
+// and short test tokens, while still catching actual obfuscated payloads.
+const BASE64_PATTERN = /[A-Za-z0-9+/]{200,}={0,2}/g;
 const HEX_ESCAPE_PATTERN = /\\x[0-9a-fA-F]{2}/g;
 const FROM_CHAR_CODE_PATTERN = /String\.fromCharCode\s*\(([^)]+)\)/g;
 
@@ -22,9 +24,14 @@ export function analyzeObfuscation(files: SkillFile[]): SkillFinding[] {
     const isJsTs = ext === "js" || ext === "ts";
 
     // 1. eval(atob(...)) or eval(Buffer.from(..., 'base64'))
+    // Strip single-line comments before checking to avoid false positives from comment docs
+    const contentNoComments = file.content
+      .split("\n")
+      .filter((l) => !l.trim().startsWith("//") && !l.trim().startsWith("*"))
+      .join("\n");
     if (
-      /eval\s*\(\s*atob\s*\(/.test(file.content) ||
-      /eval\s*\(\s*Buffer\.from\s*\([^)]+,\s*['"]base64['"]\s*\)/.test(file.content)
+      /eval\s*\(\s*atob\s*\(/.test(contentNoComments) ||
+      /eval\s*\(\s*Buffer\.from\s*\([^)]+,\s*['"]base64['"]\s*\)/.test(contentNoComments)
     ) {
       const lineNum = lines.findIndex(
         (l) =>
@@ -54,8 +61,11 @@ export function analyzeObfuscation(files: SkillFile[]): SkillFinding[] {
       });
     }
 
-    // 2. Long base64 strings and Buffer.from(..., 'base64')
-    const base64Matches = [...file.content.matchAll(BASE64_PATTERN)];
+    // 2. Long base64 strings — skip test/fixture files (test snapshots, fixtures have many hashes)
+    const isTestFile =
+      /[\\/](?:test|tests|__tests__|spec|specs|fixtures|__fixtures__|mocks|__mocks__)[\\/]/.test(file.path) ||
+      /\.(?:test|spec)\.[jt]sx?$/.test(file.path);
+    const base64Matches = isTestFile ? [] : [...file.content.matchAll(BASE64_PATTERN)];
     for (const match of base64Matches) {
       const base64Str = match[0];
       const idx = file.content.indexOf(base64Str);

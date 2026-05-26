@@ -1,19 +1,71 @@
 import type { SkillFile, SkillFinding } from "../types";
 
 const KNOWN_SAFE_DOMAINS = [
-  "api.github.com", "github.com",
+  // Major cloud / API platforms
+  "api.github.com", "github.com", "gist.github.com",
   "api.openai.com", "openai.com",
   "api.anthropic.com", "anthropic.com",
-  "googleapis.com", "google.com",
+  "googleapis.com", "google.com", "accounts.google.com",
   "api.stripe.com", "stripe.com",
-  "aws.amazon.com", "amazonaws.com",
-  "azure.microsoft.com", "microsoft.com",
+  "aws.amazon.com", "amazonaws.com", "s3.amazonaws.com",
+  "azure.microsoft.com", "microsoft.com", "login.microsoftonline.com",
+  "api.cloudflare.com", "cloudflare.com",
+  "api.vercel.com", "vercel.com",
+  "digitalocean.com", "digitaloceanspaces.com",
+  // CDNs and registries
   "cdn.jsdelivr.net", "cdnjs.cloudflare.com", "unpkg.com",
-  "registry.npmjs.org", "npmjs.com", "pypi.org",
-  "docs.github.com", "developer.mozilla.org",
-  "api.slack.com", "api.twilio.com", "api.sendgrid.com",
-  "api.cloudflare.com", "api.vercel.com",
-  "raw.githubusercontent.com", "files.pythonhosted.org",
+  "registry.npmjs.org", "npmjs.com",
+  "pypi.org", "files.pythonhosted.org",
+  "packagist.org", "rubygems.org", "crates.io", "pkg.go.dev",
+  "raw.githubusercontent.com",
+  // Communication / collaboration
+  "api.slack.com", "slack.com",
+  "api.twilio.com", "api.sendgrid.com",
+  "opencollective.com", "open-collective.com",
+  // Documentation and specifications
+  "developer.mozilla.org", "docs.github.com",
+  "en.wikipedia.org", "wikipedia.org",
+  "www.w3.org", "w3.org", "w3c.github.io",
+  "whatwg.org", "fetch.spec.whatwg.org", "html.spec.whatwg.org",
+  "nodejs.org",
+  "tc39.es",
+  "ecma-international.org",
+  "ietf.org", "tools.ietf.org", "datatracker.ietf.org",
+  "web.archive.org", "archive.org",
+  // Programming language / framework docs
+  "typescriptlang.org", "www.typescriptlang.org",
+  "python.org", "docs.python.org",
+  "golang.org", "pkg.go.dev",
+  "rust-lang.org",
+  "reactjs.org", "react.dev",
+  "vuejs.org",
+  "svelte.dev",
+  "nextjs.org",
+  "expressjs.com",
+  "vitejs.dev",
+  "jestjs.io",
+  "eslint.org",
+  "prettier.io",
+  "babeljs.io",
+  "webpack.js.org",
+  // CI / quality / badges
+  "shields.io", "img.shields.io", "badgen.net",
+  "travis-ci.org", "travis-ci.com",
+  "circleci.com",
+  "codecov.io", "coveralls.io",
+  "sonarcloud.io",
+  "snyk.io",
+  "bundlephobia.com", "npmtrends.com",
+  // RFC 2606 placeholder domains — commonly used in docs and examples
+  "example.com", "example.org", "example.net",
+  // HTTP testing tools used in examples
+  "httpbin.org", "httpstat.us", "httpbingo.org",
+  // Other common reference sites
+  "stackoverflow.com", "stackexchange.com",
+  "medium.com", "dev.to",
+  "discord.com", "discord.gg",
+  // Local targets
+  "localhost",
 ];
 
 const HARDCODED_IP_REGEX = /\b(\d{1,3}\.){3}\d{1,3}\b/;
@@ -31,8 +83,16 @@ function isDynamic(line: string): boolean {
     /fetch\(`[^`]*\${/.test(line) ||
     /fetch\(\s*\w+\s*\+/.test(line) ||
     /fetch\(\s*baseUrl/.test(line) ||
-    /fetch\(\s*url\s*[+,)]/.test(line) ||
+    /fetch\(\s*url\s*[+)]/.test(line) ||
     /fetch\(\s*\w+Url/.test(line)
+  );
+}
+
+function isTestFilePath(path: string): boolean {
+  return (
+    /[\\/](?:test|tests|__tests__|spec|specs|fixtures|__fixtures__|mocks|__mocks__|examples?)[\\/]/.test(path) ||
+    /\.(?:test|spec)(?:-d)?\.[jt]sx?$/.test(path) ||
+    /[\\/]@types[\\/]/.test(path)
   );
 }
 
@@ -58,6 +118,7 @@ export function analyzeNetwork(files: SkillFile[]): SkillFinding[] {
       const domainMap = new Map<string, DomainEntry>();
       const libMap = new Map<string, LibEntry>();
       let wsFirstLine = -1;
+      let dynamicUrlEmitted = false; // one finding per file for dynamic URLs
 
       for (let i = 0; i < lines.length; i++) {
         const line = lines[i];
@@ -66,21 +127,24 @@ export function analyzeNetwork(files: SkillFile[]): SkillFinding[] {
 
         if (!trimmed || trimmed.startsWith("//")) continue;
 
-        // Dynamic URL → CRITICAL, emit immediately
+        // Dynamic URL — one finding per file max, skip test/example files
         if (isDynamic(line)) {
-          findings.push({
-            id: id(),
-            severity: "CRITICAL",
-            category: "network",
-            title: "Dynamically constructed URL",
-            description:
-              "A URL is constructed dynamically, making it impossible to audit network destinations.",
-            file: file.path,
-            line: lineNum,
-            evidence: trimmed.slice(0, 200),
-            recommendation:
-              "Use hardcoded, documented URLs rather than dynamic constructions.",
-          });
+          if (!isTestFilePath(file.path) && !dynamicUrlEmitted) {
+            dynamicUrlEmitted = true;
+            findings.push({
+              id: id(),
+              severity: "MEDIUM",
+              category: "network",
+              title: "Dynamically constructed URL",
+              description:
+                "A URL is constructed dynamically from a variable — destination cannot be statically audited.",
+              file: file.path,
+              line: lineNum,
+              evidence: trimmed.slice(0, 200),
+              recommendation:
+                "Document the possible URL destinations in SKILL.md.",
+            });
+          }
           continue;
         }
 
@@ -116,7 +180,7 @@ export function analyzeNetwork(files: SkillFile[]): SkillFinding[] {
           }
         }
 
-        // Hardcoded IP → CRITICAL, emit immediately
+        // Hardcoded IP → HIGH
         if (HARDCODED_IP_REGEX.test(line)) {
           const ipMatch = line.match(HARDCODED_IP_REGEX);
           if (
@@ -125,7 +189,7 @@ export function analyzeNetwork(files: SkillFile[]): SkillFinding[] {
           ) {
             findings.push({
               id: id(),
-              severity: "CRITICAL",
+              severity: "HIGH",
               category: "network",
               title: "Hardcoded IP address",
               description:
@@ -141,27 +205,32 @@ export function analyzeNetwork(files: SkillFile[]): SkillFinding[] {
       }
 
       // Emit one finding per domain
+      const testFile = isTestFilePath(file.path);
       for (const [domain, { count, firstLine, firstEvidence }] of domainMap) {
         const safe = isSafeDomain(domain);
+        // Unknown domains in test/example files are expected — treat as INFO
+        const severity = safe ? "INFO" : testFile ? "INFO" : "MEDIUM";
         findings.push({
           id: id(),
-          severity: safe ? "INFO" : "HIGH",
+          severity,
           category: "network",
-          title: safe
-            ? `Network call to known service (${domain})`
-            : "Hardcoded URL to unknown domain",
+          title: safe || testFile
+            ? `Network call to ${safe ? "known service" : "domain"} (${domain})`
+            : "Hardcoded URL to undocumented domain",
           description: safe
             ? "HTTP call to a documented trusted service."
-            : `A URL pointing to "${domain}" is present in the code.`,
+            : testFile
+              ? `URL to "${domain}" in a test or example file.`
+              : `A URL pointing to "${domain}" is present in the code — verify it is intentional.`,
           file: file.path,
           line: firstLine,
           evidence:
             count > 1
               ? `${domain} (found ${count} times)`
               : firstEvidence.slice(0, 200),
-          recommendation: safe
+          recommendation: safe || testFile
             ? "Verify that the URL matches the declared usage."
-            : "Document the usage of this domain in SKILL.md.",
+            : `Document the usage of "${domain}" in SKILL.md.`,
         });
       }
 
@@ -232,7 +301,7 @@ export function analyzeNetwork(files: SkillFile[]): SkillFinding[] {
           ) {
             findings.push({
               id: id(),
-              severity: "CRITICAL",
+              severity: "HIGH",
               category: "network",
               title: "Hardcoded IP address",
               description: "An IP address is hardcoded in the code.",
@@ -338,7 +407,7 @@ export function analyzeNetwork(files: SkillFile[]): SkillFinding[] {
           ) {
             findings.push({
               id: id(),
-              severity: "CRITICAL",
+              severity: "HIGH",
               category: "network",
               title: "Hardcoded IP address",
               description: "An IP address is hardcoded in the code.",
@@ -355,7 +424,7 @@ export function analyzeNetwork(files: SkillFile[]): SkillFinding[] {
       if (curlLine >= 0) {
         findings.push({
           id: id(),
-          severity: "HIGH",
+          severity: "MEDIUM",
           category: "network",
           title: "Network request via curl",
           description: "curl is used to make network requests.",
@@ -365,14 +434,14 @@ export function analyzeNetwork(files: SkillFile[]): SkillFinding[] {
             curlCount > 1
               ? `curl (found ${curlCount} times)`
               : lines[curlLine - 1]?.trim().slice(0, 200) ?? "curl",
-          recommendation: "Document and justify network usage.",
+          recommendation: "Document the network destinations in SKILL.md.",
         });
       }
 
       if (wgetLine >= 0) {
         findings.push({
           id: id(),
-          severity: "HIGH",
+          severity: "MEDIUM",
           category: "network",
           title: "File download via wget",
           description: "wget is used to download remote files.",
@@ -382,7 +451,7 @@ export function analyzeNetwork(files: SkillFile[]): SkillFinding[] {
             wgetCount > 1
               ? `wget (found ${wgetCount} times)`
               : lines[wgetLine - 1]?.trim().slice(0, 200) ?? "wget",
-          recommendation: "Document and justify network usage.",
+          recommendation: "Document the download sources in SKILL.md.",
         });
       }
     }

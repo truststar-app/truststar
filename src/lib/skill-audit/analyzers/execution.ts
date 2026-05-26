@@ -1,9 +1,19 @@
 import type { SkillFile, SkillFinding } from "../types";
 
 function hasVariableArg(line: string, funcName: string): boolean {
-  // Check if the argument to a function is a variable (not a string literal)
   const regex = new RegExp(`${funcName}\\s*\\(\\s*(['"\`])`);
   return !regex.test(line);
+}
+
+function isInStringContext(line: string, pattern: RegExp): boolean {
+  // Heuristic: if an odd number of unescaped quote chars precede the match,
+  // the match is likely inside a string literal.
+  const match = line.search(pattern);
+  if (match < 0) return false;
+  const before = line.slice(0, match);
+  const dq = (before.match(/(?<!\\)"/g) ?? []).length;
+  const sq = (before.match(/(?<!\\)'/g) ?? []).length;
+  return dq % 2 !== 0 || sq % 2 !== 0;
 }
 
 export function analyzeExecution(files: SkillFile[]): SkillFinding[] {
@@ -40,7 +50,8 @@ export function analyzeExecution(files: SkillFile[]): SkillFinding[] {
 
       if (isJS) {
         // eval() — CRITICAL if with variable, MEDIUM if literal
-        if (/\beval\s*\(/.test(line)) {
+        // Skip if eval() appears inside a string literal context (e.g., in a description/title string)
+        if (/\beval\s*\(/.test(line) && !isInStringContext(line, /\beval\s*\(/)) {
           const isLiteral = /\beval\s*\(['"`][^'"`]*['"`]\s*\)/.test(line);
           const key = isLiteral ? "eval-literal" : "eval-dynamic";
           if (once(key)) {

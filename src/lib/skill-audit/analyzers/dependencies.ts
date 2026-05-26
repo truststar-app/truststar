@@ -1,14 +1,58 @@
 import type { SkillFile, SkillFinding } from "../types";
 
 const POPULAR_NPM = [
-  "react", "react-dom", "next", "express", "lodash", "axios", "moment",
-  "webpack", "babel-core", "typescript", "eslint", "prettier", "jest",
-  "mocha", "chai", "passport", "mongoose", "sequelize", "knex", "pg",
-  "mysql2", "redis", "socket.io", "cors", "helmet", "dotenv", "uuid",
-  "chalk", "commander", "inquirer", "yargs", "minimist", "glob", "rimraf",
-  "mkdirp", "async", "bluebird", "rxjs", "ramda", "underscore", "jquery",
-  "vue", "angular", "svelte", "tailwindcss", "bootstrap", "sass", "less",
-  "nodemon", "concurrently",
+  // Frameworks
+  "react", "react-dom", "react-native", "next", "nuxt", "vue", "angular", "svelte",
+  "express", "fastify", "koa", "hapi", "nestjs",
+  // Build tools
+  "webpack", "vite", "esbuild", "rollup", "parcel", "turbo", "tsup",
+  "babel-core", "@babel/core",
+  // TypeScript / runtime
+  "typescript", "ts-node", "tsx", "tslib", "tsd",
+  // Linters / formatters
+  "eslint", "prettier", "oxlint", "biome", "standard", "jshint", "xo",
+  // Test frameworks
+  "jest", "vitest", "mocha", "jasmine", "ava", "tap", "qunit",
+  "cypress", "playwright", "puppeteer",
+  "sinon", "nock", "supertest", "chai",
+  // Coverage
+  "c8", "nyc", "istanbul",
+  // HTTP clients
+  "axios", "got", "node-fetch", "undici", "ky", "superagent", "cross-fetch",
+  // General utilities
+  "lodash", "underscore", "ramda", "rxjs", "async", "bluebird",
+  "moment", "date-fns", "dayjs", "luxon",
+  "chalk", "commander", "inquirer", "yargs", "minimist", "meow",
+  "dotenv", "cors", "helmet", "uuid", "nanoid", "cuid",
+  "glob", "globby", "fast-glob", "chokidar", "rimraf", "mkdirp", "del",
+  "execa", "ora", "listr", "boxen", "slash", "tempy", "debug", "semver",
+  "cross-env", "npm-run-all", "concurrently", "nodemon",
+  // Database / ORM
+  "mongoose", "sequelize", "knex", "typeorm", "prisma",
+  "pg", "mysql2", "redis", "ioredis", "mongodb", "sqlite3", "better-sqlite3",
+  // Networking
+  "socket.io", "ws",
+  // State management
+  "redux", "zustand", "jotai", "recoil", "mobx", "immer", "xstate",
+  // Validation
+  "zod", "joi", "yup", "ajv", "valibot",
+  // Auth / Security
+  "passport", "jsonwebtoken", "bcrypt", "dompurify",
+  // Logging
+  "pino", "winston", "bunyan", "morgan",
+  // GraphQL
+  "graphql", "apollo",
+  // Processing
+  "sharp", "jimp", "cheerio", "jsdom", "marked", "showdown",
+  "highlight.js", "prismjs",
+  // CSS / UI
+  "bootstrap", "tailwindcss", "sass", "less", "jquery",
+  // Visualization
+  "d3", "three", "chart.js",
+  // Release / git tools
+  "husky", "lint-staged", "np", "release-it", "changesets", "patch-package",
+  // Misc
+  "multer", "formidable", "validator", "matcha", "jsr",
 ];
 
 const POPULAR_PIP = [
@@ -48,8 +92,13 @@ function detectTyposquatting(
   popularList: string[]
 ): string | null {
   const lower = pkgName.toLowerCase();
+  // Exact match in any position takes priority
+  if (popularList.includes(lower)) return null;
+  // Short names (≤4 chars) produce too many coincidental matches
+  if (lower.length <= 4) return null;
   for (const popular of popularList) {
-    if (lower === popular) return null; // Exact match — not typosquatting
+    // Skip short popular names for fuzzy comparison — same reason
+    if (popular.length <= 4) continue;
     const dist = levenshtein(lower, popular);
     if (dist <= 2 && dist > 0) {
       return popular;
