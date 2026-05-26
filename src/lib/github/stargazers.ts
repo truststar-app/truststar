@@ -1,7 +1,7 @@
 import { fetchStargazers, githubFetch } from "./client";
 import type { GitHubUser, GitHubUserDetail } from "../types";
 
-const MAX_SAMPLE_SIZE = 200;
+const MAX_SAMPLE_SIZE = 500;
 const PER_PAGE = 100;
 
 type RawStargazer = {

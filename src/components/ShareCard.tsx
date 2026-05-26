@@ -247,7 +247,8 @@ function BadgeSection({ owner, repo }: { owner: string; repo: string }) {
       <img
         src={`/api/badge/${owner}/${repo}`}
         alt="TrustStar badge"
-        style={{ display: "block" }}
+        height={20}
+        style={{ display: "block", height: 20, width: "auto" }}
       />
 
       {/* Snippet */}
