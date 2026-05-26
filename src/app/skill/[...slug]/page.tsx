@@ -2,7 +2,7 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import type { ReactNode } from "react";
 import type { SkillSafetyScore, SkillFinding } from "@/lib/skill-audit/types";
-import QRShare from "@/components/QRShare";
+import ShareCard from "@/components/ShareCard";
 
 async function getSkillReport(
   owner: string,
@@ -285,9 +285,10 @@ export default async function SkillReportPage({
         </div>
 
         {/* QR share */}
-        <QRShare
+        <ShareCard
           url={`https://truststar.co/skill/${owner}/${repo}`}
           filename={`${owner}-${repo}`}
+          analyzedAt={report.analyzedAt}
         />
       </div>
     </main>

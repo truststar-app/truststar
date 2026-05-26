@@ -1,9 +1,8 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import type { ReactNode } from "react";
-import BadgeShare from "@/components/BadgeShare";
 import { ReanalyzeButton } from "@/components/ReanalyzeButton";
-import QRShare from "@/components/QRShare";
+import ShareCard from "@/components/ShareCard";
 import type { TrustScore, TrustLabel } from "@/lib/types";
 
 // ─── Data fetching ────────────────────────────────────────────────────────────
@@ -305,13 +304,12 @@ export default async function ReportPage({
           </div>
         </div>
 
-        {/* Badge share */}
-        <BadgeShare owner={owner} repo={repo} />
-
-        {/* QR share */}
-        <QRShare
+        {/* Share card: badge + QR unified */}
+        <ShareCard
           url={`https://truststar.co/report/${owner}/${repo}`}
           filename={`${owner}-${repo}`}
+          analyzedAt={report.analyzedAt}
+          badge={{ owner, repo }}
         />
 
         {/* Go Further */}

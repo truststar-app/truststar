@@ -2,7 +2,7 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import type { ReactNode } from "react";
 import type { NpmCheckResult, NpmSignal } from "@/lib/npm/analyzer";
-import QRShare from "@/components/QRShare";
+import ShareCard from "@/components/ShareCard";
 
 // ─── Data fetching ─────────────────────────────────────────────────────────────
 
@@ -902,9 +902,10 @@ export default async function NpmReportPage({
         </div>
 
         {/* QR share */}
-        <QRShare
+        <ShareCard
           url={`https://truststar.co/npm/${packageName}`}
           filename={packageName.replace(/\//g, "-")}
+          analyzedAt={report.analyzedAt}
         />
 
         {/* Back */}
