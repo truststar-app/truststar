@@ -50,7 +50,7 @@ export async function getRecentAudits(
         rev: true,
       });
       const parsed = raw
-        .map((item) => { try { return JSON.parse(item) as RecentAudit; } catch { return null; } })
+        .map((item) => { try { return (typeof item === "string" ? JSON.parse(item) : item) as RecentAudit; } catch { return null; } })
         .filter((a): a is RecentAudit => a !== null);
       const filtered = type ? parsed.filter((a) => a.type === type) : parsed;
       return { audits: filtered.slice(0, limit), total: filtered.length };
