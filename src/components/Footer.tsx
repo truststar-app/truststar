@@ -62,6 +62,7 @@ export default function Footer() {
           <FooterLink href="/discover">Discover</FooterLink>
           <FooterLink href="/recent">Recent Audits</FooterLink>
           <FooterLink href="/api-docs">API</FooterLink>
+          <FooterLink href="/how-it-works#contact">Contact</FooterLink>
         </FooterCol>
 
         <FooterCol title="Open Source">

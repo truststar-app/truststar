@@ -401,6 +401,7 @@ function EndpointCard({ endpoint }: { endpoint: Endpoint }) {
       </p>
 
       <div
+        className="api-docs-endpoint-grid"
         style={{
           display: "grid",
           gridTemplateColumns: endpoint.bodyExample ? "1fr 1fr" : "1fr",

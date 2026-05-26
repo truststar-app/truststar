@@ -233,6 +233,39 @@ body {
   }
 }
 
+@media (max-width: 640px) {
+  .search-bar-outer {
+    flex-direction: column;
+    min-height: auto;
+    border-radius: 12px;
+  }
+
+  .search-bar-modes {
+    border-right: none;
+    border-bottom: 1px solid var(--border);
+    padding: 8px 10px;
+    width: 100%;
+  }
+
+  .search-bar-input {
+    padding: 14px 16px;
+    font-size: 16px;
+    border-bottom: 1px solid var(--border);
+    width: 100%;
+  }
+
+  .search-bar-input::placeholder {
+    font-size: 14px;
+  }
+
+  .search-bar-submit {
+    padding: 14px;
+    border-radius: 0 0 10px 10px;
+    font-size: 15px;
+    width: 100%;
+  }
+}
+
 .dd-item-hover { transition: background 0.1s; }
 .dd-item-hover:hover { background: var(--bg-hover) !important; }
 
@@ -410,6 +443,44 @@ body {
 /* ─── No horizontal overflow ─────────────────────────────────────────────────── */
 
 body { overflow-x: hidden; }
+
+/* ─── How it Works page grids ────────────────────────────────────────────────── */
+
+.hiw-problem-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
+}
+
+.hiw-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
+}
+
+.hiw-contact-form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+
+@media (max-width: 700px) {
+  .hiw-problem-grid,
+  .hiw-stats-grid {
+    grid-template-columns: 1fr;
+  }
+  .hiw-contact-form-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ─── API Docs responsive grid ───────────────────────────────────────────────── */
+
+@media (max-width: 640px) {
+  .api-docs-endpoint-grid {
+    grid-template-columns: 1fr !important;
+  }
+}
 
 /* ─── Header mobile hamburger ────────────────────────────────────────────────── */
 

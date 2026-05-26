@@ -235,6 +235,7 @@ export default function Header() {
               <DropdownDivider />
               <DropdownItem href="/badge" icon={<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>} title="Badge" desc="Embed your trust score" />
               <DropdownItem href="/recent" icon={<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M16.24 7.76a6 6 0 0 1 0 8.49m-8.48-.01a6 6 0 0 1 0-8.49m11.31-2.82a10 10 0 0 1 0 14.14m-14.14 0a10 10 0 0 1 0-14.14"/><circle cx="12" cy="12" r="2"/></svg>} title="Recent Audits" desc="Live community feed" />
+              <DropdownItem href="/how-it-works#contact" icon={<MailIcon />} title="Contact" desc="Get in touch" />
               <DropdownDivider />
               <DropdownItem href="https://github.com/truststar-app/truststar" icon={<GitHubIcon />} title="GitHub" desc="Open source — contribute" />
             </div>
@@ -305,6 +306,7 @@ export default function Header() {
             {mobileNavLink("/api-docs", "API")}
             <div style={{ height: 1, background: "var(--border)", margin: "8px 0" }} />
             {mobileNavLink("/badge", "Badge")}
+            {mobileNavLink("/how-it-works#contact", "Contact")}
             {mobileNavLink("https://github.com/truststar-app/truststar", "GitHub", true)}
           </nav>
 
@@ -335,6 +337,15 @@ function GitHubIcon() {
   return (
     <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor">
       <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z" />
+    </svg>
+  );
+}
+
+function MailIcon() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
+      <polyline points="22,6 12,13 2,6"/>
     </svg>
   );
 }
