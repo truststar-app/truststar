@@ -1,3 +1,5 @@
+import { getRedis } from "./redis";
+
 export type RecentAudit = {
   id: string;
   type: "trust-score" | "skill-audit" | "npm-check";
@@ -7,19 +9,60 @@ export type RecentAudit = {
   analyzedAt: string;
 };
 
-const MAX_ENTRIES = 100;
+const REDIS_KEY = "recent-audits";
+const MAX_ENTRIES = 500;
 
-const store: RecentAudit[] = [];
+// ─── Write ───────────────────────────────────────────────────────────────────
 
 export function addAudit(audit: RecentAudit): void {
-  store.unshift(audit);
-  if (store.length > MAX_ENTRIES) store.splice(MAX_ENTRIES);
+  const redis = getRedis();
+  if (!redis) return;
+
+  const score = new Date(audit.analyzedAt).getTime();
+  const member = JSON.stringify(audit);
+
+  // fire-and-forget — never blocks the API response
+  redis
+    .zadd(REDIS_KEY, { score, member })
+    .then(() =>
+      redis.zremrangebyrank(REDIS_KEY, 0, -(MAX_ENTRIES + 1))
+    )
+    .catch(() => {
+      // Redis unavailable — silent fail
+    });
 }
 
-export function getRecentAudits(limit = 50): RecentAudit[] {
-  const cap = Math.min(limit, MAX_ENTRIES);
-  return store
-    .slice()
-    .sort((a, b) => new Date(b.analyzedAt).getTime() - new Date(a.analyzedAt).getTime())
-    .slice(0, cap);
+// ─── Read ────────────────────────────────────────────────────────────────────
+
+export async function getRecentAudits(
+  limit = 20,
+  type?: RecentAudit["type"] | null
+): Promise<{ audits: RecentAudit[]; total: number }> {
+  const redis = getRedis();
+  if (!redis) return { audits: [], total: 0 };
+
+  try {
+    // Fetch a larger window so we can filter by type and still hit the limit
+    const fetchCount = type ? Math.min(limit * 10, MAX_ENTRIES) : limit;
+    const raw = await redis.zrange<string[]>(REDIS_KEY, 0, fetchCount - 1, {
+      rev: true,
+    });
+
+    const parsed = raw
+      .map((item) => {
+        try {
+          return JSON.parse(item) as RecentAudit;
+        } catch {
+          return null;
+        }
+      })
+      .filter((a): a is RecentAudit => a !== null);
+
+    const filtered = type ? parsed.filter((a) => a.type === type) : parsed;
+    const audits = filtered.slice(0, limit);
+
+    return { audits, total: filtered.length };
+  } catch {
+    return { audits: [], total: 0 };
+  }
 }
