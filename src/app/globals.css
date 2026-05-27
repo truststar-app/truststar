@@ -540,12 +540,65 @@ body { overflow-x: hidden; }
   gap: 40px;
 }
 
+@media (max-width: 900px) {
+  .footer-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: 28px 32px;
+  }
+  footer { padding: 36px 24px 28px !important; }
+}
+
 @media (max-width: 640px) {
   .footer-grid {
     grid-template-columns: 1fr;
     gap: 24px;
   }
   footer { padding: 32px 20px 24px !important; }
+}
+
+/* ─── Badge page responsive ──────────────────────────────────────────────────── */
+
+.badge-page-outer {
+  max-width: var(--max-w);
+  margin: 0 auto;
+  padding: 56px 32px 80px;
+}
+
+.badge-hero-title {
+  font-size: 42px;
+  font-weight: 700;
+  letter-spacing: -1.5px;
+  color: var(--text-primary);
+  margin-bottom: 12px;
+}
+
+.badge-search-wrap {
+  max-width: 480px;
+  width: 100%;
+  margin-bottom: 20px;
+}
+
+@media (max-width: 768px) {
+  .badge-page-outer {
+    padding: 40px 24px 64px;
+  }
+  .badge-hero-title {
+    font-size: 32px;
+    letter-spacing: -1px;
+  }
+  .badge-search-wrap {
+    max-width: 100%;
+  }
+}
+
+@media (max-width: 480px) {
+  .badge-page-outer {
+    padding: 32px 16px 56px;
+  }
+  .badge-hero-title {
+    font-size: 26px;
+    letter-spacing: -0.6px;
+  }
 }
 
 /* ─── Report page responsive grids ───────────────────────────────────────────── */

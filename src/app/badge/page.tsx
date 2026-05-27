@@ -172,7 +172,7 @@ function RepoSearchInput({
   }
 
   return (
-    <div ref={wrapperRef} style={{ position: "relative", maxWidth: 480 }}>
+    <div ref={wrapperRef} style={{ position: "relative", width: "100%" }}>
       <div style={{ position: "relative" }}>
         <input
           type="text"
@@ -315,7 +315,7 @@ export default function BadgePage() {
 
   return (
     <main style={{ minHeight: "100vh", background: "var(--bg-base)" }}>
-      <div style={{ maxWidth: "var(--max-w)", margin: "0 auto", padding: "56px 32px 80px" }}>
+      <div className="badge-page-outer">
 
         {/* Breadcrumb */}
         <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 32, fontSize: 14, color: "var(--text-tertiary)" }}>
@@ -336,7 +336,7 @@ export default function BadgePage() {
             Growth Tool
           </div>
 
-          <h1 style={{ fontSize: 42, fontWeight: 700, letterSpacing: "-1.5px", color: "var(--text-primary)", marginBottom: 12 }}>
+          <h1 className="badge-hero-title">
             TrustStar Badge
           </h1>
           <p style={{ fontSize: 16, color: "var(--text-secondary)", lineHeight: 1.65 }}>
@@ -433,7 +433,7 @@ export default function BadgePage() {
           </p>
 
           {/* Autocomplete input */}
-          <div style={{ marginBottom: 20 }}>
+          <div className="badge-search-wrap">
             <RepoSearchInput value={input} onChange={setInput} />
           </div>
 
