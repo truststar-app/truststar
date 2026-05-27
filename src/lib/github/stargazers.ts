@@ -125,17 +125,34 @@ export async function fetchStargazersWithDetails(
   return details;
 }
 
+// fetchAuthenticityData:
+//   - coordLockstepScore: always computed from starredMap (no extra API calls)
+//   - lowActivityRatio + burstLowActivityRatio: only fetched when fetchEvents=true
 export async function fetchAuthenticityData(
   users: GitHubUserDetail[],
-  _owner: string,
-  _repo: string
+  starredMap: Map<string, string[]>,
+  fetchEvents: boolean
 ): Promise<AuthenticitySignals> {
+  // Coordinated lockstep — uses starredMap already in memory, zero extra API calls
+  const userTimestamps = new Map(
+    users.map((u) => [u.login, new Date(u.starred_at).getTime()])
+  );
+  const coordLockstepScore = computeCoordLockstepScore(starredMap, userTimestamps);
+
+  if (!fetchEvents) {
+    return {
+      lowActivityRatio: estimateLowActivityRatio(users),
+      coordLockstepScore,
+      burstLowActivityRatio: 0,
+    };
+  }
+
+  // Events API — detects low-activity and shallow-activity accounts
   const SAMPLE_SIZE = 50;
   const BATCH_SIZE = 10;
   const sample = users.slice(0, SAMPLE_SIZE);
 
   const userEventTypes = new Map<string, string[]>();
-  const userRecentStars = new Map<string, { repo: string; starredAt: number }[]>();
 
   for (let i = 0; i < sample.length; i += BATCH_SIZE) {
     const batch = sample.slice(i, i + BATCH_SIZE);
@@ -143,20 +160,20 @@ export async function fetchAuthenticityData(
       batch.map(async (user) => {
         const data = await fetchUserEventData(user.login);
         userEventTypes.set(user.login, data.eventTypes);
-        userRecentStars.set(user.login, data.recentStars);
       })
     );
   }
 
   const lowActivityRatio = computeLowActivityRatio(sample, userEventTypes);
-  const coordLockstepScore = computeCoordLockstepScore(userRecentStars);
 
   const lowActivityLogins = new Set(
     sample
       .filter((u) => {
         const events = userEventTypes.get(u.login) ?? [];
-        const nonStar = events.filter((t) => t !== "WatchEvent" && t !== "ForkEvent");
-        return u.public_repos <= 1 && nonStar.length === 0;
+        const nonPassive = events.filter(
+          (t) => t !== "WatchEvent" && t !== "ForkEvent"
+        );
+        return u.public_repos <= 1 && nonPassive.length === 0;
       })
       .map((u) => u.login)
   );
@@ -170,8 +187,16 @@ export async function fetchLockstepData(
   owner: string,
   repo: string
 ): Promise<Map<string, string[]>> {
-  const LOCKSTEP_SAMPLE = 15;
-  const sample = users.slice(0, LOCKSTEP_SAMPLE);
+  const HALF = 15;
+  // Bias toward the burst period: take first 15 (oldest) + last 15 (most recent)
+  // Fake stars concentrate in recent bursts, so recent users are more suspicious
+  const first = users.slice(0, HALF);
+  const last = users.slice(-HALF);
+  const seen = new Set<string>();
+  const sample: GitHubUserDetail[] = [];
+  for (const u of [...first, ...last]) {
+    if (!seen.has(u.login)) { seen.add(u.login); sample.push(u); }
+  }
 
   const starredMap = new Map<string, string[]>();
 

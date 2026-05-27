@@ -105,23 +105,27 @@ export async function POST(request: NextRequest): Promise<NextResponse<TrustScor
 
     const starredMap = await fetchLockstepData(users, owner, repo);
 
-    // ── Authenticity signals (conditional — only fetch if cheap proxy signals suspicion) ──
+    // ── Authenticity signals ──────────────────────────────────────────────────
+    // Lockstep always computed (uses starredMap in memory — no extra API cost).
+    // Events API (low-activity detection) only called when cheap proxies signal suspicion.
 
     const simpleActivityRatio = estimateLowActivityRatio(users);
+    const noPublicRepoEstimate =
+      users.filter((u) => u.public_repos === 0).length / Math.max(users.length, 1);
     const prelimTemporal = scoreTemporal(users, {
       totalStars: repoInfo.stargazers_count,
       createdAt: repoInfo.created_at,
     });
-    const shouldFetchAuthenticity =
-      simpleActivityRatio > 0.15 || prelimTemporal.signals.velocityScore > 0.3;
+    const shouldFetchEvents =
+      simpleActivityRatio > 0.10 ||
+      noPublicRepoEstimate > 0.25 ||
+      prelimTemporal.signals.velocityScore > 0.3;
 
-    const authenticitySignals = shouldFetchAuthenticity
-      ? await fetchAuthenticityData(users, owner, repo)
-      : {
-          lowActivityRatio: simpleActivityRatio,
-          coordLockstepScore: 0,
-          burstLowActivityRatio: 0,
-        };
+    const authenticitySignals = await fetchAuthenticityData(
+      users,
+      starredMap,
+      shouldFetchEvents
+    );
 
     // ── Score calculation ─────────────────────────────────────────────────────
 

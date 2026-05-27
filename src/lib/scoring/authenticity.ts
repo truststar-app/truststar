@@ -17,7 +17,22 @@ export function estimateLowActivityRatio(users: GitHubUserDetail[]): number {
   return count / users.length;
 }
 
-// Confirmed classification using fetched event data
+// Contribution events = real GitHub activity (commits, PRs, issues, etc.)
+const CONTRIBUTION_EVENTS = new Set([
+  "PushEvent",
+  "PullRequestEvent",
+  "IssuesEvent",
+  "IssueCommentEvent",
+  "CreateEvent",
+  "CommitCommentEvent",
+  "PullRequestReviewEvent",
+  "PullRequestReviewCommentEvent",
+]);
+
+// Confirmed classification using fetched event data.
+// Catches two patterns:
+//   1. Classic bot: ≤1 repo + events only WatchEvent/ForkEvent
+//   2. Shallow-activity (premium fake): has repos/events but zero real contributions
 export function computeLowActivityRatio(
   users: GitHubUserDetail[],
   userEventTypes: Map<string, string[]>
@@ -25,46 +40,67 @@ export function computeLowActivityRatio(
   if (users.length === 0) return 0;
   let count = 0;
   for (const user of users) {
-    if (user.public_repos > 1) continue;
     const events = userEventTypes.get(user.login) ?? [];
-    const nonStarEvents = events.filter(
-      (t) => t !== "WatchEvent" && t !== "ForkEvent"
-    );
-    if (nonStarEvents.length === 0) count++;
+
+    // Classic bot: single-repo account with only passive events
+    if (user.public_repos <= 1) {
+      const nonPassive = events.filter(
+        (t) => t !== "WatchEvent" && t !== "ForkEvent"
+      );
+      if (nonPassive.length === 0) { count++; continue; }
+    }
+
+    // Shallow-activity: has repos and events, but zero real contributions
+    if (events.length >= 5 && !events.some((t) => CONTRIBUTION_EVENTS.has(t))) {
+      count++;
+    }
   }
   return count / users.length;
 }
 
 // ─── Coordinated Lockstep ─────────────────────────────────────────────────────
-// Simplified CopyCatch: detect clusters of accounts that starred the same repos
-// within a 7-day window. Returns fraction of sample in clusters.
+// Simplified CopyCatch: detect clusters of accounts that:
+//   a) starred the target repo within the same 14-day window
+//   b) share ≥ 2 other repos in common (from their starred-repos list)
+//
+// Uses the starredMap (other repos each user has starred) + timestamps of when
+// they starred the TARGET repo. No extra API calls needed.
 
 export function computeCoordLockstepScore(
-  userRecentStars: Map<string, { repo: string; starredAt: number }[]>
+  starredMap: Map<string, string[]>,
+  userTimestamps: Map<string, number>
 ): number {
-  if (userRecentStars.size < 5) return 0;
+  if (starredMap.size < 3) return 0;
 
-  const WINDOW_MS = 7 * 24 * 60 * 60 * 1000;
-  const MIN_SHARED = 3;
-  const MIN_CLUSTER = 5;
+  const WINDOW_MS = 14 * 24 * 60 * 60 * 1000;
+  const MIN_SHARED = 2;
+  const MIN_CLUSTER = 3;
 
-  const users = Array.from(userRecentStars.entries());
+  const entries = Array.from(starredMap.entries());
   const inCluster = new Set<string>();
 
-  for (let i = 0; i < users.length; i++) {
-    for (let j = i + 1; j < users.length; j++) {
-      const [loginA, starsA] = users[i];
-      const [loginB, starsB] = users[j];
-      if (starsA.length === 0 || starsB.length === 0) continue;
+  for (let i = 0; i < entries.length; i++) {
+    for (let j = i + 1; j < entries.length; j++) {
+      const [loginA, reposA] = entries[i];
+      const [loginB, reposB] = entries[j];
 
-      let shared = 0;
-      for (const a of starsA) {
-        if (starsB.some(
-          (b) => b.repo === a.repo && Math.abs(b.starredAt - a.starredAt) <= WINDOW_MS
-        )) {
-          shared++;
-        }
+      // Both need at least some other starred repos for meaningful overlap
+      if (reposA.length === 0 || reposB.length === 0) continue;
+
+      // Temporal gate: only compare accounts that starred the target close together
+      const tsA = userTimestamps.get(loginA);
+      const tsB = userTimestamps.get(loginB);
+      if (tsA !== undefined && tsB !== undefined) {
+        if (Math.abs(tsA - tsB) > WINDOW_MS) continue;
       }
+
+      // Count shared repos
+      const setA = new Set(reposA);
+      let shared = 0;
+      for (const r of reposB) {
+        if (setA.has(r)) { shared++; }
+      }
+
       if (shared >= MIN_SHARED) {
         inCluster.add(loginA);
         inCluster.add(loginB);
@@ -73,7 +109,7 @@ export function computeCoordLockstepScore(
   }
 
   if (inCluster.size < MIN_CLUSTER) return 0;
-  return inCluster.size / users.length;
+  return inCluster.size / starredMap.size;
 }
 
 // ─── Burst Low-Activity Ratio ────────────────────────────────────────────────
