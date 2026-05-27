@@ -537,23 +537,23 @@ body { overflow-x: hidden; }
   margin: 0 auto;
   display: grid;
   grid-template-columns: 1.6fr 1fr 1fr 1fr;
-  gap: 40px;
+  gap: 20px 32px;
 }
 
 @media (max-width: 900px) {
   .footer-grid {
     grid-template-columns: 1fr 1fr;
-    gap: 28px 32px;
+    gap: 16px 24px;
   }
-  footer { padding: 36px 24px 28px !important; }
+  footer { padding: 16px 24px 12px !important; }
 }
 
 @media (max-width: 640px) {
   .footer-grid {
-    grid-template-columns: 1fr;
-    gap: 24px;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px 16px;
   }
-  footer { padding: 32px 20px 24px !important; }
+  footer { padding: 14px 20px 10px !important; }
 }
 
 /* ─── Badge page responsive ──────────────────────────────────────────────────── */

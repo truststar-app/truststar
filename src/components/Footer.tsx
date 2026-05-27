@@ -10,7 +10,7 @@ export default function Footer() {
     <footer
       style={{
         borderTop: "1px solid var(--border)",
-        padding: "48px 24px 32px",
+        padding: "clamp(8px, 1.6vh, 16px) 24px clamp(6px, 1.2vh, 12px)",
       }}
     >
       <div className="footer-grid">
@@ -73,8 +73,8 @@ export default function Footer() {
       <div
         style={{
           maxWidth: "var(--max-w)",
-          margin: "20px auto 0",
-          paddingTop: 16,
+          margin: "8px auto 0",
+          paddingTop: 8,
           borderTop: "1px solid var(--border-subtle)",
           display: "flex",
           justifyContent: "space-between",
@@ -118,7 +118,7 @@ function FooterCol({ title, children }: { title: string; children: React.ReactNo
           color: "var(--text-secondary)",
           textTransform: "uppercase",
           letterSpacing: "0.6px",
-          marginBottom: 10,
+          marginBottom: 6,
         }}
       >
         {title}
@@ -142,7 +142,7 @@ function FooterLink({
     fontSize: 13,
     color: "var(--text-tertiary)",
     textDecoration: "none",
-    padding: "3px 0",
+    padding: "2px 0",
     transition: "color 0.12s",
   };
 
