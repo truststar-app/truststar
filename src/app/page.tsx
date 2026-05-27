@@ -151,7 +151,7 @@ const PHRASE_ROWS: PhraseRowData[] = [
   ]},
   { speed: 97, rtl: true, mobileHide: false, phrases: [
     { text: "Are these stars organic?", type: "question", size: 17 },
-    { text: "1 Lambda function = 1M fake downloads per week.", type: "stat", size: 20 },
+    { text: "npm downloads are trivially inflatable. 1 Lambda function = 1M fake downloads per week.", type: "stat", size: 20 },
     { text: "Is the last commit from a real person?", type: "question", size: 15 },
   ]},
   { speed: 155, rtl: false, mobileHide: false, phrases: [
