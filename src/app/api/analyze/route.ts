@@ -10,7 +10,7 @@ import { addAudit } from "@/lib/recent-audits";
 import { rateLimit, getClientIp } from "@/lib/rate-limit";
 import type { TrustScore, ApiError } from "@/lib/types";
 
-export const maxDuration = 30;
+export const maxDuration = 45;
 
 function parseGitHubUrl(input: string): { owner: string; repo: string } | null {
   // Accepts: https://github.com/owner/repo or owner/repo
