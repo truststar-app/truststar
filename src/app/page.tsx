@@ -286,7 +286,7 @@ const PREVIEW_DATA: Record<Mode, {
   repo: {
     icon: REPO_ICON,
     title: "Trust Score",
-    quote: "Over 6M fake stars detected on GitHub. For $0.01 per star, anyone can fake popularity.",
+    quote: "Over 6M fake stars detected on GitHub. For $0.03 per star, anyone can fake popularity.",
     signals: [
       { color: "green",  text: "Stargazer profile analysis" },
       { color: "green",  text: "Account age & activity" },
@@ -668,11 +668,6 @@ export default function HomePage() {
     return () => window.removeEventListener("resize", check);
   }, []);
 
-  // Lock scroll on homepage — everything fits in one viewport
-  useEffect(() => {
-    document.body.style.overflow = "hidden";
-    return () => { document.body.style.overflow = ""; };
-  }, []);
 
   const PLACEHOLDERS: Record<Mode, string> = isMobile
     ? { repo: "owner/repo", npm: "package name", skill: "owner/repo" }
@@ -941,6 +936,8 @@ export default function HomePage() {
           </div>
 
         </section>
+
+        <WaitlistSection />
 
       </main>
     </>
