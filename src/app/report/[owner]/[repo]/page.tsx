@@ -196,6 +196,25 @@ export default async function ReportPage({
               {cfg.description}
             </p>
 
+            {report.labelOverrideReason && (
+              <div
+                style={{
+                  marginTop: 8,
+                  padding: "7px 12px",
+                  background: cfg.bgCard,
+                  border: `1px solid ${cfg.borderCard}`,
+                  borderRadius: "var(--radius)",
+                  fontSize: 12,
+                  color: cfg.color,
+                  lineHeight: 1.55,
+                  fontWeight: 500,
+                  maxWidth: 520,
+                }}
+              >
+                {report.labelOverrideReason}
+              </div>
+            )}
+
             <div
               style={{
                 marginTop: 12,
@@ -473,21 +492,21 @@ function getLabelConfig(label: TrustLabel): LabelConfig {
       bgCard: "var(--caution-bg)",
       borderCard: "#FEF08A",
       ring: "rgba(202,138,4,0.08)",
-      description: "Mixed signals detected. The repo looks mostly healthy but some authenticity indicators warrant attention.",
+      description: "Mixed signals detected. Some stargazer authenticity indicators warrant attention before depending on this project.",
     },
     SUSPICIOUS: {
       color: "var(--suspicious)",
       bgCard: "var(--suspicious-bg)",
       borderCard: "#FDE68A",
       ring: "rgba(217,119,6,0.08)",
-      description: "Some signals are concerning. A manual review is recommended before depending on this project.",
+      description: "Significant anomalies detected. Multiple stargazer metrics suggest artificial popularity inflation. Investigate further before depending on this project.",
     },
     DANGEROUS: {
       color: "var(--dangerous)",
       bgCard: "var(--dangerous-bg)",
       borderCard: "#FECACA",
       ring: "rgba(220,38,38,0.08)",
-      description: "Strongly suspicious signals. This repo shows patterns consistent with a fake star campaign.",
+      description: "Critical anomalies detected. Stargazer patterns are consistent with known fake star campaigns. Exercise extreme caution.",
     },
     NEW: {
       color: "var(--text-secondary)",

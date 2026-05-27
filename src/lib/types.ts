@@ -88,7 +88,9 @@ export type TrustScore = {
     lowActivityRatio?: number;
     coordLockstepScore?: number;
     burstLowActivityRatio?: number;
+    ghostAccountsRatio?: number;
   };
+  labelOverrideReason?: string;
   analyzedAt: string;
   sampleSize: number;
   samplingMethod?: "stratified" | "default";

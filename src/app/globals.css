@@ -271,6 +271,11 @@ body {
 .dd-item-hover { transition: background 0.1s; }
 .dd-item-hover:hover { background: var(--bg-hover) !important; }
 
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
 .gradient-text {
   background: linear-gradient(135deg, var(--accent) 0%, #E85D5D 100%);
   -webkit-background-clip: text;

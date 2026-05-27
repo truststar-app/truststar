@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect, FormEvent } from "react";
+import { useState, useRef, useEffect, useCallback, FormEvent, KeyboardEvent } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 
@@ -592,6 +592,108 @@ export default function HomePage() {
   const [error, setError] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
+  // ── Autocomplete state ────────────────────────────────────────────────────
+  type RepoSuggestion = {
+    full_name: string;
+    description: string | null;
+    stargazers_count: number;
+    language: string | null;
+  };
+  const [suggestions, setSuggestions] = useState<RepoSuggestion[]>([]);
+  const [showDropdown, setShowDropdown] = useState(false);
+  const [activeIndex, setActiveIndex] = useState(-1);
+  const [searching, setSearching] = useState(false);
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const searchWrapperRef = useRef<HTMLDivElement>(null);
+
+  // Close dropdown on outside click
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (searchWrapperRef.current && !searchWrapperRef.current.contains(e.target as Node)) {
+        setShowDropdown(false);
+        setActiveIndex(-1);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  // Debounced GitHub search
+  useEffect(() => {
+    if (mode !== "repo") {
+      setSuggestions([]);
+      setShowDropdown(false);
+      return;
+    }
+    const val = url.trim();
+    if (val.length < 3) {
+      setSuggestions([]);
+      setShowDropdown(false);
+      return;
+    }
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(async () => {
+      setSearching(true);
+      try {
+        const res = await fetch(`/api/github-search?q=${encodeURIComponent(val)}`);
+        if (res.ok) {
+          const data = (await res.json()) as { items: RepoSuggestion[] };
+          setSuggestions(data.items ?? []);
+          setShowDropdown((data.items ?? []).length > 0);
+          setActiveIndex(-1);
+        }
+      } catch {
+        // silently ignore — don't show error for search failures
+      } finally {
+        setSearching(false);
+      }
+    }, 300);
+    return () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+    };
+  }, [url, mode]);
+
+  const selectSuggestion = useCallback((item: RepoSuggestion) => {
+    const [owner, repo] = item.full_name.split("/");
+    setUrl(item.full_name);
+    setShowDropdown(false);
+    setActiveIndex(-1);
+    setSuggestions([]);
+    setLoading(true);
+    fetch("/api/analyze", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ owner, repo }),
+    })
+      .then(() => router.push(`/report/${owner}/${repo}`))
+      .catch((err: unknown) => {
+        setError(err instanceof Error ? err.message : "An error occurred");
+        setLoading(false);
+      });
+  }, [router]);
+
+  function handleKeyDown(e: KeyboardEvent<HTMLInputElement>) {
+    if (!showDropdown || suggestions.length === 0) return;
+    if (e.key === "ArrowDown") {
+      e.preventDefault();
+      setActiveIndex((i) => Math.min(i + 1, suggestions.length - 1));
+    } else if (e.key === "ArrowUp") {
+      e.preventDefault();
+      setActiveIndex((i) => Math.max(i - 1, -1));
+    } else if (e.key === "Enter" && activeIndex >= 0) {
+      e.preventDefault();
+      selectSuggestion(suggestions[activeIndex]);
+    } else if (e.key === "Escape") {
+      setShowDropdown(false);
+      setActiveIndex(-1);
+    }
+  }
+
+  function formatStars(n: number): string {
+    if (n >= 1000) return `${(n / 1000).toFixed(n >= 10000 ? 0 : 1)}k`;
+    return String(n);
+  }
+
   function parseGitHubUrl(input: string): { owner: string; repo: string } | null {
     const urlMatch = input.match(/github\.com\/([^/]+)\/([^/\s?#]+)/);
     if (urlMatch) return { owner: urlMatch[1], repo: urlMatch[2].replace(/\.git$/, "") };
@@ -740,56 +842,138 @@ export default function HomePage() {
               Verify any open source project before you depend on it.
             </p>
 
-            <form onSubmit={handleSubmit}>
-              <div className={`search-bar-outer${error ? " has-error" : ""}`}>
-                <div className="search-bar-modes">
-                  {(["repo", "npm", "skill"] as Mode[]).map((m) => (
-                    <button
-                      key={m}
-                      type="button"
-                      onClick={() => { setMode(m); setError(null); }}
-                      className="search-bar-mode-btn"
-                      style={{
-                        background: mode === m ? "var(--accent)" : "none",
-                        color: mode === m ? "#fff" : "var(--text-secondary)",
-                      }}
-                    >
-                      {m === "repo" ? "Repo" : m === "npm" ? "npm" : "Code"}
-                    </button>
-                  ))}
+            <div ref={searchWrapperRef} style={{ position: "relative" }}>
+              <form onSubmit={handleSubmit}>
+                <div className={`search-bar-outer${error ? " has-error" : ""}`}>
+                  <div className="search-bar-modes">
+                    {(["repo", "npm", "skill"] as Mode[]).map((m) => (
+                      <button
+                        key={m}
+                        type="button"
+                        onClick={() => { setMode(m); setError(null); setShowDropdown(false); }}
+                        className="search-bar-mode-btn"
+                        style={{
+                          background: mode === m ? "var(--accent)" : "none",
+                          color: mode === m ? "#fff" : "var(--text-secondary)",
+                        }}
+                      >
+                        {m === "repo" ? "Repo" : m === "npm" ? "npm" : "Code"}
+                      </button>
+                    ))}
+                  </div>
+
+                  <div style={{ flex: 1, display: "flex", alignItems: "center", minWidth: 0 }}>
+                    <input
+                      ref={inputRef}
+                      type="text"
+                      value={url}
+                      onChange={(e) => setUrl(e.target.value)}
+                      onKeyDown={handleKeyDown}
+                      onFocus={() => { if (suggestions.length > 0) setShowDropdown(true); }}
+                      placeholder={PLACEHOLDERS[mode]}
+                      disabled={loading}
+                      autoFocus
+                      className="search-bar-input"
+                      style={{ flex: 1 }}
+                      autoComplete="off"
+                    />
+                    {searching && (
+                      <span
+                        style={{
+                          width: 16, height: 16, flexShrink: 0, marginRight: 12,
+                          border: "2px solid var(--border)",
+                          borderTopColor: "var(--accent)",
+                          borderRadius: "50%",
+                          display: "inline-block",
+                          animation: "spin 0.7s linear infinite",
+                        }}
+                      />
+                    )}
+                  </div>
+
+                  <button
+                    type="submit"
+                    disabled={loading || !url.trim()}
+                    className="search-bar-submit"
+                    style={{
+                      background: loading || !url.trim() ? "var(--bg-hover)" : "var(--accent)",
+                      color: loading || !url.trim() ? "var(--text-tertiary)" : "#fff",
+                      cursor: loading || !url.trim() ? "not-allowed" : "pointer",
+                    }}
+                  >
+                    Analyze
+                  </button>
                 </div>
 
-                <input
-                  ref={inputRef}
-                  type="text"
-                  value={url}
-                  onChange={(e) => setUrl(e.target.value)}
-                  placeholder={PLACEHOLDERS[mode]}
-                  disabled={loading}
-                  autoFocus
-                  className="search-bar-input"
-                />
+                {error && (
+                  <p style={{ marginTop: 8, fontSize: 12, color: "var(--accent)", maxWidth: 560, margin: "8px auto 0", textAlign: "left" }}>
+                    {error}
+                  </p>
+                )}
+              </form>
 
-                <button
-                  type="submit"
-                  disabled={loading || !url.trim()}
-                  className="search-bar-submit"
+              {/* Autocomplete dropdown */}
+              {showDropdown && suggestions.length > 0 && (
+                <div
                   style={{
-                    background: loading || !url.trim() ? "var(--bg-hover)" : "var(--accent)",
-                    color: loading || !url.trim() ? "var(--text-tertiary)" : "#fff",
-                    cursor: loading || !url.trim() ? "not-allowed" : "pointer",
+                    position: "absolute",
+                    top: "calc(100% + 6px)",
+                    left: "50%",
+                    transform: "translateX(-50%)",
+                    width: "100%",
+                    maxWidth: 768,
+                    background: "var(--bg-surface)",
+                    border: "1.5px solid var(--border)",
+                    borderRadius: 12,
+                    boxShadow: "0 8px 32px rgba(0,0,0,0.10)",
+                    overflow: "hidden",
+                    zIndex: 100,
                   }}
                 >
-                  Analyze
-                </button>
-              </div>
-
-              {error && (
-                <p style={{ marginTop: 8, fontSize: 12, color: "var(--accent)", maxWidth: 560, margin: "8px auto 0", textAlign: "left" }}>
-                  {error}
-                </p>
+                  {suggestions.map((item, i) => (
+                    <div
+                      key={item.full_name}
+                      className="dd-item-hover"
+                      onMouseDown={(e) => { e.preventDefault(); selectSuggestion(item); }}
+                      onMouseEnter={() => setActiveIndex(i)}
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 12,
+                        padding: "10px 16px",
+                        cursor: "pointer",
+                        background: i === activeIndex ? "var(--bg-hover)" : "var(--bg-surface)",
+                        borderBottom: i < suggestions.length - 1 ? "1px solid var(--border)" : "none",
+                      }}
+                    >
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 2 }}>
+                          <span style={{ fontFamily: "var(--font-ibm-mono), monospace", fontSize: 13, fontWeight: 600, color: "var(--text-primary)" }}>
+                            {item.full_name}
+                          </span>
+                          {item.language && (
+                            <span style={{ fontSize: 11, color: "var(--text-tertiary)", background: "var(--bg-hover)", padding: "1px 6px", borderRadius: 4, flexShrink: 0 }}>
+                              {item.language}
+                            </span>
+                          )}
+                        </div>
+                        {item.description && (
+                          <span style={{ fontSize: 12, color: "var(--text-secondary)", display: "block", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                            {item.description.length > 80 ? item.description.slice(0, 80) + "…" : item.description}
+                          </span>
+                        )}
+                      </div>
+                      <div style={{ display: "flex", alignItems: "center", gap: 4, flexShrink: 0, color: "var(--text-tertiary)", fontSize: 12 }}>
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                          <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+                        </svg>
+                        <span>{formatStars(item.stargazers_count)}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
               )}
-            </form>
+            </div>
 
             <p style={{ marginTop: 10, fontSize: 12, color: "var(--text-tertiary)" }}>
               Try:{" "}

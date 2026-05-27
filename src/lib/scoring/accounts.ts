@@ -68,6 +68,7 @@ export type AccountSignals = {
   noFollowersRatio: number;
   noAvatarRatio: number;
   lockstepScore: number;
+  ghostAccountsRatio: number;
 };
 
 export function scoreAccounts(
@@ -83,6 +84,7 @@ export function scoreAccounts(
         noFollowersRatio: 0,
         noAvatarRatio: 0,
         lockstepScore: 0,
+        ghostAccountsRatio: 0,
       },
     };
   }
@@ -100,6 +102,10 @@ export function scoreAccounts(
 
   // Disabled: cannot distinguish custom avatars from identicons via REST API
   const noAvatarRatio = 0;
+
+  // Accounts with zero repos, followers, and following — likely bot/throwaway
+  const ghostAccountsRatio =
+    users.filter((u) => u.public_repos === 0 && u.followers === 0 && u.following === 0).length / total;
 
   const lockstepScore = calculateLockstepScore(starredMap);
 
@@ -127,6 +133,7 @@ export function scoreAccounts(
       noFollowersRatio,
       noAvatarRatio,
       lockstepScore,
+      ghostAccountsRatio,
     },
   };
 }
