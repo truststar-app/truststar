@@ -211,8 +211,8 @@ function PhraseRow({ row }: { row: PhraseRowData }) {
               fontWeight: phrase.type === "stat" ? 600 : 400,
               fontFamily: "var(--font-ibm-sans), sans-serif",
               color: phrase.type === "stat"
-                ? i % 2 === 0 ? "rgba(217,54,54,0.50)" : "rgba(217,54,54,0.44)"
-                : i % 2 === 0 ? "rgba(12,12,13,0.36)" : "rgba(12,12,13,0.30)",
+                ? i % 2 === 0 ? "rgba(217,54,54,0.40)" : "rgba(217,54,54,0.34)"
+                : i % 2 === 0 ? "rgba(12,12,13,0.28)" : "rgba(12,12,13,0.22)",
               whiteSpace: "nowrap",
               flexShrink: 0,
               letterSpacing: phrase.size > 18 ? "-0.4px" : "0",
@@ -705,8 +705,8 @@ export default function HomePage() {
               pointerEvents: "none",
               userSelect: "none",
               overflow: "hidden",
-              maskImage: "linear-gradient(to bottom, transparent 0%, black 6%, black 96%, transparent 100%)",
-              WebkitMaskImage: "linear-gradient(to bottom, transparent 0%, black 6%, black 96%, transparent 100%)",
+              maskImage: "linear-gradient(to bottom, transparent 0%, black 20%, black 94%, transparent 100%)",
+              WebkitMaskImage: "linear-gradient(to bottom, transparent 0%, black 20%, black 94%, transparent 100%)",
             }}
           >
             {PHRASE_ROWS.map((row, i) => (
