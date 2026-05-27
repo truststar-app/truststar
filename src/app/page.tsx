@@ -187,7 +187,8 @@ const PHRASE_ROWS: PhraseRowData[] = [
 ];
 
 function PhraseRow({ row }: { row: PhraseRowData }) {
-  const doubled = [...row.phrases, ...row.phrases];
+  // Repeat 8× so the track is always wider than any viewport — -50% animation stays seamless
+  const doubled = [...Array(8)].flatMap(() => row.phrases);
   return (
     <div style={{ overflow: "hidden" }} className={row.mobileHide ? "phrase-row-mobile-hide" : ""}>
       <div
