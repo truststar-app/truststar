@@ -120,7 +120,7 @@ body {
 }
 
 .search-bar-outer {
-  max-width: 768px;
+  max-width: 860px;
   width: 100%;
   margin: 0 auto;
   display: flex;
@@ -130,7 +130,7 @@ body {
   box-shadow: var(--shadow-md);
   overflow: hidden;
   transition: border-color 0.2s, box-shadow 0.2s;
-  min-height: 60px;
+  min-height: 72px;
 }
 
 .search-bar-outer:focus-within {
@@ -144,10 +144,10 @@ body {
 
 .search-bar-input {
   flex: 1;
-  padding: 0 18px;
+  padding: 0 22px;
   border: none;
   outline: none;
-  font-size: 18px;
+  font-size: 22px;
   font-family: var(--font-ibm-mono), monospace;
   color: var(--text-primary);
   background: transparent;
@@ -156,7 +156,7 @@ body {
 
 .search-bar-input::placeholder {
   color: var(--text-tertiary);
-  font-size: 16px;
+  font-size: 19px;
 }
 
 .search-bar-modes {
@@ -169,10 +169,10 @@ body {
 }
 
 .search-bar-mode-btn {
-  padding: 6px 12px;
+  padding: 7px 14px;
   border-radius: 8px;
   border: none;
-  font-size: 15px;
+  font-size: 18px;
   font-weight: 500;
   font-family: inherit;
   cursor: pointer;
@@ -181,9 +181,9 @@ body {
 }
 
 .search-bar-submit {
-  padding: 0 32px;
+  padding: 0 38px;
   border: none;
-  font-size: 16px;
+  font-size: 19px;
   font-weight: 600;
   font-family: inherit;
   cursor: pointer;
