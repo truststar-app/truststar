@@ -35,6 +35,34 @@ export function addAudit(audit: RecentAudit): void {
   if (memStore.length > 100) memStore.splice(100);
 }
 
+// ─── Lookup by slug ──────────────────────────────────────────────────────────
+
+export async function getLatestAuditForSlug(
+  slug: string,
+  type: RecentAudit["type"]
+): Promise<RecentAudit | null> {
+  const key = slug.toLowerCase();
+  const redis = getRedis();
+
+  if (redis) {
+    try {
+      const raw = await redis.zrange<string[]>(REDIS_KEY, 0, MAX_ENTRIES - 1, { rev: true });
+      for (const item of raw) {
+        try {
+          const audit = (typeof item === "string" ? JSON.parse(item) : item) as RecentAudit;
+          if (audit.type === type && audit.slug.toLowerCase() === key) return audit;
+        } catch { /* skip */ }
+      }
+    } catch { /* Redis unavailable */ }
+  }
+
+  // In-memory fallback
+  const sorted = [...memStore].sort(
+    (a, b) => new Date(b.analyzedAt).getTime() - new Date(a.analyzedAt).getTime()
+  );
+  return sorted.find((a) => a.type === type && a.slug.toLowerCase() === key) ?? null;
+}
+
 // ─── Read ────────────────────────────────────────────────────────────────────
 
 export async function getRecentAudits(

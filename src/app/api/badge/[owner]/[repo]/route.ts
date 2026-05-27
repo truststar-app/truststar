@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getCached } from "@/lib/trust-score-cache";
+import { getLatestAuditForSlug } from "@/lib/recent-audits";
 import { rateLimit, getClientIp } from "@/lib/rate-limit";
 
 // Approximate Verdana 11px character width
@@ -8,10 +9,10 @@ function textPx(text: string): number {
 }
 
 const STATUS_COLORS: Record<string, string> = {
-  SAFE:       "#16A34A",
-  CAUTION:    "#CA8A04",
-  SUSPICIOUS: "#D97706",
-  DANGEROUS:  "#DC2626",
+  SAFE:       "#22c55e",
+  CAUTION:    "#f59e0b",
+  SUSPICIOUS: "#f97316",
+  DANGEROUS:  "#ef4444",
 };
 
 function buildSvg(rightText: string, color: string): string {
@@ -43,23 +44,42 @@ function buildSvg(rightText: string, color: string): string {
 }
 
 export async function GET(
-  _req: NextRequest,
+  req: NextRequest,
   { params }: { params: Promise<{ owner: string; repo: string }> }
 ) {
-  if (!rateLimit(getClientIp(_req), 60, 60_000)) {
+  if (!rateLimit(getClientIp(req), 60, 60_000)) {
     return new NextResponse("Too many requests", { status: 429 });
   }
 
   const { owner, repo } = await params;
 
+  // 1. Check in-memory cache (hot path — same serverless instance)
   const cached = getCached(owner, repo);
+
+  let score: number | null = null;
+  let label: string | null = null;
+
+  if (cached) {
+    score = cached.score;
+    label = cached.label;
+  } else {
+    // 2. Fall back to Redis / in-memory recent-audits (cross-instance persistence)
+    const audit = await getLatestAuditForSlug(`${owner}/${repo}`, "trust-score");
+    if (audit) {
+      score = audit.score;
+      label = audit.label;
+    }
+  }
 
   let rightText: string;
   let color: string;
 
-  if (cached) {
-    rightText = `${cached.label} ${cached.score}`;
-    color = STATUS_COLORS[cached.label] ?? "#9CA3AF";
+  if (score !== null && label !== null && label !== "NEW") {
+    rightText = `${score} · ${label}`;
+    color = STATUS_COLORS[label] ?? "#9CA3AF";
+  } else if (score !== null && label === "NEW") {
+    rightText = "new repo";
+    color = "#9CA3AF";
   } else {
     rightText = "not rated";
     color = "#9CA3AF";
@@ -70,7 +90,7 @@ export async function GET(
   return new NextResponse(svg, {
     headers: {
       "Content-Type": "image/svg+xml",
-      "Cache-Control": "public, max-age=3600",
+      "Cache-Control": "public, max-age=3600, stale-while-revalidate=86400",
     },
   });
 }
