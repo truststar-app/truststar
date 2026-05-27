@@ -720,7 +720,7 @@ export default function HomePage() {
               position: "relative",
               zIndex: 2,
               textAlign: "center",
-              padding: "0 24px 9vh",
+              padding: "0 24px 11vh",
               maxWidth: 960,
               width: "100%",
               flex: 1,
