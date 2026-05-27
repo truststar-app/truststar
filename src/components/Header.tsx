@@ -4,6 +4,7 @@ import { useState, useEffect, useRef, CSSProperties } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import WaitlistModal from "./WaitlistModal";
 
 const headerStyle: CSSProperties = {
   position: "fixed",
@@ -92,6 +93,7 @@ function DropdownDivider() {
 export default function Header() {
   const [moreOpen, setMoreOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [waitlistOpen, setWaitlistOpen] = useState(false);
   const headerRef = useRef<HTMLElement>(null);
   const pathname = usePathname();
 
@@ -243,23 +245,21 @@ export default function Header() {
 
           <div style={{ width: 1, height: 20, background: "var(--border)", margin: "0 4px" }} />
 
-          <Link
-            href="/coming-soon"
-            style={{ padding: "6px 12px", fontSize: 13, fontWeight: 500, color: "var(--text-secondary)", background: "none", border: "none", borderRadius: "var(--radius)", cursor: "pointer", textDecoration: "none", transition: "color 0.12s, background 0.12s" }}
-            onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = "var(--bg-hover)"; (e.currentTarget as HTMLElement).style.color = "var(--text-primary)"; }}
-            onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = "none"; (e.currentTarget as HTMLElement).style.color = "var(--text-secondary)"; }}
-          >
-            Log in
-          </Link>
-
-          <Link
-            href="/coming-soon"
-            style={{ padding: "6px 14px", fontSize: 13, fontWeight: 500, color: "#fff", background: "var(--accent)", border: "none", borderRadius: "var(--radius)", cursor: "pointer", textDecoration: "none", transition: "background 0.15s", boxShadow: "0 1px 3px rgba(217,54,54,0.2)" }}
+          <button
+            onClick={() => setWaitlistOpen(true)}
+            style={{
+              padding: "6px 14px", fontSize: 13, fontWeight: 500,
+              color: "#fff", background: "var(--accent)",
+              border: "none", borderRadius: "var(--radius)",
+              cursor: "pointer", fontFamily: "inherit",
+              transition: "background 0.15s",
+              boxShadow: "0 1px 3px rgba(217,54,54,0.2)",
+            }}
             onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = "var(--accent-hover)"; }}
             onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = "var(--accent)"; }}
           >
-            Sign up
-          </Link>
+            Get updates
+          </button>
         </div>
 
         {/* Mobile hamburger button — hidden on desktop */}
@@ -271,6 +271,8 @@ export default function Header() {
           <HamburgerIcon />
         </button>
       </header>
+
+      <WaitlistModal open={waitlistOpen} onClose={() => setWaitlistOpen(false)} />
 
       {/* Mobile full-screen menu */}
       {menuOpen && (
@@ -310,22 +312,20 @@ export default function Header() {
             {mobileNavLink("https://github.com/truststar-app/truststar", "GitHub", true)}
           </nav>
 
-          {/* Auth buttons */}
-          <div style={{ padding: "16px 20px 32px", display: "flex", flexDirection: "column", gap: 10, borderTop: "1px solid var(--border)" }}>
-            <Link
-              href="/coming-soon"
-              onClick={() => setMenuOpen(false)}
-              style={{ display: "block", textAlign: "center", padding: "12px", fontSize: 15, fontWeight: 500, color: "var(--text-primary)", textDecoration: "none", border: "1px solid var(--border)", borderRadius: "var(--radius)", background: "var(--bg-base)" }}
+          {/* Waitlist CTA */}
+          <div style={{ padding: "16px 20px 32px", borderTop: "1px solid var(--border)" }}>
+            <button
+              onClick={() => { setMenuOpen(false); setWaitlistOpen(true); }}
+              style={{
+                display: "block", width: "100%", textAlign: "center",
+                padding: "13px", fontSize: 15, fontWeight: 600,
+                color: "#fff", background: "var(--accent)",
+                border: "none", borderRadius: "var(--radius)",
+                cursor: "pointer", fontFamily: "inherit",
+              }}
             >
-              Log in
-            </Link>
-            <Link
-              href="/coming-soon"
-              onClick={() => setMenuOpen(false)}
-              style={{ display: "block", textAlign: "center", padding: "12px", fontSize: 15, fontWeight: 600, color: "#fff", textDecoration: "none", borderRadius: "var(--radius)", background: "var(--accent)" }}
-            >
-              Sign up
-            </Link>
+              Get updates
+            </button>
           </div>
         </div>
       )}

@@ -4,6 +4,140 @@ import { useState, useRef, useEffect, FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 
+// ─── Waitlist Section ──────────────────────────────────────────────────────────
+
+function WaitlistSection() {
+  const [email, setEmail] = useState("");
+  const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
+  const [errorMsg, setErrorMsg] = useState("");
+
+  async function handleSubmit(e: FormEvent) {
+    e.preventDefault();
+    const val = email.trim().toLowerCase();
+    if (!val || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val)) {
+      setErrorMsg("Please enter a valid email address.");
+      return;
+    }
+    setStatus("loading");
+    setErrorMsg("");
+    try {
+      const res = await fetch("/api/waitlist", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: val }),
+      });
+      if (res.ok) {
+        setStatus("success");
+        setEmail("");
+      } else {
+        const data = (await res.json()) as { error?: string };
+        setErrorMsg(data.error ?? "Something went wrong. Please try again.");
+        setStatus("error");
+      }
+    } catch {
+      setErrorMsg("Network error. Please try again.");
+      setStatus("error");
+    }
+  }
+
+  return (
+    <section
+      style={{
+        padding: "72px 24px",
+        background: "var(--bg-surface)",
+        borderTop: "1px solid var(--border)",
+        textAlign: "center",
+      }}
+    >
+      <div style={{ maxWidth: 480, margin: "0 auto" }}>
+        {status === "success" ? (
+          <div>
+            <div style={{
+              width: 48, height: 48, borderRadius: "50%",
+              background: "var(--safe-bg)", border: "1px solid #BBF7D0",
+              display: "flex", alignItems: "center", justifyContent: "center",
+              margin: "0 auto 16px",
+            }}>
+              <svg width="22" height="22" viewBox="0 0 22 22" fill="none" aria-hidden="true">
+                <path d="M4 11l5.5 5.5L18 7" stroke="var(--safe)" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            </div>
+            <p style={{ fontWeight: 700, fontSize: 20, color: "var(--text-primary)", marginBottom: 6, letterSpacing: "-0.4px" }}>
+              You&apos;re in!
+            </p>
+            <p style={{ fontSize: 14, color: "var(--text-secondary)" }}>We&apos;ll keep you posted.</p>
+          </div>
+        ) : (
+          <>
+            <h2 style={{ fontWeight: 700, fontSize: "clamp(20px, 3vw, 26px)", color: "var(--text-primary)", marginBottom: 10, letterSpacing: "-0.5px" }}>
+              Stay in the loop
+            </h2>
+            <p style={{ fontSize: 15, color: "var(--text-secondary)", lineHeight: 1.65, marginBottom: 28, maxWidth: 400, margin: "0 auto 28px" }}>
+              Get alerted when we detect suspicious activity on trending repos.
+            </p>
+
+            <form onSubmit={handleSubmit}>
+              <div style={{ display: "flex", gap: 8, maxWidth: 420, margin: "0 auto" }}>
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(e) => { setEmail(e.target.value); setErrorMsg(""); }}
+                  placeholder="you@example.com"
+                  disabled={status === "loading"}
+                  style={{
+                    flex: 1, padding: "10px 14px", fontSize: 14,
+                    border: `1px solid ${errorMsg ? "var(--accent)" : "var(--border)"}`,
+                    borderRadius: "var(--radius)",
+                    background: "var(--bg-base)",
+                    color: "var(--text-primary)",
+                    fontFamily: "inherit",
+                    outline: "none",
+                    transition: "border-color 0.15s",
+                    minWidth: 0,
+                  }}
+                  onFocus={(e) => { if (!errorMsg) (e.currentTarget as HTMLElement).style.borderColor = "var(--accent)"; }}
+                  onBlur={(e) => { if (!errorMsg) (e.currentTarget as HTMLElement).style.borderColor = "var(--border)"; }}
+                />
+                <button
+                  type="submit"
+                  disabled={status === "loading"}
+                  style={{
+                    padding: "10px 20px", fontSize: 14, fontWeight: 600,
+                    background: "var(--accent)", color: "#fff",
+                    border: "none", borderRadius: "var(--radius)",
+                    cursor: status === "loading" ? "not-allowed" : "pointer",
+                    opacity: status === "loading" ? 0.7 : 1,
+                    fontFamily: "inherit",
+                    whiteSpace: "nowrap",
+                    flexShrink: 0,
+                    transition: "background 0.15s",
+                    boxShadow: "0 1px 3px rgba(217,54,54,0.2)",
+                  }}
+                  onMouseEnter={(e) => {
+                    if (status !== "loading") (e.currentTarget as HTMLElement).style.background = "var(--accent-hover)";
+                  }}
+                  onMouseLeave={(e) => {
+                    (e.currentTarget as HTMLElement).style.background = "var(--accent)";
+                  }}
+                >
+                  {status === "loading" ? "..." : "Get updates"}
+                </button>
+              </div>
+              {errorMsg && (
+                <p style={{ marginTop: 8, fontSize: 12, color: "var(--accent)", maxWidth: 420, margin: "8px auto 0" }}>{errorMsg}</p>
+              )}
+            </form>
+
+            <p style={{ marginTop: 14, fontSize: 11, color: "var(--text-tertiary)" }}>
+              No spam. Unsubscribe anytime.
+            </p>
+          </>
+        )}
+      </div>
+    </section>
+  );
+}
+
 type Mode = "repo" | "npm" | "skill";
 
 type PhraseItem = {
@@ -700,6 +834,8 @@ export default function HomePage() {
           <div style={{ height: 120, width: "100%", position: "relative", zIndex: 1, flexShrink: 0 }} />
 
         </section>
+
+        <WaitlistSection />
 
       </main>
     </>
