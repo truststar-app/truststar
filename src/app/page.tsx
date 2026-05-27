@@ -138,6 +138,93 @@ function WaitlistSection() {
   );
 }
 
+// ─── Phrase marquee ────────────────────────────────────────────────────────────
+
+type PhraseItem = { text: string; type: "question" | "stat"; size: number };
+type PhraseRowData = { speed: number; rtl: boolean; mobileHide: boolean; phrases: PhraseItem[] };
+
+const PHRASE_ROWS: PhraseRowData[] = [
+  { speed: 35, rtl: false, mobileHide: false, phrases: [
+    { text: "Is this repo genuinely popular?", type: "question", size: 20 },
+    { text: "6 million fake stars detected on GitHub...", type: "stat", size: 26 },
+    { text: "Can you trust this maintainer?", type: "question", size: 16 },
+  ]},
+  { speed: 22, rtl: true, mobileHide: false, phrases: [
+    { text: "1 Lambda can fake 1M weekly downloads...", type: "stat", size: 22 },
+    { text: "Are these stars organic?", type: "question", size: 17 },
+    { text: "Who actually contributes here?", type: "question", size: 14 },
+  ]},
+  { speed: 40, rtl: false, mobileHide: false, phrases: [
+    { text: "Is this code safe to run?", type: "question", size: 21 },
+    { text: "Supply chain attacks up 742% since 2019...", type: "stat", size: 19 },
+    { text: "Do the numbers add up?", type: "question", size: 15 },
+  ]},
+  { speed: 18, rtl: true, mobileHide: false, phrases: [
+    { text: "One malicious dependency is all it takes...", type: "stat", size: 24 },
+    { text: "Are the download numbers real?", type: "question", size: 18 },
+    { text: "Star quality matters more than star count.", type: "question", size: 16 },
+  ]},
+  { speed: 28, rtl: false, mobileHide: true, phrases: [
+    { text: "Who maintains this package?", type: "question", size: 19 },
+    { text: "73% of devs use packages with 0 active contributors...", type: "stat", size: 22 },
+    { text: "Is this project still active?", type: "question", size: 15 },
+  ]},
+  { speed: 15, rtl: true, mobileHide: true, phrases: [
+    { text: "Trust but verify.", type: "question", size: 32 },
+    { text: "Does this code phone home?", type: "question", size: 17 },
+    { text: "Fake popularity = real risk.", type: "stat", size: 21 },
+  ]},
+  { speed: 33, rtl: false, mobileHide: true, phrases: [
+    { text: "Is the fork ratio healthy?", type: "question", size: 16 },
+    { text: "95% of attacks start with a trusted dependency...", type: "stat", size: 23 },
+    { text: "Verify before you install.", type: "question", size: 18 },
+  ]},
+  { speed: 25, rtl: true, mobileHide: true, phrases: [
+    { text: "Hidden credentials. Obfuscated code. Real threats.", type: "stat", size: 20 },
+    { text: "Are these issues organic?", type: "question", size: 14 },
+    { text: "Open source ≠ safe source.", type: "stat", size: 28 },
+  ]},
+];
+
+function PhraseRow({ row }: { row: PhraseRowData }) {
+  const doubled = [...row.phrases, ...row.phrases];
+  return (
+    <div style={{ overflow: "hidden" }} className={row.mobileHide ? "phrase-row-mobile-hide" : ""}>
+      <div
+        className="phrase-marquee"
+        style={{
+          display: "flex",
+          alignItems: "center",
+          gap: 64,
+          width: "max-content",
+          animation: `${row.rtl ? "marquee-rtl" : "marquee-ltr"} ${row.speed}s linear infinite`,
+          willChange: "transform",
+          padding: "10px 0",
+        }}
+      >
+        {doubled.map((phrase, i) => (
+          <span
+            key={i}
+            style={{
+              fontSize: phrase.size,
+              fontWeight: phrase.type === "stat" ? 600 : 400,
+              fontFamily: "var(--font-ibm-sans), sans-serif",
+              color: phrase.type === "stat"
+                ? i % 2 === 0 ? "rgba(217,54,54,0.25)" : "rgba(217,54,54,0.22)"
+                : i % 2 === 0 ? "rgba(12,12,13,0.18)" : "rgba(12,12,13,0.15)",
+              whiteSpace: "nowrap",
+              flexShrink: 0,
+              letterSpacing: phrase.size > 18 ? "-0.4px" : "0",
+            }}
+          >
+            {phrase.text}
+          </span>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 // ─── Loading Overlay ───────────────────────────────────────────────────────────
 
 type Mode = "repo" | "npm" | "skill";
@@ -433,16 +520,50 @@ export default function HomePage() {
 
         {/* ─── Hero ─────────────────────────────────────────────────────────── */}
         <section
+          id="hero"
           style={{
-            flex: 1,
+            position: "relative",
+            overflow: "hidden",
             display: "flex",
             flexDirection: "column",
             alignItems: "center",
-            justifyContent: "center",
-            padding: "calc(var(--header-h, 48px) + 8vh) 24px 10vh",
+            background: "var(--bg-base)",
           }}
         >
-          <div style={{ textAlign: "center", maxWidth: 780, width: "100%" }}>
+          {/* Phrase marquee — absolute background */}
+          <div
+            aria-hidden="true"
+            style={{
+              position: "absolute",
+              inset: 0,
+              display: "flex",
+              flexDirection: "column",
+              justifyContent: "space-around",
+              pointerEvents: "none",
+              userSelect: "none",
+              overflow: "hidden",
+              maskImage: "linear-gradient(to bottom, transparent 0%, black 8%, black 88%, transparent 100%)",
+              WebkitMaskImage: "linear-gradient(to bottom, transparent 0%, black 8%, black 88%, transparent 100%)",
+            }}
+          >
+            {PHRASE_ROWS.map((row, i) => (
+              <PhraseRow key={i} row={row} />
+            ))}
+          </div>
+
+          {/* Hero content — radial gradient fades phrases behind it */}
+          <div
+            style={{
+              position: "relative",
+              zIndex: 2,
+              textAlign: "center",
+              padding: "8vh 24px 6vh",
+              maxWidth: 960,
+              width: "100%",
+              background: "radial-gradient(ellipse 90% 55% at 50% 60%, rgba(250,250,250,0.98) 0%, rgba(250,250,250,0.96) 35%, rgba(250,250,250,0.70) 65%, transparent 90%)",
+            }}
+          >
+          <div style={{ textAlign: "center", maxWidth: 780, width: "100%", margin: "0 auto" }}>
 
             {/* Logo + title */}
             <div className="hero-row" style={{ marginBottom: 12, justifyContent: "center" }}>
@@ -645,6 +766,11 @@ export default function HomePage() {
             </p>
 
           </div>
+          </div>
+
+          {/* Breathing space so phrase rows are visible below hero */}
+          <div style={{ height: 80, width: "100%", position: "relative", zIndex: 1, flexShrink: 0 }} />
+
         </section>
 
         <WaitlistSection />
