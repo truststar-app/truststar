@@ -726,7 +726,7 @@ export default function HomePage() {
               flex: 1,
               display: "flex",
               alignItems: "center",
-              background: "radial-gradient(ellipse 100% 70% at 50% 45%, rgba(250,250,250,0.99) 0%, rgba(250,250,250,0.97) 40%, rgba(250,250,250,0.88) 65%, transparent 92%)",
+              background: "radial-gradient(ellipse 96% 62% at 50% 58%, rgba(250,250,250,0.99) 0%, rgba(250,250,250,0.97) 35%, rgba(250,250,250,0.91) 62%, transparent 90%)",
             }}
           >
           <div style={{ textAlign: "center", maxWidth: 780, width: "100%", margin: "0 auto", flex: 1 }}>
