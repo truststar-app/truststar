@@ -73,8 +73,8 @@ export function computeCoordLockstepScore(
   if (starredMap.size < 3) return 0;
 
   const WINDOW_MS = 14 * 24 * 60 * 60 * 1000;
-  const MIN_SHARED = 2;
-  const MIN_CLUSTER = 3;
+  const MIN_SHARED = 3;   // ≥3 obscure repos in common (popular repos pre-filtered)
+  const MIN_CLUSTER = 4;  // ≥4 accounts in the cluster
 
   const entries = Array.from(starredMap.entries());
   const inCluster = new Set<string>();

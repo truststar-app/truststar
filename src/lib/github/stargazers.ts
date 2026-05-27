@@ -125,19 +125,75 @@ export async function fetchStargazersWithDetails(
   return details;
 }
 
+// Builds a filtered starredMap that keeps only "obscure" repos (< 5 000 stars).
+// Popular repos (React, Vue, Next.js…) are starred by everyone and must not count
+// as lockstep evidence — their presence in common is normal developer behaviour.
+// Only checks repos that appear in ≥ 2 users' lists (the only ones that can cluster).
+async function buildObscureStarredMap(
+  starredMap: Map<string, string[]>
+): Promise<Map<string, string[]>> {
+  // Count how many users starred each repo
+  const freq = new Map<string, number>();
+  for (const repos of starredMap.values()) {
+    for (const r of repos) {
+      freq.set(r, (freq.get(r) ?? 0) + 1);
+    }
+  }
+
+  // Keep only repos shared by ≥ 2 users — those are the only candidates for clusters
+  const candidates = Array.from(freq.entries())
+    .filter(([, n]) => n >= 2)
+    .sort(([, a], [, b]) => b - a) // most frequent first
+    .slice(0, 40)                  // cap at 40 to limit API calls
+    .map(([repo]) => repo);
+
+  if (candidates.length === 0) return starredMap;
+
+  // Fetch star counts for candidates (batch of 10) to identify popular repos
+  const popularRepos = new Set<string>();
+  const POPULAR_THRESHOLD = 5_000;
+  const BATCH = 10;
+  for (let i = 0; i < candidates.length; i += BATCH) {
+    const batch = candidates.slice(i, i + BATCH);
+    await Promise.all(
+      batch.map(async (fullName) => {
+        try {
+          const info = await githubFetch<{ stargazers_count: number }>(
+            `/repos/${fullName}`
+          );
+          if (info.stargazers_count >= POPULAR_THRESHOLD) {
+            popularRepos.add(fullName);
+          }
+        } catch { /* ignore — leave in map, threshold conservative */ }
+      })
+    );
+  }
+
+  if (popularRepos.size === 0) return starredMap;
+
+  // Return a filtered copy — popular repos stripped out
+  const filtered = new Map<string, string[]>();
+  for (const [login, repos] of starredMap.entries()) {
+    filtered.set(login, repos.filter((r) => !popularRepos.has(r)));
+  }
+  return filtered;
+}
+
 // fetchAuthenticityData:
-//   - coordLockstepScore: always computed from starredMap (no extra API calls)
+//   - coordLockstepScore: always computed (filters popular repos, a few extra API calls)
 //   - lowActivityRatio + burstLowActivityRatio: only fetched when fetchEvents=true
 export async function fetchAuthenticityData(
   users: GitHubUserDetail[],
   starredMap: Map<string, string[]>,
   fetchEvents: boolean
 ): Promise<AuthenticitySignals> {
-  // Coordinated lockstep — uses starredMap already in memory, zero extra API calls
+  // Build starredMap with popular repos removed before computing lockstep
+  const obscureStarredMap = await buildObscureStarredMap(starredMap);
+
   const userTimestamps = new Map(
     users.map((u) => [u.login, new Date(u.starred_at).getTime()])
   );
-  const coordLockstepScore = computeCoordLockstepScore(starredMap, userTimestamps);
+  const coordLockstepScore = computeCoordLockstepScore(obscureStarredMap, userTimestamps);
 
   if (!fetchEvents) {
     return {
