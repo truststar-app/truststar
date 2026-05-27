@@ -389,11 +389,13 @@ export default async function ReportPage({
           </div>
         </div>
 
-        {/* Share card: badge + QR unified */}
+        {/* Share card: QR + badge README */}
         <ShareCard
           url={`https://truststar.co/report/${owner}/${repo}`}
           filename={`${owner}-${repo}`}
           analyzedAt={report.analyzedAt}
+          score={report.score}
+          label={report.label}
           badge={{ owner, repo }}
         />
 

@@ -5,7 +5,21 @@ import QRCode from "qrcode";
 
 const BASE = "https://truststar.co";
 
-// ─── Copy button ──────────────────────────────────────────────────────────────
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+
+function scoreColor(label: string): string {
+  if (label === "SAFE") return "#16A34A";
+  if (label === "DANGEROUS") return "#DC2626";
+  if (label === "SUSPICIOUS") return "#D97706";
+  return "#6B6B76"; // NEW or unknown
+}
+
+function scoreBg(label: string): string {
+  if (label === "SAFE") return "#F0FDF4";
+  if (label === "DANGEROUS") return "#FEF2F2";
+  if (label === "SUSPICIOUS") return "#FFFBEB";
+  return "#F4F4F5";
+}
 
 function CopyButton({ text }: { text: string }) {
   const [copied, setCopied] = useState(false);
@@ -40,16 +54,20 @@ function CopyButton({ text }: { text: string }) {
   );
 }
 
-// ─── QR section ───────────────────────────────────────────────────────────────
+// ─── QR block ─────────────────────────────────────────────────────────────────
 
-function QRSection({
+function QRBlock({
   url,
   filename,
   analyzedAt,
+  score,
+  label,
 }: {
   url: string;
   filename: string;
   analyzedAt?: string;
+  score?: number;
+  label?: string;
 }) {
   const [dataUrl, setDataUrl] = useState("");
   const generatingRef = useRef(false);
@@ -81,24 +99,20 @@ function QRSection({
           const radius = 22;
           const logoSize = 28;
 
-          // White filled circle
           ctx.beginPath();
           ctx.arc(cx, cy, radius, 0, Math.PI * 2);
           ctx.fillStyle = "#FFFFFF";
           ctx.fill();
 
-          // Red border
           ctx.strokeStyle = "#D93636";
           ctx.lineWidth = 2.5;
           ctx.stroke();
 
-          // Logo centred inside circle
           ctx.drawImage(logo, cx - logoSize / 2, cy - logoSize / 2, logoSize, logoSize);
 
           setDataUrl(canvas.toDataURL("image/png"));
         };
         logo.onerror = () => {
-          // Fallback: no logo, just plain QR
           setDataUrl(canvas.toDataURL("image/png"));
         };
       })
@@ -125,15 +139,17 @@ function QRSection({
       })
     : null;
 
+  const color = label ? scoreColor(label) : "var(--text-primary)";
+  const bg = label ? scoreBg(label) : "var(--bg-hover)";
+
   return (
     <div
       style={{
         display: "flex",
         flexDirection: "column",
         alignItems: "center",
-        gap: 10,
+        gap: 12,
         textAlign: "center",
-        minWidth: 0,
       }}
     >
       {/* QR image */}
@@ -141,21 +157,57 @@ function QRSection({
         <img
           src={dataUrl}
           alt="QR code"
-          width={120}
-          height={120}
-          style={{ borderRadius: 6, border: "1px solid var(--border-subtle)", flexShrink: 0 }}
+          width={140}
+          height={140}
+          style={{ borderRadius: 8, border: "1px solid var(--border)", display: "block" }}
         />
       ) : (
         <div
           style={{
-            width: 120,
-            height: 120,
+            width: 140,
+            height: 140,
             background: "var(--bg-hover)",
-            borderRadius: 6,
-            border: "1px solid var(--border-subtle)",
-            flexShrink: 0,
+            borderRadius: 8,
+            border: "1px solid var(--border)",
           }}
         />
+      )}
+
+      {/* Score + label pill */}
+      {score !== undefined && label && (
+        <div
+          style={{
+            display: "inline-flex",
+            alignItems: "center",
+            gap: 6,
+            padding: "4px 12px",
+            borderRadius: 20,
+            background: bg,
+            border: `1px solid ${color}33`,
+          }}
+        >
+          <span
+            style={{
+              fontFamily: "var(--font-ibm-mono), monospace",
+              fontSize: 16,
+              fontWeight: 700,
+              color,
+            }}
+          >
+            {score}
+          </span>
+          <span style={{ color: "var(--text-tertiary)", fontSize: 13 }}>·</span>
+          <span
+            style={{
+              fontSize: 12,
+              fontWeight: 600,
+              color,
+              letterSpacing: "0.5px",
+            }}
+          >
+            {label}
+          </span>
+        </div>
       )}
 
       {/* URL */}
@@ -165,8 +217,7 @@ function QRSection({
           fontSize: 10,
           color: "var(--text-tertiary)",
           wordBreak: "break-all",
-          maxWidth: 200,
-          userSelect: "text",
+          maxWidth: 220,
           lineHeight: 1.4,
         }}
       >
@@ -175,21 +226,10 @@ function QRSection({
 
       {/* Date */}
       {formattedDate && (
-        <span
-          style={{
-            fontSize: 11,
-            color: "var(--text-tertiary)",
-            fontStyle: "italic",
-          }}
-        >
+        <span style={{ fontSize: 11, color: "var(--text-tertiary)", fontStyle: "italic" }}>
           Analyzed on {formattedDate}
         </span>
       )}
-
-      {/* Scan hint */}
-      <span style={{ fontSize: 11, color: "var(--text-tertiary)" }}>
-        Scan to verify
-      </span>
 
       {/* Download button */}
       <button
@@ -224,41 +264,44 @@ function QRSection({
   );
 }
 
-// ─── Badge section ────────────────────────────────────────────────────────────
+// ─── Badge README block ────────────────────────────────────────────────────────
 
-function BadgeSection({ owner, repo }: { owner: string; repo: string }) {
+function BadgeReadmeBlock({ owner, repo }: { owner: string; repo: string }) {
   const badgeUrl = `${BASE}/api/badge/${owner}/${repo}`;
   const reportUrl = `${BASE}/report/${owner}/${repo}`;
   const markdown = `[![TrustStar](${badgeUrl})](${reportUrl})`;
 
   return (
-    <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: 12 }}>
-      <div>
-        <div style={{ fontSize: 13, fontWeight: 600, color: "var(--text-primary)", marginBottom: 4 }}>
-          README badge
-        </div>
-        <p style={{ fontSize: 12, color: "var(--text-secondary)", lineHeight: 1.6 }}>
-          Add this badge to your README to show your trust score.
-        </p>
+    <div
+      style={{
+        marginTop: 12,
+        background: "var(--bg-surface)",
+        border: "1px solid var(--border)",
+        borderRadius: 10,
+        padding: "16px 20px",
+        boxShadow: "var(--shadow-xs)",
+      }}
+    >
+      <div
+        style={{
+          fontSize: 12,
+          fontWeight: 600,
+          color: "var(--text-secondary)",
+          textTransform: "uppercase",
+          letterSpacing: "0.5px",
+          marginBottom: 12,
+        }}
+      >
+        Add badge to your README
       </div>
 
-      {/* Badge preview */}
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img
-        src={`/api/badge/${owner}/${repo}`}
-        alt="TrustStar badge"
-        height={20}
-        style={{ display: "block", height: 20, width: "auto" }}
-      />
-
-      {/* Snippet */}
       <div style={{ position: "relative" }}>
         <pre
           style={{
             background: "var(--bg-base)",
             border: "1px solid var(--border)",
             borderRadius: 8,
-            padding: "12px 40px 12px 14px",
+            padding: "10px 44px 10px 12px",
             fontSize: 11,
             fontFamily: "var(--font-ibm-mono), monospace",
             color: "var(--text-primary)",
@@ -266,6 +309,7 @@ function BadgeSection({ owner, repo }: { owner: string; repo: string }) {
             margin: 0,
             whiteSpace: "pre-wrap",
             wordBreak: "break-all",
+            lineHeight: 1.5,
           }}
         >
           {markdown}
@@ -273,9 +317,33 @@ function BadgeSection({ owner, repo }: { owner: string; repo: string }) {
         <CopyButton text={markdown} />
       </div>
 
-      <p style={{ fontSize: 11, color: "var(--text-tertiary)" }}>
-        The badge updates automatically every hour.
-      </p>
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          marginTop: 8,
+          flexWrap: "wrap",
+          gap: 6,
+        }}
+      >
+        <span style={{ fontSize: 11, color: "var(--text-tertiary)" }}>
+          Badge updates automatically every hour.
+        </span>
+        <a
+          href={badgeUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          style={{
+            fontSize: 11,
+            color: "var(--text-secondary)",
+            textDecoration: "underline",
+            textUnderlineOffset: 2,
+          }}
+        >
+          Preview badge
+        </a>
+      </div>
     </div>
   );
 }
@@ -286,60 +354,60 @@ interface ShareCardProps {
   url: string;
   filename: string;
   analyzedAt?: string;
+  score?: number;
+  label?: string;
   badge?: { owner: string; repo: string };
 }
 
-export default function ShareCard({ url, filename, analyzedAt, badge }: ShareCardProps) {
+export default function ShareCard({
+  url,
+  filename,
+  analyzedAt,
+  score,
+  label,
+  badge,
+}: ShareCardProps) {
   return (
-    <div
-      style={{
-        marginTop: 24,
-        background: "var(--bg-surface)",
-        border: "1px solid var(--border)",
-        borderRadius: 10,
-        padding: "20px 24px",
-        boxShadow: "var(--shadow-xs)",
-      }}
-    >
-      {/* Header */}
+    <>
+      {/* QR / share block */}
       <div
         style={{
-          fontSize: 12,
-          fontWeight: 600,
-          color: "var(--text-secondary)",
-          textTransform: "uppercase",
-          letterSpacing: "0.5px",
-          marginBottom: 16,
-        }}
-      >
-        Share this report
-      </div>
-
-      {/* Body */}
-      <div
-        style={{
+          marginTop: 24,
+          background: "var(--bg-surface)",
+          border: "1px solid var(--border)",
+          borderRadius: 10,
+          padding: "20px 24px",
+          boxShadow: "var(--shadow-xs)",
           display: "flex",
-          gap: 24,
-          alignItems: "flex-start",
-          flexWrap: "wrap",
+          flexDirection: "column",
+          alignItems: "center",
         }}
       >
-        {badge && (
-          <>
-            <BadgeSection owner={badge.owner} repo={badge.repo} />
-            <div
-              style={{
-                width: 1,
-                alignSelf: "stretch",
-                background: "var(--border)",
-                flexShrink: 0,
-              }}
-            />
-          </>
-        )}
+        <div
+          style={{
+            fontSize: 12,
+            fontWeight: 600,
+            color: "var(--text-secondary)",
+            textTransform: "uppercase",
+            letterSpacing: "0.5px",
+            marginBottom: 16,
+            alignSelf: "flex-start",
+          }}
+        >
+          Share this report
+        </div>
 
-        <QRSection url={url} filename={filename} analyzedAt={analyzedAt} />
+        <QRBlock
+          url={url}
+          filename={filename}
+          analyzedAt={analyzedAt}
+          score={score}
+          label={label}
+        />
       </div>
-    </div>
+
+      {/* Badge README block */}
+      {badge && <BadgeReadmeBlock owner={badge.owner} repo={badge.repo} />}
+    </>
   );
 }
