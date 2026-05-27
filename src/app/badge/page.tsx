@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import Link from "next/link";
 
 const BASE = "https://truststar.co";
@@ -79,25 +79,210 @@ function CodeBlock({ code }: { code: string }) {
   );
 }
 
+// ─── Autocomplete search ──────────────────────────────────────────────────────
+
+type RepoSuggestion = {
+  full_name: string;
+  description: string | null;
+  stargazers_count: number;
+  language: string | null;
+};
+
+function RepoSearchInput({
+  value,
+  onChange,
+}: {
+  value: string;
+  onChange: (val: string) => void;
+}) {
+  const [suggestions, setSuggestions] = useState<RepoSuggestion[]>([]);
+  const [showDropdown, setShowDropdown] = useState(false);
+  const [activeIndex, setActiveIndex] = useState(-1);
+  const [searching, setSearching] = useState(false);
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const wrapperRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (wrapperRef.current && !wrapperRef.current.contains(e.target as Node)) {
+        setShowDropdown(false);
+        setActiveIndex(-1);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  useEffect(() => {
+    const val = value.trim();
+    if (val.length < 3) {
+      setSuggestions([]);
+      setShowDropdown(false);
+      return;
+    }
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(async () => {
+      setSearching(true);
+      try {
+        const res = await fetch(`/api/github-search?q=${encodeURIComponent(val)}`);
+        if (res.ok) {
+          const data = (await res.json()) as { items: RepoSuggestion[] };
+          setSuggestions(data.items ?? []);
+          setShowDropdown((data.items ?? []).length > 0);
+          setActiveIndex(-1);
+        }
+      } catch {
+        // ignore
+      } finally {
+        setSearching(false);
+      }
+    }, 300);
+    return () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+    };
+  }, [value]);
+
+  const select = useCallback((item: RepoSuggestion) => {
+    onChange(item.full_name);
+    setSuggestions([]);
+    setShowDropdown(false);
+    setActiveIndex(-1);
+  }, [onChange]);
+
+  function formatStars(n: number): string {
+    if (n >= 1000) return `${(n / 1000).toFixed(n >= 10000 ? 0 : 1)}k`;
+    return String(n);
+  }
+
+  function handleKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
+    if (!showDropdown || suggestions.length === 0) return;
+    if (e.key === "ArrowDown") {
+      e.preventDefault();
+      setActiveIndex((i) => Math.min(i + 1, suggestions.length - 1));
+    } else if (e.key === "ArrowUp") {
+      e.preventDefault();
+      setActiveIndex((i) => Math.max(i - 1, -1));
+    } else if (e.key === "Enter" && activeIndex >= 0) {
+      e.preventDefault();
+      select(suggestions[activeIndex]);
+    } else if (e.key === "Escape") {
+      setShowDropdown(false);
+      setActiveIndex(-1);
+    }
+  }
+
+  return (
+    <div ref={wrapperRef} style={{ position: "relative", maxWidth: 480 }}>
+      <div style={{ position: "relative" }}>
+        <input
+          type="text"
+          placeholder="owner/repo or https://github.com/owner/repo"
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          onFocus={() => { if (suggestions.length > 0) setShowDropdown(true); }}
+          onKeyDown={handleKeyDown}
+          style={{
+            width: "100%",
+            padding: "10px 36px 10px 14px",
+            fontSize: 14,
+            background: "var(--bg-surface)",
+            border: "1px solid var(--border)",
+            borderRadius: 6,
+            color: "var(--text-primary)",
+            outline: "none",
+            fontFamily: "var(--font-ibm-mono), monospace",
+            boxSizing: "border-box" as const,
+            transition: "border-color 0.12s",
+          }}
+          onFocusCapture={(e) => { (e.currentTarget as HTMLElement).style.borderColor = "var(--accent)"; }}
+          onBlur={(e) => { (e.currentTarget as HTMLElement).style.borderColor = "var(--border)"; }}
+        />
+        {searching && (
+          <div
+            style={{
+              position: "absolute",
+              right: 10,
+              top: "50%",
+              transform: "translateY(-50%)",
+              width: 14,
+              height: 14,
+              border: "2px solid var(--border)",
+              borderTopColor: "var(--accent)",
+              borderRadius: "50%",
+              animation: "spin 0.7s linear infinite",
+            }}
+          />
+        )}
+      </div>
+
+      {showDropdown && suggestions.length > 0 && (
+        <div
+          style={{
+            position: "absolute",
+            top: "calc(100% + 4px)",
+            left: 0,
+            right: 0,
+            background: "var(--bg-surface)",
+            border: "1px solid var(--border)",
+            borderRadius: 8,
+            boxShadow: "0 4px 16px rgba(0,0,0,0.10)",
+            zIndex: 50,
+            overflow: "hidden",
+          }}
+        >
+          {suggestions.map((item, i) => (
+            <div
+              key={item.full_name}
+              onMouseDown={(e) => { e.preventDefault(); select(item); }}
+              style={{
+                padding: "9px 14px",
+                cursor: "pointer",
+                background: i === activeIndex ? "var(--bg-hover)" : "transparent",
+                borderBottom: i < suggestions.length - 1 ? "1px solid var(--border)" : "none",
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                gap: 12,
+              }}
+              onMouseEnter={() => setActiveIndex(i)}
+            >
+              <div style={{ minWidth: 0 }}>
+                <div style={{ fontSize: 13, fontWeight: 500, color: "var(--text-primary)", fontFamily: "var(--font-ibm-mono), monospace" }}>
+                  {item.full_name}
+                </div>
+                {item.description && (
+                  <div style={{ fontSize: 11, color: "var(--text-tertiary)", marginTop: 2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                    {item.description}
+                  </div>
+                )}
+              </div>
+              <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0, fontSize: 11, color: "var(--text-tertiary)" }}>
+                {item.language && <span>{item.language}</span>}
+                <span
+                  style={{
+                    fontFamily: "var(--font-ibm-mono), monospace",
+                    background: "var(--bg-hover)",
+                    border: "1px solid var(--border)",
+                    borderRadius: 4,
+                    padding: "1px 6px",
+                    fontSize: 10,
+                    color: "var(--text-secondary)",
+                  }}
+                >
+                  {formatStars(item.stargazers_count)}
+                </span>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 type CodeTab = "markdown" | "html" | "rst";
-
-function BadgeWhy_ShieldIcon() {
-  return <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>;
-}
-function BadgeWhy_TrendIcon() {
-  return <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>;
-}
-function BadgeWhy_RefreshIcon() {
-  return <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>;
-}
-
-const WHY_CARDS = [
-  { icon: <BadgeWhy_ShieldIcon />, title: "Build Trust", desc: "Users instantly see your project has been independently verified. No fake stars, no hidden risks." },
-  { icon: <BadgeWhy_TrendIcon />, title: "Increase Adoption", desc: "Projects with trust signals get more contributors and enterprise adoption." },
-  { icon: <BadgeWhy_RefreshIcon />, title: "Always Up to Date", desc: "The badge auto-updates every hour. Re-run your analysis anytime to refresh your score." },
-];
 
 export default function BadgePage() {
   const [input, setInput] = useState("");
@@ -140,7 +325,7 @@ export default function BadgePage() {
         </div>
 
         {/* Hero */}
-        <div style={{ maxWidth: 600, marginBottom: 56 }}>
+        <div style={{ maxWidth: 600, marginBottom: 40 }}>
           <div style={{
             display: "inline-flex", alignItems: "center", gap: 7,
             padding: "5px 16px 5px 12px", background: "var(--bg-surface)",
@@ -160,21 +345,77 @@ export default function BadgePage() {
           </p>
         </div>
 
+        {/* Why add a badge */}
+        <section style={{ marginBottom: 52 }}>
+          <p style={{ fontSize: 15, color: "var(--text-secondary)", lineHeight: 1.7, marginBottom: 24, maxWidth: 620 }}>
+            Maintainers who add a TrustStar badge signal transparency and build trust with their users.
+            The badge updates automatically — when your project grows organically, your score reflects it.
+          </p>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 14 }}>
+            {[
+              {
+                icon: (
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                  </svg>
+                ),
+                title: "Prove your stars are real",
+                desc: "Differentiate your project from repos with inflated metrics. One badge that can't be faked.",
+              },
+              {
+                icon: (
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/>
+                    <polyline points="17 6 23 6 23 12"/>
+                  </svg>
+                ),
+                title: "Build trust with adopters",
+                desc: "Teams evaluating dependencies check trust signals before npm install. Give them a clear answer.",
+              },
+              {
+                icon: (
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <circle cx="12" cy="12" r="10"/>
+                    <polyline points="12 6 12 12 16 14"/>
+                  </svg>
+                ),
+                title: "Join the transparency movement",
+                desc: "6 million fake stars erode trust in open source. Be part of the solution.",
+              },
+            ].map(({ icon, title, desc }) => (
+              <div
+                key={title}
+                style={{
+                  background: "var(--bg-surface)",
+                  border: "1px solid var(--border)",
+                  borderRadius: 10,
+                  padding: "20px 22px",
+                  boxShadow: "var(--shadow-xs)",
+                }}
+              >
+                <span style={{ display: "block", marginBottom: 10, color: "var(--accent)" }}>{icon}</span>
+                <p style={{ fontSize: 14, fontWeight: 700, color: "var(--text-primary)", marginBottom: 6 }}>{title}</p>
+                <p style={{ fontSize: 13, color: "var(--text-secondary)", lineHeight: 1.6 }}>{desc}</p>
+              </div>
+            ))}
+          </div>
+        </section>
+
         {/* Preview */}
-        <section style={{ marginBottom: 56 }}>
-          <h2 style={{ fontSize: 20, fontWeight: 700, letterSpacing: "-0.5px", color: "var(--text-primary)", marginBottom: 20 }}>
+        <section style={{ marginBottom: 48 }}>
+          <h2 style={{ fontSize: 18, fontWeight: 700, letterSpacing: "-0.4px", color: "var(--text-primary)", marginBottom: 16 }}>
             Preview
           </h2>
-          <div style={{ display: "flex", gap: 24, flexWrap: "wrap" }}>
+          <div style={{ display: "flex", gap: 24, flexWrap: "wrap", alignItems: "flex-end" }}>
             {previews.map(({ svg, label }) => (
-              <div key={label} style={{ display: "flex", flexDirection: "column", alignItems: "flex-start", gap: 8 }}>
+              <div key={label} style={{ display: "flex", flexDirection: "column", alignItems: "flex-start", gap: 6 }}>
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src={`data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`}
                   alt={label}
                   style={{ display: "block" }}
                 />
-                <span style={{ fontSize: 12, color: "var(--text-tertiary)", fontFamily: "var(--font-ibm-mono), monospace" }}>
+                <span style={{ fontSize: 11, color: "var(--text-tertiary)", fontFamily: "var(--font-ibm-mono), monospace" }}>
                   {label}
                 </span>
               </div>
@@ -184,37 +425,17 @@ export default function BadgePage() {
 
         {/* Generator */}
         <section style={{ marginBottom: 56 }}>
-          <h2 style={{ fontSize: 20, fontWeight: 700, letterSpacing: "-0.5px", color: "var(--text-primary)", marginBottom: 8 }}>
+          <h2 style={{ fontSize: 18, fontWeight: 700, letterSpacing: "-0.4px", color: "var(--text-primary)", marginBottom: 8 }}>
             Add to your README
           </h2>
           <p style={{ fontSize: 14, color: "var(--text-secondary)", marginBottom: 20 }}>
-            Enter your repository to generate the badge snippets.
+            Search your repository to generate the badge snippet.
           </p>
 
-          {/* Input */}
-          <input
-            type="text"
-            placeholder="owner/repo or https://github.com/owner/repo"
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            style={{
-              width: "100%",
-              maxWidth: 480,
-              padding: "10px 14px",
-              fontSize: 14,
-              background: "var(--bg-surface)",
-              border: "1px solid var(--border)",
-              borderRadius: 6,
-              color: "var(--text-primary)",
-              outline: "none",
-              fontFamily: "var(--font-ibm-mono), monospace",
-              marginBottom: 20,
-              boxSizing: "border-box" as const,
-              transition: "border-color 0.12s",
-            }}
-            onFocus={(e) => { (e.currentTarget as HTMLElement).style.borderColor = "var(--accent)"; }}
-            onBlur={(e) => { (e.currentTarget as HTMLElement).style.borderColor = "var(--border)"; }}
-          />
+          {/* Autocomplete input */}
+          <div style={{ marginBottom: 20 }}>
+            <RepoSearchInput value={input} onChange={setInput} />
+          </div>
 
           {/* Live badge preview */}
           {valid && (
@@ -229,7 +450,6 @@ export default function BadgePage() {
 
           {/* Code tabs */}
           <div style={{ background: "var(--bg-surface)", border: "1px solid var(--border)", borderRadius: 10, overflow: "hidden" }}>
-            {/* Tab bar */}
             <div style={{ display: "flex", borderBottom: "1px solid var(--border)", padding: "0 4px" }}>
               {TABS.map(({ id, label }) => {
                 const active = activeTab === id;
@@ -256,8 +476,6 @@ export default function BadgePage() {
                 );
               })}
             </div>
-
-            {/* Code */}
             <div style={{ padding: 14 }}>
               <CodeBlock code={snippets[activeTab]} />
             </div>
@@ -290,29 +508,46 @@ export default function BadgePage() {
           </div>
         </section>
 
-        {/* Why badges */}
-        <section style={{ marginBottom: 56 }}>
-          <h2 style={{ fontSize: 20, fontWeight: 700, letterSpacing: "-0.5px", color: "var(--text-primary)", marginBottom: 20 }}>
-            Why add the badge?
+        {/* Trusted by */}
+        <section style={{ marginBottom: 40 }}>
+          <h2 style={{ fontSize: 18, fontWeight: 700, letterSpacing: "-0.4px", color: "var(--text-primary)", marginBottom: 8 }}>
+            Join projects that display their trust score
           </h2>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 14 }}>
-            {WHY_CARDS.map(({ icon, title, desc }) => (
-              <div
-                key={title}
-                style={{
-                  background: "var(--bg-surface)",
-                  border: "1px solid var(--border)",
-                  borderRadius: 10,
-                  padding: "20px 22px",
-                  boxShadow: "var(--shadow-xs)",
-                }}
-              >
-                <span style={{ fontSize: 22, display: "block", marginBottom: 10 }}>{icon}</span>
-                <p style={{ fontSize: 14, fontWeight: 700, color: "var(--text-primary)", marginBottom: 6 }}>{title}</p>
-                <p style={{ fontSize: 13, color: "var(--text-secondary)", lineHeight: 1.6 }}>{desc}</p>
-              </div>
-            ))}
+          <p style={{ fontSize: 14, color: "var(--text-secondary)", marginBottom: 20 }}>
+            Add your badge to be part of the transparency movement.
+          </p>
+
+          <div style={{ display: "flex", gap: 16, flexWrap: "wrap", alignItems: "center" }}>
+            {/* TrustStar itself */}
+            <a
+              href={`${BASE}/report/truststar-app/truststar`}
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{ display: "inline-flex", flexDirection: "column", alignItems: "flex-start", gap: 6, textDecoration: "none" }}
+            >
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={`${BASE}/api/badge/truststar-app/truststar`}
+                alt="TrustStar"
+                style={{ display: "block" }}
+              />
+              <span style={{ fontSize: 11, color: "var(--text-tertiary)", fontFamily: "var(--font-ibm-mono), monospace" }}>
+                truststar-app/truststar
+              </span>
+            </a>
           </div>
+
+          <p style={{ marginTop: 20, fontSize: 12, color: "var(--text-tertiary)" }}>
+            Using the badge in your project?{" "}
+            <a
+              href="https://github.com/truststar-app/truststar/issues"
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{ color: "var(--text-secondary)", textDecoration: "underline" }}
+            >
+              Open an issue to get listed here.
+            </a>
+          </p>
         </section>
 
         {/* CTA */}

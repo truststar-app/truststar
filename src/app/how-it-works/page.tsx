@@ -80,7 +80,7 @@ function ProblemCard({ num, title, text }: { num: string; title: string; text: s
       <div
         style={{
           fontFamily: "var(--font-ibm-mono, 'JetBrains Mono', monospace)",
-          fontSize: 36,
+          fontSize: 34,
           fontWeight: 700,
           color: "var(--accent)",
           letterSpacing: "-1px",
@@ -325,6 +325,94 @@ function StatCard({ num, label, sub }: { num: string; label: string; sub: string
   );
 }
 
+// ─── Comparison table ─────────────────────────────────────────────────────────
+
+type CompareCell = { text: string; yes?: boolean; no?: boolean; partial?: boolean };
+
+function CompareTable({
+  headers,
+  rows,
+}: {
+  headers: string[];
+  rows: { feature: string; cells: CompareCell[] }[];
+}) {
+  return (
+    <div style={{ overflowX: "auto" }}>
+      <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13, minWidth: 540 }}>
+        <thead>
+          <tr>
+            {headers.map((h, i) => (
+              <th
+                key={i}
+                style={{
+                  padding: "10px 14px",
+                  textAlign: i === 0 ? "left" : "center",
+                  fontSize: 12,
+                  fontWeight: 700,
+                  color: i === 1 ? "var(--accent)" : "var(--text-secondary)",
+                  background: i === 1 ? "var(--accent-subtle)" : "var(--bg-hover)",
+                  borderBottom: "2px solid var(--border)",
+                  whiteSpace: "nowrap",
+                  letterSpacing: i === 1 ? "-0.2px" : "normal",
+                }}
+              >
+                {h}
+              </th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map(({ feature, cells }, ri) => (
+            <tr
+              key={ri}
+              style={{ borderBottom: ri < rows.length - 1 ? "1px solid var(--border)" : "none" }}
+            >
+              <td
+                style={{
+                  padding: "9px 14px",
+                  fontWeight: 500,
+                  color: "var(--text-primary)",
+                  background: ri % 2 === 0 ? "transparent" : "var(--bg-hover)",
+                }}
+              >
+                {feature}
+              </td>
+              {cells.map((cell, ci) => (
+                <td
+                  key={ci}
+                  style={{
+                    padding: "9px 14px",
+                    textAlign: "center",
+                    color: cell.yes
+                      ? "#16A34A"
+                      : cell.no
+                      ? "#A0A0AB"
+                      : cell.partial
+                      ? "#D97706"
+                      : "var(--text-secondary)",
+                    fontWeight: cell.yes || cell.no ? 600 : 400,
+                    fontSize: cell.yes || cell.no ? 14 : 12,
+                    background:
+                      ci === 0
+                        ? ri % 2 === 0
+                          ? "var(--accent-subtle)"
+                          : "#fdf0f0"
+                        : ri % 2 === 0
+                        ? "transparent"
+                        : "var(--bg-hover)",
+                  }}
+                >
+                  {cell.text}
+                </td>
+              ))}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
 export default function HowItWorksPage() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -446,18 +534,23 @@ export default function HowItWorksPage() {
         </p>
         <div className="hiw-problem-grid">
           <ProblemCard
-            num="6M+"
-            title="Fake Stars"
-            text="GitHub stars can be purchased in bulk. Services sell them openly, inflating perceived popularity and misleading developers who rely on star count as a quality signal."
+            num="6,000,000"
+            title="Fake Stars — confirmed by peer-reviewed research"
+            text="A Carnegie Mellon University study (ICSE 2026) identified 6 million suspected fake stars across 18,617 repositories using 301,000 accounts. By July 2024, 16.66% of repos with 50+ stars were involved in fake star campaigns."
           />
           <ProblemCard
-            num="$0"
-            title="Inflated Downloads"
-            text="npm download counts can be inflated at near-zero cost using AWS Lambda or CI scripts. A package with 500k weekly downloads may have zero real users."
+            num="$0.03–$0.85"
+            title="Per star — sold openly on a dozen platforms"
+            text="Fake stars are sold on Fiverr gigs, Telegram channels, and dedicated websites. SocialPlug alone claims 3.1 million stars delivered to 53,000 clients."
+          />
+          <ProblemCard
+            num="78 repos"
+            title="Reached GitHub Trending via purchased stars"
+            text="78 repositories made it onto GitHub Trending with manufactured star counts, gaming the platform's own discovery pipeline and misleading thousands of developers."
           />
           <ProblemCard
             num="+742%"
-            title="Supply Chain Attacks"
+            title="Supply Chain Attacks since 2019"
             text="Supply chain attacks on open source packages have increased 742% since 2019. A single malicious dependency can compromise thousands of downstream projects."
           />
         </div>
@@ -487,19 +580,37 @@ export default function HowItWorksPage() {
             <TableLabel>How we score it</TableLabel>
             <SimpleTable
               rows={[
-                ["Account Quality", "35%", "Age, repos, followers of stargazers sampled across time"],
-                ["Temporal Behavior", "30%", "Star velocity anomalies, 48h concentration, z-score"],
-                ["Project Health", "35%", "Fork/star ratio, commit cadence, contributors, issue resolution"],
+                ["Account Quality", "26%", "Profile completeness of sampled stargazers: account age, public repos, followers, avatar, lockstep patterns"],
+                ["Temporal Behavior", "23%", "Star velocity anomalies, burst detection, Z-score peaks, time-window concentration"],
+                ["Project Health", "26%", "Fork/star ratio, commit cadence, active contributors, issue resolution rate"],
+                ["Authenticity", "25%", "Low-activity disposable accounts, coordinated starring (lockstep), burst months dominated by suspicious accounts"],
               ]}
             />
           </div>
           <div style={{ marginTop: 16 }}>
             <TableLabel>Labels</TableLabel>
             <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginTop: 8 }}>
-              <LabelBadge color="var(--safe)" bg="var(--safe-bg)" label="SAFE" note="score ≥ 70" />
-              <LabelBadge color="var(--suspicious)" bg="var(--suspicious-bg)" label="SUSPICIOUS" note="score 40–69" />
-              <LabelBadge color="var(--dangerous)" bg="var(--dangerous-bg)" label="DANGEROUS" note="score < 40" />
+              <LabelBadge color="var(--safe)" bg="var(--safe-bg)" label="SAFE" note="score ≥ 70 + all checks pass" />
+              <LabelBadge color="#D97706" bg="#FFFBEB" label="CAUTION" note="mixed signals or authenticity override" />
+              <LabelBadge color="var(--suspicious)" bg="var(--suspicious-bg)" label="SUSPICIOUS" note="significant anomalies" />
+              <LabelBadge color="var(--dangerous)" bg="var(--dangerous-bg)" label="DANGEROUS" note="score < 30 or critical anomalies" />
               <LabelBadge color="#6B6B76" bg="var(--bg-hover)" label="NEW" note="< 50 stars" />
+            </div>
+            <div
+              style={{
+                marginTop: 12,
+                padding: "10px 14px",
+                background: "var(--bg-hover)",
+                border: "1px solid var(--border)",
+                borderRadius: 8,
+                fontSize: 12,
+                color: "var(--text-secondary)",
+                lineHeight: 1.6,
+              }}
+            >
+              Labels can be overridden by critical metrics. A repo scoring 75 can still be labeled{" "}
+              <strong style={{ color: "#D97706" }}>CAUTION</strong> if 40%+ of its stargazers have
+              zero followers — because numbers don&apos;t lie.
             </div>
           </div>
         </EngineCard>
@@ -577,6 +688,100 @@ export default function HowItWorksPage() {
         </EngineCard>
       </section>
 
+      {/* ── How TrustStar compares ───────────────────────────────────────────── */}
+      <section style={{ marginBottom: 72 }}>
+        <SectionLabel>Positioning</SectionLabel>
+        <SectionH2>How TrustStar compares</SectionH2>
+        <p style={{ fontSize: 15, color: "var(--text-secondary)", lineHeight: 1.6, margin: "0 0 24px", maxWidth: 600 }}>
+          TrustStar is not a replacement for Socket or Snyk. It&apos;s the quick
+          trust check you do before <code style={{ fontFamily: "var(--font-ibm-mono, monospace)", fontSize: 13, background: "var(--bg-hover)", padding: "1px 5px", borderRadius: 3 }}>npm install</code>.
+          5 seconds to know if a repo is legit.
+        </p>
+        <div
+          style={{
+            background: "var(--bg-surface)",
+            border: "1px solid var(--border)",
+            borderRadius: 12,
+            padding: "4px 0",
+            boxShadow: "0 1px 4px rgba(0,0,0,0.04)",
+            overflow: "hidden",
+          }}
+        >
+          <CompareTable
+            headers={["", "TrustStar", "OpenSSF Scorecard", "Socket", "StarForensic"]}
+            rows={[
+              {
+                feature: "Fake star detection",
+                cells: [
+                  { text: "✓ Full (4 dimensions)", yes: true },
+                  { text: "✗", no: true },
+                  { text: "✗", no: true },
+                  { text: "Stars only", partial: true },
+                ],
+              },
+              {
+                feature: "npm consistency check",
+                cells: [
+                  { text: "✓", yes: true },
+                  { text: "✗", no: true },
+                  { text: "✓", yes: true },
+                  { text: "✗", no: true },
+                ],
+              },
+              {
+                feature: "Code scan",
+                cells: [
+                  { text: "✓", yes: true },
+                  { text: "Partial", partial: true },
+                  { text: "✓ Deep", yes: true },
+                  { text: "✗", no: true },
+                ],
+              },
+              {
+                feature: "Free & open source",
+                cells: [
+                  { text: "✓ MIT", yes: true },
+                  { text: "✓", yes: true },
+                  { text: "Freemium", partial: true },
+                  { text: "Free", yes: true },
+                ],
+              },
+              {
+                feature: "No account required",
+                cells: [
+                  { text: "✓", yes: true },
+                  { text: "✓", yes: true },
+                  { text: "✗", no: true },
+                  { text: "✓", yes: true },
+                ],
+              },
+              {
+                feature: "Badge for README",
+                cells: [
+                  { text: "✓", yes: true },
+                  { text: "✓", yes: true },
+                  { text: "✗", no: true },
+                  { text: "✗", no: true },
+                ],
+              },
+              {
+                feature: "API access",
+                cells: [
+                  { text: "✓ Free", yes: true },
+                  { text: "✓", yes: true },
+                  { text: "Paid", partial: true },
+                  { text: "✗", no: true },
+                ],
+              },
+            ]}
+          />
+        </div>
+        <p style={{ marginTop: 12, fontSize: 12, color: "var(--text-tertiary)", lineHeight: 1.6 }}>
+          Socket and Snyk do deep vulnerability scanning and malware detection. TrustStar is complementary — the
+          quick legitimacy check before you invest time in a deeper audit.
+        </p>
+      </section>
+
       {/* ── Honest limits ───────────────────────────────────────────────────── */}
       <section style={{ marginBottom: 72 }}>
         <SectionLabel>Limitations</SectionLabel>
@@ -642,6 +847,119 @@ export default function HowItWorksPage() {
             View benchmark scripts on GitHub
           </a>
         </p>
+      </section>
+
+      {/* ── Research Foundation ──────────────────────────────────────────────── */}
+      <section style={{ marginBottom: 72 }}>
+        <div
+          style={{
+            background: "var(--bg-surface)",
+            border: "1px solid var(--border)",
+            borderRadius: 12,
+            padding: "28px 32px",
+          }}
+        >
+          <SectionLabel>Research</SectionLabel>
+          <h2
+            style={{
+              fontSize: 20,
+              fontWeight: 700,
+              color: "var(--text-primary)",
+              margin: "8px 0 14px",
+              letterSpacing: "-0.4px",
+            }}
+          >
+            Built on peer-reviewed research
+          </h2>
+          <p style={{ fontSize: 14, color: "var(--text-secondary)", lineHeight: 1.75, marginBottom: 16 }}>
+            TrustStar&apos;s Authenticity engine is inspired by{" "}
+            <strong style={{ color: "var(--text-primary)" }}>StarScout</strong>, a peer-reviewed
+            detection system developed at Carnegie Mellon University, North Carolina State University,
+            and Socket Inc., published at ICSE 2026 — the top academic venue for software engineering.
+          </p>
+          <p style={{ fontSize: 14, color: "var(--text-secondary)", lineHeight: 1.75, marginBottom: 16 }}>
+            StarScout analyzed 20 terabytes of GitHub metadata — 6.7 billion events and 326 million
+            stars from 2019 to 2024. Their findings:
+          </p>
+          <ul
+            style={{
+              listStyle: "none",
+              padding: 0,
+              margin: "0 0 20px",
+              display: "flex",
+              flexDirection: "column",
+              gap: 8,
+            }}
+          >
+            {[
+              "6 million suspected fake stars across 18,617 repositories",
+              "301,000 accounts involved in fake star campaigns",
+              "90.42% of flagged repos were later deleted by GitHub, confirming detection accuracy",
+              "AI/LLM repositories are the largest non-malicious category of fake star recipients",
+            ].map((item, i) => (
+              <li key={i} style={{ display: "flex", gap: 10, fontSize: 13, color: "var(--text-secondary)", lineHeight: 1.65 }}>
+                <span style={{ color: "var(--accent)", fontWeight: 700, flexShrink: 0 }}>—</span>
+                <span>{item}</span>
+              </li>
+            ))}
+          </ul>
+          <p style={{ fontSize: 14, color: "var(--text-secondary)", lineHeight: 1.75, marginBottom: 14 }}>
+            TrustStar implements two key signatures from this research:
+          </p>
+          <ul
+            style={{
+              listStyle: "none",
+              padding: 0,
+              margin: "0 0 20px",
+              display: "flex",
+              flexDirection: "column",
+              gap: 10,
+            }}
+          >
+            <li style={{ display: "flex", gap: 10, fontSize: 13, color: "var(--text-secondary)", lineHeight: 1.65 }}>
+              <span style={{ color: "var(--accent)", fontWeight: 700, flexShrink: 0 }}>1.</span>
+              <span>
+                <strong style={{ color: "var(--text-primary)" }}>Low Activity Signature</strong> —
+                detecting disposable accounts created solely for starring, with no public repos,
+                no followers, and no activity beyond the starring event.
+              </span>
+            </li>
+            <li style={{ display: "flex", gap: 10, fontSize: 13, color: "var(--text-secondary)", lineHeight: 1.65 }}>
+              <span style={{ color: "var(--accent)", fontWeight: 700, flexShrink: 0 }}>2.</span>
+              <span>
+                <strong style={{ color: "var(--text-primary)" }}>Lockstep Signature</strong> —
+                detecting coordinated groups of accounts that star the same repositories in tight
+                time windows (adapted from the CopyCatch algorithm by Facebook).
+              </span>
+            </li>
+          </ul>
+          <p style={{ fontSize: 13, color: "var(--text-secondary)", lineHeight: 1.65, marginBottom: 14 }}>
+            Additionally, TrustStar adds stratified burst-month sampling for large repositories
+            (5K+ stars), targeting the time periods where fake star campaigns concentrate their activity.
+          </p>
+          <div
+            style={{
+              padding: "10px 14px",
+              background: "var(--bg-hover)",
+              border: "1px solid var(--border)",
+              borderRadius: 8,
+              fontSize: 12,
+              color: "var(--text-tertiary)",
+              lineHeight: 1.65,
+            }}
+          >
+            He, Yang, Burckhardt, Kapravelos, Vasilescu, and Kästner. &ldquo;Six Million (Suspected) Fake Stars on GitHub:
+            A Growing Spiral of Popularity Contests, Spam, and Malware.&rdquo; ICSE 2026.{" "}
+            <a
+              href="https://arxiv.org/abs/2412.13459"
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{ color: "var(--text-secondary)", textDecoration: "underline" }}
+            >
+              arxiv.org/abs/2412.13459
+            </a>
+          </div>
+        </div>
       </section>
 
       {/* ── Get in touch ────────────────────────────────────────────────────── */}
@@ -767,69 +1085,6 @@ export default function HowItWorksPage() {
             </a>
           </div>
         </form>
-      </section>
-
-      {/* StarScout citation */}
-      <section style={{ maxWidth: 780, margin: "0 auto", padding: "0 24px 64px" }}>
-        <div
-          style={{
-            background: "var(--bg-surface)",
-            border: "1px solid var(--border)",
-            borderRadius: 10,
-            padding: "24px 28px",
-          }}
-        >
-          <h2
-            style={{
-              fontSize: 16,
-              fontWeight: 700,
-              color: "var(--text-primary)",
-              marginBottom: 12,
-              letterSpacing: "-0.3px",
-            }}
-          >
-            Research foundation — StarScout
-          </h2>
-          <p style={{ fontSize: 13, color: "var(--text-secondary)", lineHeight: 1.75, marginBottom: 12 }}>
-            The Authenticity dimension is inspired by{" "}
-            <strong style={{ color: "var(--text-primary)" }}>StarScout</strong>, a peer-reviewed system
-            developed at Carnegie Mellon University and published at ICSE 2026. StarScout identifies
-            fake star campaigns on GitHub using two core signatures:
-          </p>
-          <ul
-            style={{
-              listStyle: "none",
-              padding: 0,
-              margin: "0 0 14px",
-              display: "flex",
-              flexDirection: "column",
-              gap: 8,
-            }}
-          >
-            <li style={{ display: "flex", gap: 10, fontSize: 13, color: "var(--text-secondary)", lineHeight: 1.65 }}>
-              <span style={{ color: "var(--accent)", fontWeight: 700, flexShrink: 0 }}>1.</span>
-              <span>
-                <strong style={{ color: "var(--text-primary)" }}>Low Activity Signature</strong> — disposable
-                accounts with a single public repo, zero followers, and no activity beyond starring.
-              </span>
-            </li>
-            <li style={{ display: "flex", gap: 10, fontSize: 13, color: "var(--text-secondary)", lineHeight: 1.65 }}>
-              <span style={{ color: "var(--accent)", fontWeight: 700, flexShrink: 0 }}>2.</span>
-              <span>
-                <strong style={{ color: "var(--text-primary)" }}>Lockstep Signature</strong> — clusters of accounts
-                that starred the same set of repositories within a 7-day window (simplified CopyCatch algorithm).
-              </span>
-            </li>
-          </ul>
-          <p style={{ fontSize: 12, color: "var(--text-tertiary)", lineHeight: 1.65 }}>
-            TrustStar applies these signals conservatively: clean repos skip event-API calls entirely, and the
-            authenticity score is additive — it never overrides strong positive signals from other dimensions.
-            Full paper:{" "}
-            <span style={{ fontFamily: "var(--font-ibm-mono), monospace" }}>
-              Wermke et al., "StarScout: Identifying Fake Stars on GitHub", ICSE 2026.
-            </span>
-          </p>
-        </div>
       </section>
     </main>
   );
