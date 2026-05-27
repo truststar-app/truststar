@@ -1,15 +1,19 @@
+import { cache } from "react";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import type { ReactNode } from "react";
+import type { Metadata } from "next";
 import type { NpmCheckResult, NpmSignal } from "@/lib/npm/analyzer";
 import ShareCard from "@/components/ShareCard";
 
-// ─── Data fetching ─────────────────────────────────────────────────────────────
+const BASE = process.env.NEXT_PUBLIC_BASE_URL ?? "http://localhost:3000";
+const SITE = "https://truststar.co";
 
-async function getNpmReport(packageName: string): Promise<NpmCheckResult | null> {
+// ─── Data fetching (cached per request) ───────────────────────────────────────
+
+const getNpmReport = cache(async (packageName: string): Promise<NpmCheckResult | null> => {
   try {
-    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL ?? "http://localhost:3000";
-    const res = await fetch(`${baseUrl}/api/npm-check`, {
+    const res = await fetch(`${BASE}/api/npm-check`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ package: packageName }),
@@ -21,6 +25,38 @@ async function getNpmReport(packageName: string): Promise<NpmCheckResult | null>
   } catch {
     return null;
   }
+});
+
+// ─── Metadata ─────────────────────────────────────────────────────────────────
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ slug: string[] }>;
+}): Promise<Metadata> {
+  const { slug } = await params;
+  const packageName = slug.join("/");
+  const report = await getNpmReport(packageName);
+
+  const title = `${packageName} — npm Check | TrustStar`;
+  const description = report
+    ? `npm package analysis for ${packageName}. ${report.weeklyDownloads.toLocaleString("en-US")} weekly downloads, ${report.maintainers.length} maintainer(s), ${report.signals.filter((s) => s.type === "positive").length} positive signal(s). Verified by TrustStar.`
+    : `npm package analysis for ${packageName}. Download/star consistency check and community signal verification.`;
+
+  return {
+    title,
+    description,
+    openGraph: {
+      title,
+      description,
+      url: `${SITE}/npm/${packageName}`,
+    },
+    twitter: {
+      card: "summary",
+      title,
+      description,
+    },
+  };
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────

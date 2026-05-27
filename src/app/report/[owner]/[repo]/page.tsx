@@ -1,16 +1,20 @@
+import { cache } from "react";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import type { ReactNode } from "react";
+import type { Metadata } from "next";
 import { ReanalyzeButton } from "@/components/ReanalyzeButton";
 import ShareCard from "@/components/ShareCard";
 import type { TrustScore, TrustLabel } from "@/lib/types";
 
-// ─── Data fetching ────────────────────────────────────────────────────────────
+const BASE = process.env.NEXT_PUBLIC_BASE_URL ?? "http://localhost:3000";
+const SITE = "https://truststar.co";
 
-async function getReport(owner: string, repo: string): Promise<TrustScore | null> {
+// ─── Data fetching (cached per request to share between generateMetadata + page) ─
+
+const getReport = cache(async (owner: string, repo: string): Promise<TrustScore | null> => {
   try {
-    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL ?? "http://localhost:3000";
-    const response = await fetch(`${baseUrl}/api/analyze`, {
+    const response = await fetch(`${BASE}/api/analyze`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ owner, repo }),
@@ -21,6 +25,43 @@ async function getReport(owner: string, repo: string): Promise<TrustScore | null
   } catch {
     return null;
   }
+});
+
+// ─── Metadata ─────────────────────────────────────────────────────────────────
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ owner: string; repo: string }>;
+}): Promise<Metadata> {
+  const { owner, repo } = await params;
+  const report = await getReport(owner, repo);
+  const slug = `${owner}/${repo}`;
+
+  if (!report) {
+    return { title: `${slug} — Trust Score | TrustStar` };
+  }
+
+  const title = `${slug} — Trust Score: ${report.score} ${report.label} | TrustStar`;
+  const description = `Trust Score analysis for ${slug}. Stargazer quality: ${report.dimensions.accounts}%, temporal patterns: ${report.dimensions.temporal}%, project health: ${report.dimensions.health}%. Verified by TrustStar.`;
+  const ogImage = `${SITE}/api/og/${owner}/${repo}`;
+
+  return {
+    title,
+    description,
+    openGraph: {
+      title,
+      description,
+      url: `${SITE}/report/${slug}`,
+      images: [{ url: ogImage, width: 1200, height: 630, alt: `TrustStar — ${slug}` }],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title,
+      description,
+      images: [ogImage],
+    },
+  };
 }
 
 // ─── Page ─────────────────────────────────────────────────────────────────────

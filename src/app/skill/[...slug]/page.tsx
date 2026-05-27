@@ -1,18 +1,20 @@
+import { cache } from "react";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import type { ReactNode } from "react";
+import type { Metadata } from "next";
 import type { SkillSafetyScore, SkillFinding } from "@/lib/skill-audit/types";
 import ShareCard from "@/components/ShareCard";
 
-async function getSkillReport(
+const BASE = process.env.NEXT_PUBLIC_BASE_URL ?? "http://localhost:3000";
+const SITE = "https://truststar.co";
+
+const getSkillReport = cache(async (
   owner: string,
   repo: string
-): Promise<SkillSafetyScore | { error: string; details?: string } | null> {
+): Promise<SkillSafetyScore | { error: string; details?: string } | null> => {
   try {
-    const baseUrl =
-      process.env.NEXT_PUBLIC_BASE_URL ?? "http://localhost:3000";
-
-    const response = await fetch(`${baseUrl}/api/skill-audit`, {
+    const response = await fetch(`${BASE}/api/skill-audit`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ slug: `${owner}/${repo}` }),
@@ -29,6 +31,48 @@ async function getSkillReport(
   } catch {
     return null;
   }
+});
+
+// ─── Metadata ─────────────────────────────────────────────────────────────────
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ slug: string[] }>;
+}): Promise<Metadata> {
+  const { slug } = await params;
+  if (!slug || slug.length < 2) return { title: "Code Scan | TrustStar" };
+
+  const owner = slug[0];
+  const repo = slug[1];
+  const result = await getSkillReport(owner, repo);
+  const repoSlug = `${owner}/${repo}`;
+
+  const isReport = result && !("error" in result);
+  const report = isReport ? (result as SkillSafetyScore) : null;
+
+  const title = report
+    ? `${repoSlug} — Code Scan: ${report.score} ${report.label} | TrustStar`
+    : `${repoSlug} — Code Scan | TrustStar`;
+
+  const description = report
+    ? `Static security analysis for ${repoSlug}. ${report.findings.length} finding(s) detected across ${report.metadata.files.length} file(s). Score: ${report.score} ${report.label}. Scanned by TrustStar.`
+    : `Static security analysis for ${repoSlug}. X findings detected. Scanned by TrustStar.`;
+
+  return {
+    title,
+    description,
+    openGraph: {
+      title,
+      description,
+      url: `${SITE}/skill/${repoSlug}`,
+    },
+    twitter: {
+      card: "summary",
+      title,
+      description,
+    },
+  };
 }
 
 export default async function SkillReportPage({
