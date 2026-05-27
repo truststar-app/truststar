@@ -729,12 +729,12 @@ export default function HomePage() {
             }}
           >
           <div style={{
-            textAlign: "center", maxWidth: 660, width: "100%", margin: "0 auto", flex: 1,
+            textAlign: "center", maxWidth: 726, width: "100%", margin: "0 auto", flex: 1,
             background: "rgba(250,250,250,0.96)",
             backdropFilter: "blur(10px)",
             WebkitBackdropFilter: "blur(10px)",
             borderRadius: 20,
-            padding: "22px 28px 20px",
+            padding: "24px 31px 22px",
           }}>
 
             {/* Logo + title */}
@@ -750,7 +750,7 @@ export default function HomePage() {
               <h1
                 className="hero-title"
                 style={{
-                  fontSize: "clamp(22px, 3.4vw, 38px)",
+                  fontSize: "clamp(24px, 3.7vw, 42px)",
                   fontWeight: 700,
                   letterSpacing: "-1.5px",
                   lineHeight: 1.1,
@@ -763,7 +763,7 @@ export default function HomePage() {
               </h1>
             </div>
 
-            <p style={{ fontSize: 15, color: "var(--text-secondary)", lineHeight: 1.6, whiteSpace: "nowrap" as const, margin: "0 auto 22px" }}>
+            <p style={{ fontSize: 16, color: "var(--text-secondary)", lineHeight: 1.6, whiteSpace: "nowrap" as const, margin: "0 auto 24px" }}>
               Verify any open source project before you depend on it.
             </p>
 
