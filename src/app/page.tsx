@@ -257,17 +257,18 @@ const SIGNAL_COLORS: Record<SignalItem["color"], { dot: string; bg: string; bord
 
 function SignalRow({ signals }: { signals: SignalItem[] }) {
   return (
-    <div style={{ display: "flex", flexWrap: "wrap" as const, gap: 6 }}>
+    <div style={{ display: "flex", flexWrap: "wrap" as const, gap: 7 }}>
       {signals.map((s, i) => {
         const c = SIGNAL_COLORS[s.color];
         return (
           <span key={i} style={{
-            display: "inline-flex", alignItems: "center", gap: 5,
-            padding: "3px 10px", borderRadius: 20,
-            fontSize: 11, fontWeight: 500,
+            display: "inline-flex", alignItems: "center", gap: 6,
+            padding: "5px 12px", borderRadius: 20,
+            fontSize: 12, fontWeight: 600,
             background: c.bg, border: `1px solid ${c.border}`, color: c.text,
+            lineHeight: 1,
           }}>
-            <span style={{ width: 6, height: 6, borderRadius: "50%", background: c.dot, flexShrink: 0, display: "inline-block" }} />
+            <span style={{ width: 7, height: 7, borderRadius: "50%", background: c.dot, flexShrink: 0, display: "inline-block" }} />
             {s.text}
           </span>
         );
@@ -760,7 +761,7 @@ export default function HomePage() {
               </h1>
             </div>
 
-            <p style={{ fontSize: 17, color: "var(--text-secondary)", lineHeight: 1.6, maxWidth: 440, margin: "0 auto 28px" }}>
+            <p style={{ fontSize: 17, color: "var(--text-secondary)", lineHeight: 1.6, whiteSpace: "nowrap" as const, margin: "0 auto 28px" }}>
               Verify any open source project before you depend on it.
             </p>
 
