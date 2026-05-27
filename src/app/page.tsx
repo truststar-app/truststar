@@ -508,6 +508,12 @@ export default function HomePage() {
     return () => window.removeEventListener("resize", check);
   }, []);
 
+  // Lock scroll on homepage — everything fits in one viewport
+  useEffect(() => {
+    document.body.style.overflow = "hidden";
+    return () => { document.body.style.overflow = ""; };
+  }, []);
+
   const PLACEHOLDERS: Record<Mode, string> = isMobile
     ? { repo: "owner/repo", npm: "package name", skill: "owner/repo" }
     : { repo: "github.com/owner/repo or owner/repo", npm: "package name — e.g. express, lodash", skill: "owner/repo — e.g. dbalve/fast-io" };
@@ -516,7 +522,7 @@ export default function HomePage() {
     <>
       {loading && <LoadingOverlay mode={mode} />}
 
-      <main style={{ background: "var(--bg-base)", minHeight: "100vh", display: "flex", flexDirection: "column" }}>
+      <main style={{ background: "var(--bg-base)" }}>
 
         {/* ─── Hero ─────────────────────────────────────────────────────────── */}
         <section
@@ -528,6 +534,7 @@ export default function HomePage() {
             flexDirection: "column",
             alignItems: "center",
             background: "var(--bg-base)",
+            height: "calc(70vh - var(--header-h, 48px))",
           }}
         >
           {/* Phrase marquee — absolute background */}
@@ -557,13 +564,16 @@ export default function HomePage() {
               position: "relative",
               zIndex: 2,
               textAlign: "center",
-              padding: "8vh 24px 6vh",
+              padding: "5vh 24px 4vh",
               maxWidth: 960,
               width: "100%",
+              flex: 1,
+              display: "flex",
+              alignItems: "center",
               background: "radial-gradient(ellipse 90% 55% at 50% 60%, rgba(250,250,250,0.98) 0%, rgba(250,250,250,0.96) 35%, rgba(250,250,250,0.70) 65%, transparent 90%)",
             }}
           >
-          <div style={{ textAlign: "center", maxWidth: 780, width: "100%", margin: "0 auto" }}>
+          <div style={{ textAlign: "center", maxWidth: 780, width: "100%", margin: "0 auto", flex: 1 }}>
 
             {/* Logo + title */}
             <div className="hero-row" style={{ marginBottom: 12, justifyContent: "center" }}>
@@ -768,12 +778,7 @@ export default function HomePage() {
           </div>
           </div>
 
-          {/* Breathing space so phrase rows are visible below hero */}
-          <div style={{ height: 80, width: "100%", position: "relative", zIndex: 1, flexShrink: 0 }} />
-
         </section>
-
-        <WaitlistSection />
 
       </main>
     </>
