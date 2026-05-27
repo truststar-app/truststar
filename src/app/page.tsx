@@ -229,154 +229,99 @@ function PhraseRow({ row }: { row: PhraseRowData }) {
 
 type Mode = "repo" | "npm" | "skill";
 
-function ScoreArc({ score, color, label }: { score: number; color: string; label: string }) {
-  const r = 24;
-  const circumference = 2 * Math.PI * r;
-  const offset = circumference - (score / 100) * circumference;
-  return (
-    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 4, flexShrink: 0 }}>
-      <svg width="60" height="60" viewBox="0 0 60 60" aria-hidden="true">
-        <circle cx="30" cy="30" r={r} fill="none" stroke="var(--border)" strokeWidth="5" />
-        <circle cx="30" cy="30" r={r} fill="none" stroke={color} strokeWidth="5"
-          strokeDasharray={circumference} strokeDashoffset={offset}
-          strokeLinecap="round" transform="rotate(-90 30 30)" />
-        <text x="30" y="35" textAnchor="middle"
-          style={{ fontSize: 14, fontWeight: "bold", fill: color, fontFamily: "monospace" }}>
-          {score}
-        </text>
-      </svg>
-      <span style={{ fontSize: 9, fontWeight: 700, color, letterSpacing: "0.5px", textTransform: "uppercase" as const }}>
-        {label}
-      </span>
-    </div>
-  );
-}
+type SignalItem = { color: "green" | "orange" | "red" | "gray"; text: string };
 
-function PreviewBar({ label, pct }: { label: string; pct: number }) {
-  const color = pct > 70 ? "var(--safe)" : pct >= 40 ? "var(--suspicious)" : "var(--dangerous)";
-  return (
-    <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-      <span style={{ fontSize: 12, color: "var(--text-secondary)", flex: 1, whiteSpace: "nowrap" as const }}>{label}</span>
-      <div style={{ flex: 2, height: 6, background: "var(--bg-hover)", borderRadius: 4, overflow: "hidden" }}>
-        <div style={{ height: "100%", width: `${pct}%`, background: color, borderRadius: 4 }} />
-      </div>
-      <span style={{ fontSize: 12, fontFamily: "var(--font-ibm-mono), monospace", color: "var(--text-secondary)", width: 36, textAlign: "right" as const }}>{pct}%</span>
-    </div>
-  );
-}
+const REPO_ICON = (
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+  </svg>
+);
+const NPM_ICON = (
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <polyline points="16 16 12 12 8 16"/><line x1="12" y1="12" x2="12" y2="21"/>
+    <path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/>
+  </svg>
+);
+const CODE_ICON = (
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/>
+  </svg>
+);
 
-type DotColor = "orange" | "green" | "red" | "gray";
-const DOT_COLORS: Record<DotColor, string> = {
-  orange: "#D97706", green: "#16A34A", red: "#DC2626", gray: "#A0A0AB",
+const SIGNAL_COLORS: Record<SignalItem["color"], { dot: string; bg: string; border: string; text: string }> = {
+  green:  { dot: "#16A34A", bg: "#F0FDF4", border: "#BBF7D0", text: "#15803D" },
+  orange: { dot: "#D97706", bg: "#FFFBEB", border: "#FDE68A", text: "#B45309" },
+  red:    { dot: "#DC2626", bg: "#FEF2F2", border: "#FECACA", text: "#B91C1C" },
+  gray:   { dot: "#A0A0AB", bg: "#F4F4F5", border: "#E4E4E7", text: "#6B6B76" },
 };
 
-function PreviewFinding({ dot, text }: { dot: DotColor; text: string }) {
+function SignalRow({ signals }: { signals: SignalItem[] }) {
   return (
-    <div style={{ display: "flex", alignItems: "flex-start", gap: 8, fontSize: 12, lineHeight: 1.8 }}>
-      <span style={{ width: 7, height: 7, borderRadius: "50%", background: DOT_COLORS[dot], display: "inline-block", flexShrink: 0, marginTop: 6 }} />
-      <span style={{ color: "var(--text-secondary)" }}>{text}</span>
+    <div style={{ display: "flex", flexWrap: "wrap" as const, gap: 6 }}>
+      {signals.map((s, i) => {
+        const c = SIGNAL_COLORS[s.color];
+        return (
+          <span key={i} style={{
+            display: "inline-flex", alignItems: "center", gap: 5,
+            padding: "3px 10px", borderRadius: 20,
+            fontSize: 11, fontWeight: 500,
+            background: c.bg, border: `1px solid ${c.border}`, color: c.text,
+          }}>
+            <span style={{ width: 6, height: 6, borderRadius: "50%", background: c.dot, flexShrink: 0, display: "inline-block" }} />
+            {s.text}
+          </span>
+        );
+      })}
     </div>
   );
 }
 
-function RepoPreview() {
-  return (
-    <>
-      <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 16 }}>
-        <div>
-          <p style={{ fontWeight: 600, fontSize: 18, color: "var(--text-primary)", marginBottom: 2, letterSpacing: "-0.3px" }}>Trust Score</p>
-          <p style={{ fontSize: 12, color: "var(--text-tertiary)", fontStyle: "italic" }}>What you&apos;ll discover</p>
-        </div>
-        <ScoreArc score={87} color="#16A34A" label="SAFE" />
-      </div>
-      <p style={{ fontSize: 13, color: "var(--text-secondary)", fontStyle: "italic", marginBottom: 16, lineHeight: 1.6 }}>
-        &ldquo;Over 6M fake stars detected on GitHub. For $0.01 per star, anyone can fake popularity.&rdquo;
-      </p>
-      <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 16 }}>
-        <PreviewBar label="Stargazer Quality" pct={82} />
-        <PreviewBar label="Temporal Patterns" pct={89} />
-        <PreviewBar label="Project Health" pct={61} />
-        <PreviewBar label="Community Signals" pct={95} />
-      </div>
-      <div style={{ borderTop: "1px solid var(--border)", marginBottom: 12 }} />
-      <div style={{ display: "flex", flexDirection: "column" }}>
-        <PreviewFinding dot="orange" text="12% of stargazers have accounts younger than 7 days" />
-        <PreviewFinding dot="orange" text="Star burst: +2,400 stars in 48h (March 3)" />
-        <PreviewFinding dot="green" text="Healthy fork/star ratio (1:18)" />
-        <PreviewFinding dot="green" text="Active maintenance — 47 commits last month" />
-      </div>
-    </>
-  );
-}
-
-function NpmPreview() {
-  const points = [10,14,9,18,16,22,20,28,26,32,30,38,36,43,40,47,44,52,50,57,54,61,58,66,63,70,67,74,71,78];
-  const W = 400; const H = 60;
-  const maxV = Math.max(...points);
-  const pts = points.map((v, i) => `${(i / (points.length - 1)) * W},${H - (v / maxV) * H}`).join(" ");
-
-  return (
-    <>
-      <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 16 }}>
-        <div>
-          <p style={{ fontWeight: 600, fontSize: 18, color: "var(--text-primary)", marginBottom: 2, letterSpacing: "-0.3px" }}>npm Check</p>
-          <p style={{ fontSize: 12, color: "var(--text-tertiary)", fontStyle: "italic" }}>What you&apos;ll discover</p>
-        </div>
-        <span style={{ fontSize: 11, fontWeight: 600, padding: "4px 10px", borderRadius: "var(--radius)", background: "var(--safe-bg)", color: "var(--safe)", border: "1px solid #BBF7D0", alignSelf: "flex-start", flexShrink: 0 }}>
-          7 positive signals
-        </span>
-      </div>
-      <p style={{ fontSize: 13, color: "var(--text-secondary)", fontStyle: "italic", marginBottom: 14, lineHeight: 1.6 }}>
-        &ldquo;npm downloads are trivially inflatable. 1 Lambda function = 1M fake downloads per week.&rdquo;
-      </p>
-      <div style={{ background: "var(--accent-subtle)", borderRadius: "var(--radius)", overflow: "hidden", marginBottom: 12 }}>
-        <svg viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" style={{ width: "100%", height: 60, display: "block" }} aria-hidden="true">
-          <polyline points={pts} fill="none" stroke="#D93636" strokeWidth="1.5" strokeLinejoin="round" strokeLinecap="round" />
-        </svg>
-      </div>
-      <p style={{ fontSize: 12, fontFamily: "var(--font-ibm-mono), monospace", color: "var(--text-secondary)", marginBottom: 16 }}>
-        Weekly: 106.8M · Stars: 69.1k · Maintainers: 5 · Versions: 288
-      </p>
-      <div style={{ borderTop: "1px solid var(--border)", marginBottom: 12 }} />
-      <div style={{ display: "flex", flexDirection: "column" }}>
-        <PreviewFinding dot="green" text="Widely adopted — 106.8M weekly downloads" />
-        <PreviewFinding dot="green" text="Established package — published since 2010" />
-        <PreviewFinding dot="green" text="Multiple maintainers — 5 registered" />
-        <PreviewFinding dot="gray" text="Install scripts detected — review before installing" />
-      </div>
-    </>
-  );
-}
-
-function CodePreview() {
-  return (
-    <>
-      <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 16 }}>
-        <div>
-          <p style={{ fontWeight: 600, fontSize: 18, color: "var(--text-primary)", marginBottom: 2, letterSpacing: "-0.3px" }}>Code Scan</p>
-          <p style={{ fontSize: 12, color: "var(--text-tertiary)", fontStyle: "italic" }}>What you&apos;ll discover</p>
-        </div>
-        <ScoreArc score={73} color="#D97706" label="SUSPICIOUS" />
-      </div>
-      <p style={{ fontSize: 13, color: "var(--text-secondary)", fontStyle: "italic", marginBottom: 16, lineHeight: 1.6 }}>
-        &ldquo;95% of supply chain attacks start with a trusted dependency.&rdquo;
-      </p>
-      <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 16 }}>
-        <PreviewBar label="Network Access" pct={65} />
-        <PreviewBar label="File Access" pct={90} />
-        <PreviewBar label="Execution" pct={45} />
-        <PreviewBar label="Dependencies" pct={82} />
-      </div>
-      <div style={{ borderTop: "1px solid var(--border)", marginBottom: 12 }} />
-      <div style={{ display: "flex", flexDirection: "column" }}>
-        <PreviewFinding dot="red" text="Hardcoded URL to unknown domain (3 occurrences)" />
-        <PreviewFinding dot="orange" text="Uses eval() with dynamic input" />
-        <PreviewFinding dot="green" text="No access to sensitive paths" />
-        <PreviewFinding dot="green" text="All dependencies pinned to exact versions" />
-      </div>
-    </>
-  );
-}
+const PREVIEW_DATA: Record<Mode, {
+  icon: React.ReactNode;
+  title: string;
+  quote: string;
+  signals: SignalItem[];
+}> = {
+  repo: {
+    icon: REPO_ICON,
+    title: "Trust Score",
+    quote: "Over 6M fake stars detected on GitHub. For $0.01 per star, anyone can fake popularity.",
+    signals: [
+      { color: "green",  text: "Stargazer profile analysis" },
+      { color: "green",  text: "Account age & activity" },
+      { color: "orange", text: "Burst detection" },
+      { color: "green",  text: "Fork/star ratio" },
+      { color: "green",  text: "Commit velocity" },
+      { color: "orange", text: "Lockstep patterns" },
+    ],
+  },
+  npm: {
+    icon: NPM_ICON,
+    title: "npm Check",
+    quote: "npm downloads are trivially inflatable. 1 Lambda function = 1M fake downloads per week.",
+    signals: [
+      { color: "green",  text: "Download consistency" },
+      { color: "green",  text: "Stars vs. downloads" },
+      { color: "green",  text: "Maintainer count" },
+      { color: "orange", text: "Install scripts" },
+      { color: "green",  text: "Package age" },
+      { color: "green",  text: "Version history" },
+    ],
+  },
+  skill: {
+    icon: CODE_ICON,
+    title: "Code Scan",
+    quote: "95% of supply chain attacks start with a trusted dependency.",
+    signals: [
+      { color: "green",  text: "Network calls" },
+      { color: "green",  text: "File system access" },
+      { color: "red",    text: "Obfuscated code" },
+      { color: "orange", text: "Hardcoded secrets" },
+      { color: "green",  text: "Dependency pinning" },
+      { color: "orange", text: "Shell execution" },
+    ],
+  },
+};
 
 function PreviewBlock({ mode }: { mode: Mode }) {
   const [displayedMode, setDisplayedMode] = useState<Mode>(mode);
@@ -393,31 +338,50 @@ function PreviewBlock({ mode }: { mode: Mode }) {
     return () => { if (timerRef.current) clearTimeout(timerRef.current); };
   }, [mode, displayedMode]);
 
+  const d = PREVIEW_DATA[displayedMode];
+
   return (
     <div
       className="preview-block"
       style={{
-        maxWidth: 700,
+        maxWidth: 640,
         width: "100%",
-        margin: "16px auto 0",
+        margin: "14px auto 0",
         textAlign: "left",
-        background: "rgba(255,255,255,0.92)",
-        backdropFilter: "blur(10px)",
-        WebkitBackdropFilter: "blur(10px)",
+        background: "rgba(255,255,255,0.94)",
+        backdropFilter: "blur(12px)",
+        WebkitBackdropFilter: "blur(12px)",
         border: "1px solid var(--border)",
         borderRadius: 14,
-        boxShadow: "0 4px 24px rgba(0,0,0,0.06)",
-        padding: "28px 32px",
+        boxShadow: "0 4px 20px rgba(0,0,0,0.05)",
+        padding: "20px 24px",
         opacity: phase === "in" ? 1 : 0,
-        transform: phase === "in" ? "translateY(0)" : "translateY(8px)",
+        transform: phase === "in" ? "translateY(0)" : "translateY(6px)",
         transition: phase === "in"
           ? "opacity 250ms ease, transform 250ms ease"
           : "opacity 150ms ease, transform 150ms ease",
       }}
     >
-      {displayedMode === "repo" && <RepoPreview />}
-      {displayedMode === "npm" && <NpmPreview />}
-      {displayedMode === "skill" && <CodePreview />}
+      {/* Header */}
+      <div style={{ display: "flex", alignItems: "center", gap: 9, marginBottom: 10 }}>
+        <span style={{ color: "var(--accent)", display: "flex", flexShrink: 0 }}>{d.icon}</span>
+        <span style={{ fontWeight: 700, fontSize: 15, color: "var(--text-primary)", letterSpacing: "-0.3px" }}>
+          {d.title}
+        </span>
+      </div>
+
+      {/* Quote */}
+      <p style={{
+        fontSize: 13, lineHeight: 1.65, color: "var(--text-secondary)",
+        fontStyle: "italic", marginBottom: 14,
+        paddingLeft: 12,
+        borderLeft: "2px solid var(--accent)",
+      }}>
+        &ldquo;{d.quote}&rdquo;
+      </p>
+
+      {/* Signal pills */}
+      <SignalRow signals={d.signals} />
     </div>
   );
 }
