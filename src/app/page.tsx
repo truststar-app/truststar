@@ -144,42 +144,42 @@ type PhraseItem = { text: string; type: "question" | "stat"; size: number };
 type PhraseRowData = { speed: number; rtl: boolean; mobileHide: boolean; phrases: PhraseItem[] };
 
 const PHRASE_ROWS: PhraseRowData[] = [
-  { speed: 75, rtl: false, mobileHide: false, phrases: [
+  { speed: 105, rtl: false, mobileHide: false, phrases: [
     { text: "Is this repo genuinely popular?", type: "question", size: 20 },
     { text: "6 million fake stars detected on GitHub...", type: "stat", size: 26 },
     { text: "Would you run code nobody reviewed?", type: "question", size: 17 },
   ]},
-  { speed: 55, rtl: true, mobileHide: false, phrases: [
+  { speed: 78, rtl: true, mobileHide: false, phrases: [
     { text: "Are these stars organic?", type: "question", size: 17 },
     { text: "1 Lambda function = 1M fake downloads per week.", type: "stat", size: 20 },
     { text: "Is the last commit from a real person?", type: "question", size: 15 },
   ]},
-  { speed: 90, rtl: false, mobileHide: false, phrases: [
+  { speed: 125, rtl: false, mobileHide: false, phrases: [
     { text: "Is this code safe to run?", type: "question", size: 21 },
     { text: "Supply chain attacks up 742% since 2019.", type: "stat", size: 19 },
     { text: "npm install with your eyes closed?", type: "question", size: 18 },
   ]},
-  { speed: 45, rtl: true, mobileHide: false, phrases: [
+  { speed: 63, rtl: true, mobileHide: false, phrases: [
     { text: "Are the download numbers real?", type: "question", size: 18 },
     { text: "One malicious dependency is all it takes.", type: "stat", size: 24 },
     { text: "When did this repo last get a real commit?", type: "question", size: 15 },
   ]},
-  { speed: 65, rtl: false, mobileHide: true, phrases: [
+  { speed: 92, rtl: false, mobileHide: true, phrases: [
     { text: "Who maintains this package?", type: "question", size: 19 },
     { text: "Fake stars hide real malware.", type: "stat", size: 23 },
     { text: "Has the maintainer gone silent?", type: "question", size: 17 },
   ]},
-  { speed: 38, rtl: true, mobileHide: true, phrases: [
+  { speed: 54, rtl: true, mobileHide: true, phrases: [
     { text: "Trust but verify.", type: "question", size: 32 },
     { text: "78 repos gamed GitHub Trending with bought stars.", type: "stat", size: 16 },
     { text: "Does this code phone home?", type: "question", size: 17 },
   ]},
-  { speed: 80, rtl: false, mobileHide: true, phrases: [
+  { speed: 112, rtl: false, mobileHide: true, phrases: [
     { text: "Verify before you install.", type: "question", size: 18 },
     { text: "95% of attacks start with a trusted dependency.", type: "stat", size: 22 },
     { text: "Who reviewed the last release?", type: "question", size: 16 },
   ]},
-  { speed: 60, rtl: true, mobileHide: true, phrases: [
+  { speed: 85, rtl: true, mobileHide: true, phrases: [
     { text: "Open source ≠ safe source.", type: "question", size: 28 },
     { text: "Hidden credentials. Obfuscated code. Real threats.", type: "stat", size: 18 },
     { text: "Are these issues organic?", type: "question", size: 14 },
