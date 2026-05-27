@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect, useCallback, FormEvent, KeyboardEvent } from "react";
+import React, { useState, useRef, useEffect, useCallback, FormEvent, KeyboardEvent } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 
@@ -225,9 +225,84 @@ function PhraseRow({ row }: { row: PhraseRowData }) {
   );
 }
 
-// ─── Loading Overlay ───────────────────────────────────────────────────────────
+// ─── Tab Hint ─────────────────────────────────────────────────────────────────
 
 type Mode = "repo" | "npm" | "skill";
+
+const TAB_HINTS: Record<Mode, { icon: React.ReactNode; text: string }> = {
+  repo: {
+    icon: (
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+        <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+      </svg>
+    ),
+    text: "Detects fake stars — analyzes stargazer profiles, burst patterns and temporal behavior",
+  },
+  npm: {
+    icon: (
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+        <polyline points="16 16 12 12 8 16"/><line x1="12" y1="12" x2="12" y2="21"/>
+        <path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/>
+      </svg>
+    ),
+    text: "Checks download/star consistency and community trust signals — catches inflated download counts",
+  },
+  skill: {
+    icon: (
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+        <polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/>
+      </svg>
+    ),
+    text: "Static security scan — dangerous patterns, hardcoded secrets, suspicious network calls",
+  },
+};
+
+function TabHint({ mode }: { mode: Mode }) {
+  const [displayed, setDisplayed] = useState<Mode>(mode);
+  const [visible, setVisible] = useState(true);
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    if (mode === displayed) return;
+    setVisible(false);
+    timerRef.current = setTimeout(() => {
+      setDisplayed(mode);
+      setVisible(true);
+    }, 140);
+    return () => { if (timerRef.current) clearTimeout(timerRef.current); };
+  }, [mode, displayed]);
+
+  const hint = TAB_HINTS[displayed];
+
+  return (
+    <div
+      style={{
+        display: "inline-flex",
+        alignItems: "center",
+        gap: 6,
+        marginTop: 10,
+        padding: "5px 12px",
+        borderRadius: 20,
+        background: "var(--bg-surface)",
+        border: "1px solid var(--border)",
+        fontSize: 12,
+        color: "var(--text-secondary)",
+        opacity: visible ? 1 : 0,
+        transform: visible ? "translateY(0)" : "translateY(4px)",
+        transition: visible
+          ? "opacity 200ms ease, transform 200ms ease"
+          : "opacity 140ms ease, transform 140ms ease",
+        maxWidth: 560,
+        lineHeight: 1.4,
+      }}
+    >
+      <span style={{ flexShrink: 0, color: "var(--accent)", display: "flex" }}>{hint.icon}</span>
+      {hint.text}
+    </div>
+  );
+}
+
+// ─── Loading Overlay ───────────────────────────────────────────────────────────
 
 function LoadingOverlay({ mode }: { mode: Mode }) {
   const [step, setStep] = useState(0);
@@ -739,8 +814,13 @@ export default function HomePage() {
               )}
             </div>
 
+            {/* Tab hint */}
+            <div style={{ display: "flex", justifyContent: "center" }}>
+              <TabHint mode={mode} />
+            </div>
+
             {/* Examples */}
-            <p style={{ marginTop: 12, fontSize: 12, color: "var(--text-tertiary)" }}>
+            <p style={{ marginTop: 10, fontSize: 12, color: "var(--text-tertiary)" }}>
               Try:{" "}
               {[
                 { label: "facebook/react", value: "facebook/react", m: "repo" as Mode },
