@@ -32,16 +32,14 @@ type RawUserDetail = {
   following: number;
 };
 
-// ─── Sampling helpers ─────────────────────────────────────────────────────────
+export type SamplingMeta = {
+  burstMonth: string | null;
+  method: "stratified" | "default";
+  burstGroupSize: number;
+  baselineGroupSize: number;
+};
 
-function buildDistributedPages(totalPages: number): number[] {
-  if (totalPages <= 5) return Array.from({ length: totalPages }, (_, i) => i + 1);
-  const p25 = Math.max(2, Math.floor(totalPages * 0.25));
-  const p50 = Math.max(3, Math.floor(totalPages * 0.5));
-  const p75 = Math.max(4, Math.floor(totalPages * 0.75));
-  const pPrev = Math.max(5, totalPages - 1);
-  return [...new Set([1, p25, p50, p75, pPrev, totalPages])];
-}
+// ─── Low-level helpers ────────────────────────────────────────────────────────
 
 function rawToGitHubUsers(raw: RawStargazer[]): GitHubUser[] {
   return raw.map((item) => ({
@@ -53,7 +51,8 @@ function rawToGitHubUsers(raw: RawStargazer[]): GitHubUser[] {
 }
 
 function subsampleRaw(raw: RawStargazer[], maxCount: number): RawStargazer[] {
-  const step = Math.max(1, Math.floor(raw.length / maxCount));
+  if (raw.length <= maxCount) return raw;
+  const step = Math.floor(raw.length / maxCount);
   return raw.filter((_, i) => i % step === 0).slice(0, maxCount);
 }
 
@@ -66,9 +65,31 @@ function dedupByLogin(raw: RawStargazer[]): RawStargazer[] {
   });
 }
 
-// ─── Burst detection ──────────────────────────────────────────────────────────
-// Returns the YYYY-MM string of the peak month if it is clearly a burst (3x+ median).
-// Returns null for repos with organic growth (no dominant spike).
+// ─── Scan page selection ──────────────────────────────────────────────────────
+// For large repos: page 1 (oldest) + middle page + last 5 pages (most recent).
+// The last 5 pages ensure recent fake star campaigns are always in the probe sample.
+
+function buildScanPages(totalPages: number): number[] {
+  if (totalPages <= 7) return Array.from({ length: totalPages }, (_, i) => i + 1);
+  const mid = Math.ceil(totalPages / 2);
+  const last5 = [
+    totalPages - 4, totalPages - 3, totalPages - 2, totalPages - 1, totalPages,
+  ].filter((p) => p > mid);
+  return [...new Set([1, mid, ...last5])].sort((a, b) => a - b);
+}
+
+// For small repos: evenly distributed pages across full history.
+function buildDistributedPages(totalPages: number): number[] {
+  if (totalPages <= 5) return Array.from({ length: totalPages }, (_, i) => i + 1);
+  const p25 = Math.max(2, Math.floor(totalPages * 0.25));
+  const p50 = Math.max(3, Math.floor(totalPages * 0.5));
+  const p75 = Math.max(4, Math.floor(totalPages * 0.75));
+  return [...new Set([1, p25, p50, p75, totalPages])];
+}
+
+// ─── Burst month detection ────────────────────────────────────────────────────
+// Returns the YYYY-MM of the peak month if it is clearly anomalous (3× median).
+// The scan sample always includes the last 5 pages, so recent spikes are captured.
 
 function detectBurstMonth(sample: RawStargazer[]): string | null {
   if (sample.length < 10) return null;
@@ -92,7 +113,7 @@ function detectBurstMonth(sample: RawStargazer[]): string | null {
   return peak > median * 3 ? peakMonth : null;
 }
 
-// Same as detectBurstMonth but for GitHubUserDetail[] (used in authenticity)
+// Same algorithm for GitHubUserDetail[] (used inside engine & authenticity).
 export function detectBurstMonthFromUsers(users: GitHubUserDetail[]): string | null {
   if (users.length < 10) return null;
 
@@ -115,14 +136,14 @@ export function detectBurstMonthFromUsers(users: GitHubUserDetail[]): string | n
   return peak > median * 3 ? peakMonth : null;
 }
 
-// Estimates the first page number where the burst month's stars begin.
-// Uses the temporal distribution of the pass-1 sample as a proxy for the full history.
+// Estimates the first page number for the burst month by interpolating the
+// pass-1 sample's timestamp distribution against total pages.
 function estimateBurstPageStart(
   burstMonth: string,
-  pass1Sample: RawStargazer[],
+  scanSample: RawStargazer[],
   totalPages: number
 ): number {
-  const sorted = [...pass1Sample].sort(
+  const sorted = [...scanSample].sort(
     (a, b) => new Date(a.starred_at).getTime() - new Date(b.starred_at).getTime()
   );
   const burstStartIso = `${burstMonth}-01`;
@@ -137,59 +158,117 @@ export async function fetchStargazersSample(
   owner: string,
   repo: string,
   totalStars: number
-): Promise<GitHubUser[]> {
-  if (totalStars === 0) return [];
+): Promise<{ users: GitHubUser[]; meta: SamplingMeta }> {
+  if (totalStars === 0) {
+    return { users: [], meta: { burstMonth: null, method: "default", burstGroupSize: 0, baselineGroupSize: 0 } };
+  }
 
   const totalPages = Math.ceil(totalStars / PER_PAGE);
 
-  // Small repos: simple distributed sampling (no two-pass overhead)
+  // ── Small repos: evenly distributed pages, no burst analysis needed ─────────
   if (totalStars < SMALL_REPO_THRESHOLD) {
     const pages = buildDistributedPages(totalPages);
     const raw = (await fetchStargazers(owner, repo, pages)) as RawStargazer[];
-    return rawToGitHubUsers(subsampleRaw(raw, MAX_SAMPLE_SIZE));
+    const subsampled = subsampleRaw(raw, MAX_SAMPLE_SIZE);
+    return {
+      users: rawToGitHubUsers(subsampled),
+      meta: { burstMonth: null, method: "default", burstGroupSize: 0, baselineGroupSize: subsampled.length },
+    };
   }
 
   // ── Large repos: two-pass burst-aware sampling ────────────────────────────
 
-  // Pass 1: distributed probe to detect burst month (~6 API calls)
-  const pass1Pages = buildDistributedPages(totalPages);
-  const pass1Raw = (await fetchStargazers(owner, repo, pass1Pages)) as RawStargazer[];
-  if (pass1Raw.length === 0) return [];
-
-  const burstMonth = detectBurstMonth(pass1Raw);
-
-  // No burst detected: organic growth, distributed sample is sufficient
-  if (!burstMonth) {
-    return rawToGitHubUsers(subsampleRaw(pass1Raw, MAX_SAMPLE_SIZE));
+  // Pass 1 — scan: page 1 + middle + last 5 pages (~7 API calls = ~700 stars)
+  // The last 5 pages guarantee recent campaigns are always represented.
+  let scanRaw: RawStargazer[];
+  try {
+    const scanPages = buildScanPages(totalPages);
+    scanRaw = (await fetchStargazers(owner, repo, scanPages)) as RawStargazer[];
+  } catch {
+    // Fallback to distributed sampling if scan fails
+    const pages = buildDistributedPages(totalPages);
+    const raw = (await fetchStargazers(owner, repo, pages)) as RawStargazer[];
+    const subsampled = subsampleRaw(raw, MAX_SAMPLE_SIZE);
+    return {
+      users: rawToGitHubUsers(subsampled),
+      meta: { burstMonth: null, method: "default", burstGroupSize: 0, baselineGroupSize: subsampled.length },
+    };
   }
 
-  // Pass 2: fetch pages concentrated around the burst month (~3 API calls)
-  const burstStart = estimateBurstPageStart(burstMonth, pass1Raw, totalPages);
-  const burstPagesCount = totalStars >= 50_000 ? 3 : 2;
-  const burstPages = Array.from({ length: burstPagesCount }, (_, i) =>
-    Math.min(totalPages, burstStart + i)
+  if (scanRaw.length === 0) {
+    return { users: [], meta: { burstMonth: null, method: "default", burstGroupSize: 0, baselineGroupSize: 0 } };
+  }
+
+  const burstMonth = detectBurstMonth(scanRaw);
+
+  // ── No burst: recency-biased sample ──────────────────────────────────────
+  // Even without a spike, we prefer recent stars over old ones because:
+  //   a) Fake star services target recent visibility
+  //   b) Recent accounts haven't had time to build organic profiles
+  if (!burstMonth) {
+    const sortedDesc = [...scanRaw].sort(
+      (a, b) => new Date(b.starred_at).getTime() - new Date(a.starred_at).getTime()
+    );
+    // Most recent 500 stars = from last 5 scan pages
+    const recent = sortedDesc.slice(0, 500);
+    const historical = sortedDesc.slice(500);
+
+    const recentSample = subsampleRaw(recent, 100);
+    const historicalSample = subsampleRaw(historical, 50);
+    const combined = [...recentSample, ...historicalSample];
+
+    return {
+      users: rawToGitHubUsers(combined),
+      meta: {
+        burstMonth: null,
+        method: "default",
+        burstGroupSize: 0,
+        baselineGroupSize: combined.length,
+      },
+    };
+  }
+
+  // ── Burst detected: pass 2 — targeted pages around the burst month ────────
+  const burstPageStart = estimateBurstPageStart(burstMonth, scanRaw, totalPages);
+  const burstPageCount = totalStars >= 50_000 ? 5 : 3;
+  const scanPages = buildScanPages(totalPages);
+  const burstPages = Array.from({ length: burstPageCount }, (_, i) =>
+    Math.min(totalPages, burstPageStart + i)
   );
-  const newBurstPages = burstPages.filter((p) => !pass1Pages.includes(p));
+  const newBurstPages = burstPages.filter((p) => !scanPages.includes(p));
 
   let pass2Raw: RawStargazer[] = [];
   if (newBurstPages.length > 0) {
-    pass2Raw = (await fetchStargazers(owner, repo, newBurstPages)) as RawStargazer[];
+    try {
+      pass2Raw = (await fetchStargazers(owner, repo, newBurstPages)) as RawStargazer[];
+    } catch { /* proceed with scan data only */ }
   }
 
-  // Stratified sample: burst-period stars heavy + baseline stars light
+  // Stratified sample: burst-period stars (majority) + baseline stars (minority)
   const burstTarget = totalStars >= 50_000 ? 150 : 100;
   const baselineTarget = 50;
 
-  const burstFromPass1 = pass1Raw.filter((s) => s.starred_at.startsWith(burstMonth));
-  const burstFromPass2 = pass2Raw.filter((s) => s.starred_at.startsWith(burstMonth));
-  const allBurstStars = dedupByLogin([...burstFromPass1, ...burstFromPass2]);
-  const baselineStars = pass1Raw.filter((s) => !s.starred_at.startsWith(burstMonth));
+  const allBurstStars = dedupByLogin([
+    ...scanRaw.filter((s) => s.starred_at.startsWith(burstMonth)),
+    ...pass2Raw.filter((s) => s.starred_at.startsWith(burstMonth)),
+  ]);
+  const baselineStars = scanRaw.filter((s) => !s.starred_at.startsWith(burstMonth));
 
   const burstSample = allBurstStars.slice(0, burstTarget);
   const baselineSample = subsampleRaw(baselineStars, baselineTarget);
 
-  return rawToGitHubUsers([...burstSample, ...baselineSample]);
+  return {
+    users: rawToGitHubUsers([...burstSample, ...baselineSample]),
+    meta: {
+      burstMonth,
+      method: "stratified",
+      burstGroupSize: burstSample.length,
+      baselineGroupSize: baselineSample.length,
+    },
+  };
 }
+
+// ─── User details fetch ───────────────────────────────────────────────────────
 
 export async function fetchUserDetails(
   login: string,
@@ -228,8 +307,8 @@ export async function fetchStargazersWithDetails(
   owner: string,
   repo: string,
   totalStars: number
-): Promise<GitHubUserDetail[]> {
-  const sample = await fetchStargazersSample(owner, repo, totalStars);
+): Promise<{ users: GitHubUserDetail[]; meta: SamplingMeta }> {
+  const { users: sample, meta } = await fetchStargazersSample(owner, repo, totalStars);
 
   const BATCH_SIZE = 50;
   const details: GitHubUserDetail[] = [];
@@ -239,17 +318,15 @@ export async function fetchStargazersWithDetails(
     const batchResults = await Promise.all(
       batch.map((user) => fetchUserDetails(user.login, user.starred_at))
     );
-    details.push(
-      ...batchResults.filter((d): d is GitHubUserDetail => d !== null)
-    );
+    details.push(...batchResults.filter((d): d is GitHubUserDetail => d !== null));
   }
 
-  return details;
+  return { users: details, meta };
 }
 
-// ─── Popular repo filter for lockstep ────────────────────────────────────────
-// Strips repos with ≥ 5 000 stars from the starredMap so that popular repos
-// (React, Vue, Next.js…) cannot fake-trigger the coordinated lockstep signal.
+// ─── Popular repo filter (for lockstep false-positive prevention) ─────────────
+// Strips repos with ≥5 000 stars before the lockstep comparison so that
+// popular projects (React, Vue, Next.js…) don't fake-trigger clustering.
 
 async function buildObscureStarredMap(
   starredMap: Map<string, string[]>
@@ -268,16 +345,13 @@ async function buildObscureStarredMap(
   if (candidates.length === 0) return starredMap;
 
   const popularRepos = new Set<string>();
-  const POPULAR_THRESHOLD = 5_000;
   const BATCH = 10;
   for (let i = 0; i < candidates.length; i += BATCH) {
     await Promise.all(
       candidates.slice(i, i + BATCH).map(async (fullName) => {
         try {
-          const info = await githubFetch<{ stargazers_count: number }>(
-            `/repos/${fullName}`
-          );
-          if (info.stargazers_count >= POPULAR_THRESHOLD) popularRepos.add(fullName);
+          const info = await githubFetch<{ stargazers_count: number }>(`/repos/${fullName}`);
+          if (info.stargazers_count >= 5_000) popularRepos.add(fullName);
         } catch { /* leave in map — conservative */ }
       })
     );
@@ -293,9 +367,6 @@ async function buildObscureStarredMap(
 }
 
 // ─── Authenticity data fetch ──────────────────────────────────────────────────
-// coordLockstepScore: always computed (uses starredMap in memory + ~40 repo lookups)
-// lowActivityRatio + burstLowActivityRatio: only when fetchEvents=true
-// burstVsBaselineDelta: computed from events data to amplify concentrated campaign signal
 
 export async function fetchAuthenticityData(
   users: GitHubUserDetail[],
@@ -316,8 +387,9 @@ export async function fetchAuthenticityData(
     };
   }
 
-  // ── Events API: low-activity + shallow-activity detection ────────────────
-  // Sample burst users first (they're at the start of the array in two-pass output)
+  // Events API — low-activity + shallow-activity detection
+  // Burst users are first in the array (stratified sampling output), so we
+  // naturally oversample the suspicious period when taking the first 50.
   const SAMPLE_SIZE = 50;
   const BATCH_SIZE = 10;
   const sample = users.slice(0, SAMPLE_SIZE);
@@ -334,9 +406,9 @@ export async function fetchAuthenticityData(
 
   let lowActivityRatio = computeLowActivityRatio(sample, userEventTypes);
 
-  // ── Burst-vs-baseline delta ───────────────────────────────────────────────
-  // If burst-period accounts are significantly more suspicious than baseline accounts,
-  // amplify the lowActivityRatio to reflect the concentrated campaign pattern.
+  // Burst-vs-baseline delta amplification:
+  // If burst-period accounts are ≥20pp more suspicious than baseline,
+  // boost the final ratio to avoid dilution by legitimate baseline users.
   const burstMonth = detectBurstMonthFromUsers(users);
   if (burstMonth) {
     const burstGroup = sample.filter((u) => u.starred_at.startsWith(burstMonth));
@@ -346,7 +418,6 @@ export async function fetchAuthenticityData(
       const baselineRatio = computeLowActivityRatio(baselineGroup, userEventTypes);
       const delta = burstRatio - baselineRatio;
       if (delta > 0.20) {
-        // Amplify: burst is clearly worse than baseline — boost the overall signal
         lowActivityRatio = Math.min(1, lowActivityRatio + delta * 0.5);
       }
     }
@@ -356,9 +427,7 @@ export async function fetchAuthenticityData(
     sample
       .filter((u) => {
         const events = userEventTypes.get(u.login) ?? [];
-        const nonPassive = events.filter(
-          (t) => t !== "WatchEvent" && t !== "ForkEvent"
-        );
+        const nonPassive = events.filter((t) => t !== "WatchEvent" && t !== "ForkEvent");
         return u.public_repos <= 1 && nonPassive.length === 0;
       })
       .map((u) => u.login)
@@ -369,9 +438,8 @@ export async function fetchAuthenticityData(
 }
 
 // ─── Lockstep starred-repos data ─────────────────────────────────────────────
-// Fetches the full list of OTHER repos starred by a sample of users.
-// With two-pass sampling, the first half of users are burst-period accounts —
-// the "first 15" slice naturally targets the most suspicious group.
+// With stratified sampling, burst users are first in the array — so taking
+// "first 15" naturally targets the most suspicious group.
 
 export async function fetchLockstepData(
   users: GitHubUserDetail[],

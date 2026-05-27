@@ -91,6 +91,10 @@ export type TrustScore = {
   };
   analyzedAt: string;
   sampleSize: number;
+  samplingMethod?: "stratified" | "default";
+  burstMonthDetected?: string;
+  burstGroupSize?: number;
+  baselineGroupSize?: number;
 };
 
 export type ApiError = {

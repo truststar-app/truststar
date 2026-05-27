@@ -48,6 +48,10 @@ export type EngineInput = {
   recentCommitData: { commitsPerWeek: number; activeContributorsRatio: number };
   issueStats: IssueStats;
   authenticitySignals?: AuthenticitySignals;
+  burstMonth?: string | null;
+  samplingMethod?: "stratified" | "default";
+  burstGroupSize?: number;
+  baselineGroupSize?: number;
 };
 
 export function computeTrustScore(input: EngineInput): TrustScore {
@@ -60,11 +64,24 @@ export function computeTrustScore(input: EngineInput): TrustScore {
     recentCommitData,
     issueStats,
     authenticitySignals,
+    burstMonth,
+    samplingMethod,
+    burstGroupSize,
+    baselineGroupSize,
   } = input;
 
   // ── Compute the 4 dimensions ─────────────────────────────────────────────
 
-  const accountsResult = scoreAccounts(users, starredMap);
+  // Account Quality: when a burst month is identified, score only the burst group.
+  // Burst users are first in the array (stratified sampling output), so we
+  // directly measure the suspicious period instead of averaging with clean baseline.
+  let accountsResult = scoreAccounts(users, starredMap);
+  if (burstMonth) {
+    const burstUsers = users.filter((u) => u.starred_at.startsWith(burstMonth));
+    if (burstUsers.length >= 10) {
+      accountsResult = scoreAccounts(burstUsers, starredMap);
+    }
+  }
   const temporalResult = scoreTemporal(users, {
     totalStars: repoInfo.stargazers_count,
     createdAt: repoInfo.created_at,
@@ -130,6 +147,10 @@ export function computeTrustScore(input: EngineInput): TrustScore {
     },
     analyzedAt: new Date().toISOString(),
     sampleSize: users.length,
+    samplingMethod: samplingMethod ?? "default",
+    burstMonthDetected: burstMonth ?? undefined,
+    burstGroupSize: burstGroupSize ?? 0,
+    baselineGroupSize: baselineGroupSize ?? users.length,
   };
 
   return result;

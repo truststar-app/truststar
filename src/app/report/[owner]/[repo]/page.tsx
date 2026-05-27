@@ -339,6 +339,14 @@ export default async function ReportPage({
                 value={new Date(report.analyzedAt).toLocaleString("en-US")}
               />
               <MetaRow label="Score" value={`${report.score}/100 — ${report.label}`} />
+              {report.samplingMethod === "stratified" && report.burstMonthDetected ? (
+                <MetaRow
+                  label="Sampling"
+                  value={`Stratified — burst ${report.burstMonthDetected} (${report.burstGroupSize} burst / ${report.baselineGroupSize} baseline)`}
+                />
+              ) : (
+                <MetaRow label="Sampling" value="Default (distributed)" />
+              )}
             </div>
 
             {/* Usage disclaimer */}

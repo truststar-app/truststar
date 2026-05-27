@@ -10,7 +10,7 @@ import { addAudit } from "@/lib/recent-audits";
 import { rateLimit, getClientIp } from "@/lib/rate-limit";
 import type { TrustScore, ApiError } from "@/lib/types";
 
-export const maxDuration = 45;
+export const maxDuration = 60;
 
 function parseGitHubUrl(input: string): { owner: string; repo: string } | null {
   // Accepts: https://github.com/owner/repo or owner/repo
@@ -95,7 +95,7 @@ export async function POST(request: NextRequest): Promise<NextResponse<TrustScor
 
     // ── Fetch stargazers (sequential, depends on total) ───────────────────────
 
-    const users = await fetchStargazersWithDetails(
+    const { users, meta: samplingMeta } = await fetchStargazersWithDetails(
       owner,
       repo,
       repoInfo.stargazers_count
@@ -106,8 +106,8 @@ export async function POST(request: NextRequest): Promise<NextResponse<TrustScor
     const starredMap = await fetchLockstepData(users, owner, repo);
 
     // ── Authenticity signals ──────────────────────────────────────────────────
-    // Lockstep always computed (uses starredMap in memory — no extra API cost).
-    // Events API (low-activity detection) only called when cheap proxies signal suspicion.
+    // Lockstep always computed (uses starredMap in memory).
+    // Events API only called when cheap proxies signal suspicion.
 
     const simpleActivityRatio = estimateLowActivityRatio(users);
     const noPublicRepoEstimate =
@@ -137,6 +137,10 @@ export async function POST(request: NextRequest): Promise<NextResponse<TrustScor
       repoInfo,
       recentCommitData,
       issueStats,
+      burstMonth: samplingMeta.burstMonth,
+      samplingMethod: samplingMeta.method,
+      burstGroupSize: samplingMeta.burstGroupSize,
+      baselineGroupSize: samplingMeta.baselineGroupSize,
       authenticitySignals,
     });
 
