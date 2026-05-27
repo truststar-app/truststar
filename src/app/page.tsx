@@ -714,7 +714,7 @@ export default function HomePage() {
             ))}
           </div>
 
-          {/* Hero content — radial gradient fades phrases behind it */}
+          {/* Hero content */}
           <div
             style={{
               position: "relative",
@@ -726,10 +726,16 @@ export default function HomePage() {
               flex: 1,
               display: "flex",
               alignItems: "center",
-              background: "radial-gradient(ellipse 82% 36% at 50% 30%, rgba(250,250,250,0.99) 0%, rgba(250,250,250,0.97) 35%, rgba(250,250,250,0.91) 62%, transparent 90%)",
             }}
           >
-          <div style={{ textAlign: "center", maxWidth: 780, width: "100%", margin: "0 auto", flex: 1 }}>
+          <div style={{
+            textAlign: "center", maxWidth: 780, width: "100%", margin: "0 auto", flex: 1,
+            background: "rgba(250,250,250,0.96)",
+            backdropFilter: "blur(10px)",
+            WebkitBackdropFilter: "blur(10px)",
+            borderRadius: 20,
+            padding: "28px 32px 24px",
+          }}>
 
             {/* Logo + title */}
             <div className="hero-row" style={{ marginBottom: 12, justifyContent: "center" }}>
