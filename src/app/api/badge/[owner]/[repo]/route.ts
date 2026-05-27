@@ -9,6 +9,7 @@ function textPx(text: string): number {
 
 const STATUS_COLORS: Record<string, string> = {
   SAFE:       "#16A34A",
+  CAUTION:    "#CA8A04",
   SUSPICIOUS: "#D97706",
   DANGEROUS:  "#DC2626",
 };

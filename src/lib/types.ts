@@ -55,7 +55,7 @@ export type IssueStats = {
   closed: number;
 };
 
-export type TrustLabel = "SAFE" | "SUSPICIOUS" | "DANGEROUS" | "NEW";
+export type TrustLabel = "SAFE" | "CAUTION" | "SUSPICIOUS" | "DANGEROUS" | "NEW";
 
 export type TrustScore = {
   repo: string;
@@ -66,20 +66,28 @@ export type TrustScore = {
     accounts: number;
     temporal: number;
     health: number;
+    authenticity?: number;  // StarScout-inspired; optional for backward compat with cached results
   };
   signals: {
+    // Account Quality
     newAccountsRatio: number;
     noRepoRatio: number;
     noFollowersRatio: number;
     noAvatarRatio: number;
     lockstepScore: number;
+    // Temporal Behavior
     zScorePeak: number;
     velocityScore: number;
     recentStarsRatio: number;
+    // Project Health
     forkStarRatio: number;
     activeContributorsRatio: number;
     commitFrequency: number;
     issueResolutionRatio: number;
+    // Authenticity (StarScout-inspired, optional)
+    lowActivityRatio?: number;
+    coordLockstepScore?: number;
+    burstLowActivityRatio?: number;
   };
   analyzedAt: string;
   sampleSize: number;

@@ -1,5 +1,13 @@
 import { fetchStargazers, githubFetch } from "./client";
 import type { GitHubUser, GitHubUserDetail } from "../types";
+import { fetchUserEventData } from "./events";
+import {
+  estimateLowActivityRatio,
+  computeLowActivityRatio,
+  computeCoordLockstepScore,
+  computeBurstLowActivityRatio,
+  type AuthenticitySignals,
+} from "../scoring/authenticity";
 
 const MAX_SAMPLE_SIZE = 150;
 const PER_PAGE = 100;
@@ -115,6 +123,46 @@ export async function fetchStargazersWithDetails(
   }
 
   return details;
+}
+
+export async function fetchAuthenticityData(
+  users: GitHubUserDetail[],
+  _owner: string,
+  _repo: string
+): Promise<AuthenticitySignals> {
+  const SAMPLE_SIZE = 50;
+  const BATCH_SIZE = 10;
+  const sample = users.slice(0, SAMPLE_SIZE);
+
+  const userEventTypes = new Map<string, string[]>();
+  const userRecentStars = new Map<string, { repo: string; starredAt: number }[]>();
+
+  for (let i = 0; i < sample.length; i += BATCH_SIZE) {
+    const batch = sample.slice(i, i + BATCH_SIZE);
+    await Promise.all(
+      batch.map(async (user) => {
+        const data = await fetchUserEventData(user.login);
+        userEventTypes.set(user.login, data.eventTypes);
+        userRecentStars.set(user.login, data.recentStars);
+      })
+    );
+  }
+
+  const lowActivityRatio = computeLowActivityRatio(sample, userEventTypes);
+  const coordLockstepScore = computeCoordLockstepScore(userRecentStars);
+
+  const lowActivityLogins = new Set(
+    sample
+      .filter((u) => {
+        const events = userEventTypes.get(u.login) ?? [];
+        const nonStar = events.filter((t) => t !== "WatchEvent" && t !== "ForkEvent");
+        return u.public_repos <= 1 && nonStar.length === 0;
+      })
+      .map((u) => u.login)
+  );
+  const burstLowActivityRatio = computeBurstLowActivityRatio(users, lowActivityLogins);
+
+  return { lowActivityRatio, coordLockstepScore, burstLowActivityRatio };
 }
 
 export async function fetchLockstepData(

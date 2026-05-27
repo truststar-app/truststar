@@ -46,6 +46,8 @@ function ScoreBadge({ score, label }: { score: number; label: string }) {
   const cfg =
     label === "SAFE"
       ? { bg: "var(--safe-bg)", color: "var(--safe)" }
+      : label === "CAUTION"
+      ? { bg: "var(--caution-bg)", color: "var(--caution)" }
       : label === "SUSPICIOUS"
       ? { bg: "var(--suspicious-bg)", color: "var(--suspicious)" }
       : label === "NEW"

@@ -768,6 +768,69 @@ export default function HowItWorksPage() {
           </div>
         </form>
       </section>
+
+      {/* StarScout citation */}
+      <section style={{ maxWidth: 780, margin: "0 auto", padding: "0 24px 64px" }}>
+        <div
+          style={{
+            background: "var(--bg-surface)",
+            border: "1px solid var(--border)",
+            borderRadius: 10,
+            padding: "24px 28px",
+          }}
+        >
+          <h2
+            style={{
+              fontSize: 16,
+              fontWeight: 700,
+              color: "var(--text-primary)",
+              marginBottom: 12,
+              letterSpacing: "-0.3px",
+            }}
+          >
+            Research foundation — StarScout
+          </h2>
+          <p style={{ fontSize: 13, color: "var(--text-secondary)", lineHeight: 1.75, marginBottom: 12 }}>
+            The Authenticity dimension is inspired by{" "}
+            <strong style={{ color: "var(--text-primary)" }}>StarScout</strong>, a peer-reviewed system
+            developed at Carnegie Mellon University and published at ICSE 2026. StarScout identifies
+            fake star campaigns on GitHub using two core signatures:
+          </p>
+          <ul
+            style={{
+              listStyle: "none",
+              padding: 0,
+              margin: "0 0 14px",
+              display: "flex",
+              flexDirection: "column",
+              gap: 8,
+            }}
+          >
+            <li style={{ display: "flex", gap: 10, fontSize: 13, color: "var(--text-secondary)", lineHeight: 1.65 }}>
+              <span style={{ color: "var(--accent)", fontWeight: 700, flexShrink: 0 }}>1.</span>
+              <span>
+                <strong style={{ color: "var(--text-primary)" }}>Low Activity Signature</strong> — disposable
+                accounts with a single public repo, zero followers, and no activity beyond starring.
+              </span>
+            </li>
+            <li style={{ display: "flex", gap: 10, fontSize: 13, color: "var(--text-secondary)", lineHeight: 1.65 }}>
+              <span style={{ color: "var(--accent)", fontWeight: 700, flexShrink: 0 }}>2.</span>
+              <span>
+                <strong style={{ color: "var(--text-primary)" }}>Lockstep Signature</strong> — clusters of accounts
+                that starred the same set of repositories within a 7-day window (simplified CopyCatch algorithm).
+              </span>
+            </li>
+          </ul>
+          <p style={{ fontSize: 12, color: "var(--text-tertiary)", lineHeight: 1.65 }}>
+            TrustStar applies these signals conservatively: clean repos skip event-API calls entirely, and the
+            authenticity score is additive — it never overrides strong positive signals from other dimensions.
+            Full paper:{" "}
+            <span style={{ fontFamily: "var(--font-ibm-mono), monospace" }}>
+              Wermke et al., "StarScout: Identifying Fake Stars on GitHub", ICSE 2026.
+            </span>
+          </p>
+        </div>
+      </section>
     </main>
   );
 }

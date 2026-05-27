@@ -249,14 +249,17 @@ export default async function ReportPage({
           className="rpt-dims-grid"
           style={{
             display: "grid",
-            gridTemplateColumns: "repeat(3, 1fr)",
+            gridTemplateColumns: report.dimensions.authenticity !== undefined ? "repeat(4, 1fr)" : "repeat(3, 1fr)",
             gap: 12,
             marginBottom: 20,
           }}
         >
-          <DimensionCard label="Account Quality" score={report.dimensions.accounts} weight="35%" icon={<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>} />
-          <DimensionCard label="Temporal Behavior" score={report.dimensions.temporal} weight="30%" icon={<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>} />
-          <DimensionCard label="Project Health" score={report.dimensions.health} weight="35%" icon={<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>} />
+          <DimensionCard label="Account Quality" score={report.dimensions.accounts} weight="26%" icon={<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>} />
+          <DimensionCard label="Temporal Behavior" score={report.dimensions.temporal} weight="23%" icon={<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>} />
+          <DimensionCard label="Project Health" score={report.dimensions.health} weight="26%" icon={<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>} />
+          {report.dimensions.authenticity !== undefined && (
+            <DimensionCard label="Authenticity" score={report.dimensions.authenticity} weight="25%" icon={<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>} />
+          )}
         </div>
 
         {/* Signals */}
@@ -297,6 +300,17 @@ export default async function ReportPage({
               { label: "Issue resolution rate", value: report.signals.issueResolutionRatio, format: "percent", danger: report.signals.issueResolutionRatio < 0.5 },
             ]}
           />
+
+          {report.signals.lowActivityRatio !== undefined && (
+            <SignalsPanel
+              title="Authenticity"
+              signals={[
+                { label: "Low-activity accounts ratio", value: report.signals.lowActivityRatio, format: "percent", danger: report.signals.lowActivityRatio > 0.3 },
+                { label: "Coordinated lockstep score", value: report.signals.coordLockstepScore ?? 0, format: "percent", danger: (report.signals.coordLockstepScore ?? 0) > 0.15 },
+                { label: "Burst months dominated by low-activity", value: report.signals.burstLowActivityRatio ?? 0, format: "percent", danger: (report.signals.burstLowActivityRatio ?? 0) > 0.4 },
+              ]}
+            />
+          )}
 
           {/* Meta */}
           <div
@@ -445,6 +459,13 @@ function getLabelConfig(label: TrustLabel): LabelConfig {
       borderCard: "#BBF7D0",
       ring: "rgba(22,163,74,0.08)",
       description: "This repo shows healthy signals. Popularity appears organic and health metrics are solid.",
+    },
+    CAUTION: {
+      color: "var(--caution)",
+      bgCard: "var(--caution-bg)",
+      borderCard: "#FEF08A",
+      ring: "rgba(202,138,4,0.08)",
+      description: "Mixed signals detected. The repo looks mostly healthy but some authenticity indicators warrant attention.",
     },
     SUSPICIOUS: {
       color: "var(--suspicious)",

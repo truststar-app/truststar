@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { fetchRepoInfo, fetchRecentCommitData } from "@/lib/github/commits";
-import { fetchStargazersWithDetails, fetchLockstepData } from "@/lib/github/stargazers";
+import { fetchStargazersWithDetails, fetchLockstepData, fetchAuthenticityData } from "@/lib/github/stargazers";
 import { fetchIssueStats } from "@/lib/github/issues";
+import { estimateLowActivityRatio } from "@/lib/scoring/authenticity";
+import { scoreTemporal } from "@/lib/scoring/temporal";
 import { computeTrustScore } from "@/lib/scoring/engine";
 import { getCached, setCached, trustScoreCache, CACHE_TTL_MS, cacheKey } from "@/lib/trust-score-cache";
 import { addAudit } from "@/lib/recent-audits";
@@ -103,6 +105,24 @@ export async function POST(request: NextRequest): Promise<NextResponse<TrustScor
 
     const starredMap = await fetchLockstepData(users, owner, repo);
 
+    // ── Authenticity signals (conditional — only fetch if cheap proxy signals suspicion) ──
+
+    const simpleActivityRatio = estimateLowActivityRatio(users);
+    const prelimTemporal = scoreTemporal(users, {
+      totalStars: repoInfo.stargazers_count,
+      createdAt: repoInfo.created_at,
+    });
+    const shouldFetchAuthenticity =
+      simpleActivityRatio > 0.15 || prelimTemporal.signals.velocityScore > 0.3;
+
+    const authenticitySignals = shouldFetchAuthenticity
+      ? await fetchAuthenticityData(users, owner, repo)
+      : {
+          lowActivityRatio: simpleActivityRatio,
+          coordLockstepScore: 0,
+          burstLowActivityRatio: 0,
+        };
+
     // ── Score calculation ─────────────────────────────────────────────────────
 
     const trustScore = computeTrustScore({
@@ -113,6 +133,7 @@ export async function POST(request: NextRequest): Promise<NextResponse<TrustScor
       repoInfo,
       recentCommitData,
       issueStats,
+      authenticitySignals,
     });
 
     setCached(owner, repo, trustScore);
