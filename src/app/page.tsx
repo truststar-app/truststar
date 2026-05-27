@@ -138,105 +138,9 @@ function WaitlistSection() {
   );
 }
 
-type Mode = "repo" | "npm" | "skill";
-
-type PhraseItem = {
-  text: string;
-  type: "question" | "stat";
-  size: number;
-};
-
-type PhraseRowData = {
-  speed: number;
-  rtl: boolean;
-  mobileHide: boolean;
-  phrases: PhraseItem[];
-};
-
-const PHRASE_ROWS: PhraseRowData[] = [
-  {
-    speed: 35,
-    rtl: false,
-    mobileHide: false,
-    phrases: [
-      { text: "Is this repo genuinely popular?", type: "question", size: 20 },
-      { text: "6 million fake stars detected on GitHub...", type: "stat", size: 26 },
-      { text: "Can you trust this maintainer?", type: "question", size: 16 },
-    ],
-  },
-  {
-    speed: 22,
-    rtl: true,
-    mobileHide: false,
-    phrases: [
-      { text: "1 Lambda can fake 1M weekly downloads...", type: "stat", size: 22 },
-      { text: "Are these stars organic?", type: "question", size: 17 },
-      { text: "Who actually contributes here?", type: "question", size: 14 },
-    ],
-  },
-  {
-    speed: 40,
-    rtl: false,
-    mobileHide: false,
-    phrases: [
-      { text: "Is this code safe to run?", type: "question", size: 21 },
-      { text: "Supply chain attacks up 742% since 2019...", type: "stat", size: 19 },
-      { text: "Do the numbers add up?", type: "question", size: 15 },
-    ],
-  },
-  {
-    speed: 18,
-    rtl: true,
-    mobileHide: false,
-    phrases: [
-      { text: "One malicious dependency is all it takes...", type: "stat", size: 24 },
-      { text: "Are the download numbers real?", type: "question", size: 18 },
-      { text: "Star quality matters more than star count.", type: "question", size: 16 },
-    ],
-  },
-  {
-    speed: 28,
-    rtl: false,
-    mobileHide: true,
-    phrases: [
-      { text: "Who maintains this package?", type: "question", size: 19 },
-      { text: "73% of devs use packages with 0 active contributors...", type: "stat", size: 22 },
-      { text: "Is this project still active?", type: "question", size: 15 },
-    ],
-  },
-  {
-    speed: 15,
-    rtl: true,
-    mobileHide: true,
-    phrases: [
-      { text: "Trust but verify.", type: "question", size: 32 },
-      { text: "Does this code phone home?", type: "question", size: 17 },
-      { text: "Fake popularity = real risk.", type: "stat", size: 21 },
-    ],
-  },
-  {
-    speed: 33,
-    rtl: false,
-    mobileHide: true,
-    phrases: [
-      { text: "Is the fork ratio healthy?", type: "question", size: 16 },
-      { text: "95% of attacks start with a trusted dependency...", type: "stat", size: 23 },
-      { text: "Verify before you install.", type: "question", size: 18 },
-    ],
-  },
-  {
-    speed: 25,
-    rtl: true,
-    mobileHide: true,
-    phrases: [
-      { text: "Hidden credentials. Obfuscated code. Real threats.", type: "stat", size: 20 },
-      { text: "Are these issues organic?", type: "question", size: 14 },
-      { text: "Open source ≠ safe source.", type: "stat", size: 28 },
-    ],
-  },
-];
-
 // ─── Loading Overlay ───────────────────────────────────────────────────────────
+
+type Mode = "repo" | "npm" | "skill";
 
 function LoadingOverlay({ mode }: { mode: Mode }) {
   const [step, setStep] = useState(0);
@@ -343,245 +247,6 @@ function LoadingOverlay({ mode }: { mode: Mode }) {
   );
 }
 
-// ─── Phrase Row ────────────────────────────────────────────────────────────────
-
-function PhraseRow({ row }: { row: PhraseRowData }) {
-  const doubled = [...row.phrases, ...row.phrases];
-  return (
-    <div style={{ overflow: "hidden" }} className={row.mobileHide ? "phrase-row-mobile-hide" : ""}>
-      <div
-        className="phrase-marquee"
-        style={{
-          display: "flex",
-          alignItems: "center",
-          gap: 64,
-          width: "max-content",
-          animation: `${row.rtl ? "marquee-rtl" : "marquee-ltr"} ${row.speed}s linear infinite`,
-          willChange: "transform",
-          padding: "10px 0",
-        }}
-      >
-        {doubled.map((phrase, i) => (
-          <span
-            key={i}
-            style={{
-              fontSize: phrase.size,
-              fontWeight: phrase.type === "stat" ? 600 : 400,
-              fontFamily: "var(--font-ibm-sans), sans-serif",
-              color:
-                phrase.type === "stat"
-                  ? i % 2 === 0 ? "rgba(217,54,54,0.25)" : "rgba(217,54,54,0.22)"
-                  : i % 2 === 0 ? "rgba(12,12,13,0.18)" : "rgba(12,12,13,0.15)",
-              whiteSpace: "nowrap",
-              flexShrink: 0,
-              letterSpacing: phrase.size > 18 ? "-0.4px" : "0",
-            }}
-          >
-            {phrase.text}
-          </span>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-// ─── Preview Block ─────────────────────────────────────────────────────────────
-
-function ScoreArc({ score, color, label }: { score: number; color: string; label: string }) {
-  const r = 24;
-  const circumference = 2 * Math.PI * r;
-  const offset = circumference - (score / 100) * circumference;
-  return (
-    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 4, flexShrink: 0 }}>
-      <svg width="60" height="60" viewBox="0 0 60 60" aria-hidden="true">
-        <circle cx="30" cy="30" r={r} fill="none" stroke="var(--border)" strokeWidth="5" />
-        <circle cx="30" cy="30" r={r} fill="none" stroke={color} strokeWidth="5"
-          strokeDasharray={circumference} strokeDashoffset={offset}
-          strokeLinecap="round" transform="rotate(-90 30 30)" />
-        <text x="30" y="35" textAnchor="middle"
-          style={{ fontSize: 14, fontWeight: "bold", fill: color, fontFamily: "monospace" }}>
-          {score}
-        </text>
-      </svg>
-      <span style={{ fontSize: 9, fontWeight: 700, color, letterSpacing: "0.5px", textTransform: "uppercase" as const }}>
-        {label}
-      </span>
-    </div>
-  );
-}
-
-function PreviewBar({ label, pct }: { label: string; pct: number }) {
-  const color = pct > 70 ? "var(--safe)" : pct >= 40 ? "var(--suspicious)" : "var(--dangerous)";
-  return (
-    <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-      <span style={{ fontSize: 12, color: "var(--text-secondary)", flex: 1, whiteSpace: "nowrap" as const }}>{label}</span>
-      <div style={{ flex: 2, height: 6, background: "var(--bg-hover)", borderRadius: 4, overflow: "hidden" }}>
-        <div style={{ height: "100%", width: `${pct}%`, background: color, borderRadius: 4 }} />
-      </div>
-      <span style={{ fontSize: 12, fontFamily: "var(--font-ibm-mono), monospace", color: "var(--text-secondary)", width: 36, textAlign: "right" as const }}>{pct}%</span>
-    </div>
-  );
-}
-
-type DotColor = "orange" | "green" | "red" | "gray";
-const DOT_COLORS: Record<DotColor, string> = {
-  orange: "#D97706", green: "#16A34A", red: "#DC2626", gray: "#A0A0AB",
-};
-
-function PreviewFinding({ dot, text }: { dot: DotColor; text: string }) {
-  return (
-    <div style={{ display: "flex", alignItems: "flex-start", gap: 8, fontSize: 12, lineHeight: 1.8 }}>
-      <span style={{ width: 7, height: 7, borderRadius: "50%", background: DOT_COLORS[dot], display: "inline-block", flexShrink: 0, marginTop: 6 }} />
-      <span style={{ color: "var(--text-secondary)" }}>{text}</span>
-    </div>
-  );
-}
-
-function RepoPreview() {
-  return (
-    <>
-      <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 16 }}>
-        <div>
-          <p style={{ fontWeight: 600, fontSize: 18, color: "var(--text-primary)", marginBottom: 2, letterSpacing: "-0.3px" }}>Trust Score</p>
-          <p style={{ fontSize: 12, color: "var(--text-tertiary)", fontStyle: "italic" }}>What you&apos;ll discover</p>
-        </div>
-        <ScoreArc score={87} color="#16A34A" label="SAFE" />
-      </div>
-      <p style={{ fontSize: 13, color: "var(--text-secondary)", fontStyle: "italic", marginBottom: 16, lineHeight: 1.6 }}>
-        &ldquo;Over 6M fake stars detected on GitHub. For $0.01 per star, anyone can fake popularity.&rdquo;
-      </p>
-      <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 16 }}>
-        <PreviewBar label="Stargazer Quality" pct={82} />
-        <PreviewBar label="Temporal Patterns" pct={89} />
-        <PreviewBar label="Project Health" pct={61} />
-        <PreviewBar label="Community Signals" pct={95} />
-      </div>
-      <div style={{ borderTop: "1px solid var(--border)", marginBottom: 12 }} />
-      <div style={{ display: "flex", flexDirection: "column" }}>
-        <PreviewFinding dot="orange" text="12% of stargazers have accounts younger than 7 days" />
-        <PreviewFinding dot="orange" text="Star burst: +2,400 stars in 48h (March 3)" />
-        <PreviewFinding dot="green" text="Healthy fork/star ratio (1:18)" />
-        <PreviewFinding dot="green" text="Active maintenance — 47 commits last month" />
-      </div>
-    </>
-  );
-}
-
-function NpmPreview() {
-  const points = [10,14,9,18,16,22,20,28,26,32,30,38,36,43,40,47,44,52,50,57,54,61,58,66,63,70,67,74,71,78];
-  const W = 400; const H = 60;
-  const maxV = Math.max(...points);
-  const pts = points.map((v, i) => `${(i / (points.length - 1)) * W},${H - (v / maxV) * H}`).join(" ");
-
-  return (
-    <>
-      <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 16 }}>
-        <div>
-          <p style={{ fontWeight: 600, fontSize: 18, color: "var(--text-primary)", marginBottom: 2, letterSpacing: "-0.3px" }}>npm Check</p>
-          <p style={{ fontSize: 12, color: "var(--text-tertiary)", fontStyle: "italic" }}>What you&apos;ll discover</p>
-        </div>
-        <span style={{ fontSize: 11, fontWeight: 600, padding: "4px 10px", borderRadius: "var(--radius)", background: "var(--safe-bg)", color: "var(--safe)", border: "1px solid #BBF7D0", alignSelf: "flex-start", flexShrink: 0 }}>
-          7 positive signals
-        </span>
-      </div>
-      <p style={{ fontSize: 13, color: "var(--text-secondary)", fontStyle: "italic", marginBottom: 14, lineHeight: 1.6 }}>
-        &ldquo;npm downloads are trivially inflatable. 1 Lambda function = 1M fake downloads per week.&rdquo;
-      </p>
-      <div style={{ background: "var(--accent-subtle)", borderRadius: "var(--radius)", overflow: "hidden", marginBottom: 12 }}>
-        <svg viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" style={{ width: "100%", height: 60, display: "block" }} aria-hidden="true">
-          <polyline points={pts} fill="none" stroke="#D93636" strokeWidth="1.5" strokeLinejoin="round" strokeLinecap="round" />
-        </svg>
-      </div>
-      <p style={{ fontSize: 12, fontFamily: "var(--font-ibm-mono), monospace", color: "var(--text-secondary)", marginBottom: 16 }}>
-        Weekly: 106.8M · Stars: 69.1k · Maintainers: 5 · Versions: 288
-      </p>
-      <div style={{ borderTop: "1px solid var(--border)", marginBottom: 12 }} />
-      <div style={{ display: "flex", flexDirection: "column" }}>
-        <PreviewFinding dot="green" text="Widely adopted — 106.8M weekly downloads" />
-        <PreviewFinding dot="green" text="Established package — published since 2010" />
-        <PreviewFinding dot="green" text="Multiple maintainers — 5 registered" />
-        <PreviewFinding dot="gray" text="Install scripts detected — review before installing" />
-      </div>
-    </>
-  );
-}
-
-function CodePreview() {
-  return (
-    <>
-      <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 16 }}>
-        <div>
-          <p style={{ fontWeight: 600, fontSize: 18, color: "var(--text-primary)", marginBottom: 2, letterSpacing: "-0.3px" }}>Code Scan</p>
-          <p style={{ fontSize: 12, color: "var(--text-tertiary)", fontStyle: "italic" }}>What you&apos;ll discover</p>
-        </div>
-        <ScoreArc score={73} color="#D97706" label="SUSPICIOUS" />
-      </div>
-      <p style={{ fontSize: 13, color: "var(--text-secondary)", fontStyle: "italic", marginBottom: 16, lineHeight: 1.6 }}>
-        &ldquo;95% of supply chain attacks start with a trusted dependency.&rdquo;
-      </p>
-      <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 16 }}>
-        <PreviewBar label="Network Access" pct={65} />
-        <PreviewBar label="File Access" pct={90} />
-        <PreviewBar label="Execution" pct={45} />
-        <PreviewBar label="Dependencies" pct={82} />
-      </div>
-      <div style={{ borderTop: "1px solid var(--border)", marginBottom: 12 }} />
-      <div style={{ display: "flex", flexDirection: "column" }}>
-        <PreviewFinding dot="red" text="Hardcoded URL to unknown domain (3 occurrences)" />
-        <PreviewFinding dot="orange" text="Uses eval() with dynamic input" />
-        <PreviewFinding dot="green" text="No access to sensitive paths" />
-        <PreviewFinding dot="green" text="All dependencies pinned to exact versions" />
-      </div>
-    </>
-  );
-}
-
-function PreviewBlock({ mode }: { mode: Mode }) {
-  const [displayedMode, setDisplayedMode] = useState<Mode>(mode);
-  const [phase, setPhase] = useState<"in" | "out">("in");
-  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  useEffect(() => {
-    if (mode === displayedMode) return;
-    setPhase("out");
-    timerRef.current = setTimeout(() => {
-      setDisplayedMode(mode);
-      setPhase("in");
-    }, 150);
-    return () => {
-      if (timerRef.current) clearTimeout(timerRef.current);
-    };
-  }, [mode, displayedMode]);
-
-  return (
-    <div
-      className="preview-block"
-      style={{
-        maxWidth: 700,
-        width: "100%",
-        margin: "16px auto 0",
-        textAlign: "left",
-        background: "rgba(255,255,255,0.92)",
-        backdropFilter: "blur(10px)",
-        WebkitBackdropFilter: "blur(10px)",
-        border: "1px solid var(--border)",
-        borderRadius: 14,
-        boxShadow: "0 4px 24px rgba(0,0,0,0.06)",
-        padding: "28px 32px",
-        opacity: phase === "in" ? 1 : 0,
-        transform: phase === "in" ? "translateY(0)" : "translateY(8px)",
-        transition: phase === "in"
-          ? "opacity 250ms ease, transform 250ms ease"
-          : "opacity 150ms ease, transform 150ms ease",
-      }}
-    >
-      {displayedMode === "repo" && <RepoPreview />}
-      {displayedMode === "npm" && <NpmPreview />}
-      {displayedMode === "skill" && <CodePreview />}
-    </div>
-  );
-}
-
 // ─── Main Page ─────────────────────────────────────────────────────────────────
 
 export default function HomePage() {
@@ -606,7 +271,6 @@ export default function HomePage() {
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const searchWrapperRef = useRef<HTMLDivElement>(null);
 
-  // Close dropdown on outside click
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
       if (searchWrapperRef.current && !searchWrapperRef.current.contains(e.target as Node)) {
@@ -618,7 +282,6 @@ export default function HomePage() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  // Debounced GitHub search
   useEffect(() => {
     if (mode !== "repo") {
       setSuggestions([]);
@@ -643,7 +306,7 @@ export default function HomePage() {
           setActiveIndex(-1);
         }
       } catch {
-        // silently ignore — don't show error for search failures
+        // silently ignore
       } finally {
         setSearching(false);
       }
@@ -766,59 +429,28 @@ export default function HomePage() {
     <>
       {loading && <LoadingOverlay mode={mode} />}
 
-      <main style={{ background: "var(--bg-base)" }}>
+      <main style={{ background: "var(--bg-base)", minHeight: "100vh", display: "flex", flexDirection: "column" }}>
 
-        {/* ─── HERO + breathing space ────────────────────────────────────────── */}
+        {/* ─── Hero ─────────────────────────────────────────────────────────── */}
         <section
-          id="hero"
           style={{
-            position: "relative",
-            overflow: "hidden",
+            flex: 1,
             display: "flex",
             flexDirection: "column",
             alignItems: "center",
-            background: "var(--bg-base)",
+            justifyContent: "center",
+            padding: "calc(var(--header-h, 48px) + 8vh) 24px 10vh",
           }}
         >
-          {/* Animated phrase rows — full section background */}
-          <div
-            aria-hidden="true"
-            style={{
-              position: "absolute",
-              inset: 0,
-              display: "flex",
-              flexDirection: "column",
-              justifyContent: "space-around",
-              pointerEvents: "none",
-              userSelect: "none",
-              overflow: "hidden",
-              maskImage: "linear-gradient(to bottom, transparent 0%, black 8%, black 88%, transparent 100%)",
-              WebkitMaskImage: "linear-gradient(to bottom, transparent 0%, black 8%, black 88%, transparent 100%)",
-            }}
-          >
-            {PHRASE_ROWS.map((row, i) => (
-              <PhraseRow key={i} row={row} />
-            ))}
-          </div>
+          <div style={{ textAlign: "center", maxWidth: 780, width: "100%" }}>
 
-          {/* Main content — radial gradient fades phrases behind it */}
-          <div
-            style={{
-              position: "relative",
-              zIndex: 2,
-              textAlign: "center",
-              padding: "8vh 24px 0",
-              maxWidth: 960,
-              width: "100%",
-              background: "radial-gradient(ellipse 90% 55% at 50% 60%, rgba(250,250,250,0.98) 0%, rgba(250,250,250,0.96) 35%, rgba(250,250,250,0.70) 65%, transparent 90%)",
-            }}
-          >
-            <div className="hero-row" style={{ marginBottom: 10 }}>
+            {/* Logo + title */}
+            <div className="hero-row" style={{ marginBottom: 12, justifyContent: "center" }}>
               <Image
                 src="/14619e05-69a1-41be-86dc-5ecda5629b3a-removebg-preview.png"
                 alt="TrustStar"
-                width={72}
-                height={72}
+                width={64}
+                height={64}
                 priority
                 className="hero-logo"
               />
@@ -838,10 +470,11 @@ export default function HomePage() {
               </h1>
             </div>
 
-            <p style={{ fontSize: 17, color: "var(--text-secondary)", lineHeight: 1.6, maxWidth: 480, margin: "10px auto 20px" }}>
+            <p style={{ fontSize: 17, color: "var(--text-secondary)", lineHeight: 1.6, maxWidth: 440, margin: "0 auto 28px" }}>
               Verify any open source project before you depend on it.
             </p>
 
+            {/* Search bar */}
             <div ref={searchWrapperRef} style={{ position: "relative" }}>
               <form onSubmit={handleSubmit}>
                 <div className={`search-bar-outer${error ? " has-error" : ""}`}>
@@ -975,7 +608,8 @@ export default function HomePage() {
               )}
             </div>
 
-            <p style={{ marginTop: 10, fontSize: 12, color: "var(--text-tertiary)" }}>
+            {/* Examples */}
+            <p style={{ marginTop: 12, fontSize: 12, color: "var(--text-tertiary)" }}>
               Try:{" "}
               {[
                 { label: "facebook/react", value: "facebook/react", m: "repo" as Mode },
@@ -1010,13 +644,7 @@ export default function HomePage() {
               ))}
             </p>
 
-            <PreviewBlock mode={mode} />
-
           </div>
-
-          {/* 120px breathing space — phrase rows visible through transparent gap */}
-          <div style={{ height: 120, width: "100%", position: "relative", zIndex: 1, flexShrink: 0 }} />
-
         </section>
 
         <WaitlistSection />
