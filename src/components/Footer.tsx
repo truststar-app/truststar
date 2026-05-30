@@ -10,7 +10,7 @@ export default function Footer() {
     <footer
       style={{
         borderTop: "1px solid var(--border)",
-        padding: "clamp(8px, 1.6vh, 16px) 24px clamp(6px, 1.2vh, 12px)",
+        padding: "clamp(8px, 1.6vh, 16px) 24px 6px",
       }}
     >
       <div className="footer-grid">
@@ -73,8 +73,8 @@ export default function Footer() {
       <div
         style={{
           maxWidth: "var(--max-w)",
-          margin: "8px auto 0",
-          paddingTop: 8,
+          margin: "4px auto 0",
+          paddingTop: 6,
           borderTop: "1px solid var(--border-subtle)",
           display: "flex",
           justifyContent: "space-between",
