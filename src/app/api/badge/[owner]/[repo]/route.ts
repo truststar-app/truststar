@@ -1,94 +1,107 @@
 import { NextRequest, NextResponse } from "next/server";
 import QRCode from "qrcode";
-import fs from "fs";
-import path from "path";
 import { getCached } from "@/lib/trust-score-cache";
 import { getLatestAuditForSlug } from "@/lib/recent-audits";
 import { rateLimit, getClientIp } from "@/lib/rate-limit";
 
 const BASE = process.env.NEXT_PUBLIC_BASE_URL ?? "https://truststar.co";
 
-const STATUS_COLORS: Record<string, string> = {
-  SAFE:       "#16A34A",
-  CAUTION:    "#D97706",
-  SUSPICIOUS: "#D97706",
-  DANGEROUS:  "#DC2626",
+const STATUS_COLORS: Record<string, { bg: string; light: string }> = {
+  SAFE:       { bg: "#16A34A", light: "#BBF7D0" },
+  CAUTION:    { bg: "#D97706", light: "#FDE68A" },
+  SUSPICIOUS: { bg: "#D97706", light: "#FDE68A" },
+  DANGEROUS:  { bg: "#DC2626", light: "#FECACA" },
 };
 
-// Logo: read once at startup (50×57px PNG, ~6KB)
-function loadLogo(): string {
-  try {
-    const buf = fs.readFileSync(path.join(process.cwd(), "public", "badge-owl.png"));
-    return `data:image/png;base64,${buf.toString("base64")}`;
-  } catch {
-    return "";
-  }
-}
-const LOGO_DATA = loadLogo();
+// Layout — 220 × 40px
+const LW = 96;   // brand section
+const SW = 80;   // score section
+const QW = 44;   // QR section
+const W  = LW + SW + QW;  // 220
+const H  = 40;
 
-// Badge layout — 176 × 40px
-const LOGO_W  = 48;   // dark brand section (logo only)
-const SCORE_W = 88;   // colored section (TrustStar + score + label)
-const QR_W    = 40;   // white QR section
-const TOTAL   = LOGO_W + SCORE_W + QR_W;  // 176
-const H       = 40;
-
-// Logo: 26×30 centered in 48×40
-const LOGO_IMG_W = 26;
-const LOGO_IMG_H = 30;
-const LOGO_X = Math.round((LOGO_W - LOGO_IMG_W) / 2);
-const LOGO_Y = Math.round((H - LOGO_IMG_H) / 2);
-
-// QR: 32×32 centered in 40×40
-const QR_SIZE = 32;
-const QR_X = LOGO_W + SCORE_W + Math.round((QR_W - QR_SIZE) / 2);
-const QR_Y = Math.round((H - QR_SIZE) / 2);
-
-// Score section center x
-const SC = LOGO_W + Math.round(SCORE_W / 2);
+// QR: 32×32 centered in QW×H
+const QS   = 32;
+const QX   = LW + SW + Math.round((QW - QS) / 2);
+const QY   = Math.round((H - QS) / 2);
 
 async function extractQrPath(url: string): Promise<{ d: string; scale: number } | null> {
   try {
     const svg = await QRCode.toString(url, { type: "svg", margin: 0, errorCorrectionLevel: "L" });
     const vb = svg.match(/viewBox="0 0 (\d+)/);
-    const n = vb ? parseInt(vb[1]) : 37;
+    const n  = vb ? parseInt(vb[1]) : 37;
     const pd = svg.match(/<path[^>]+d="([^"]+)"/);
     if (!pd) return null;
-    return { d: pd[1], scale: QR_SIZE / n };
+    return { d: pd[1], scale: QS / n };
   } catch {
     return null;
   }
 }
 
 async function buildSvg(score: number | null, label: string | null, reportUrl: string): Promise<string> {
-  const color     = STATUS_COLORS[label ?? ""] ?? "#9CA3AF";
+  const cfg       = STATUS_COLORS[label ?? ""] ?? { bg: "#6B7280", light: "#E5E7EB" };
   const scoreText = score !== null ? String(score) : "—";
   const labelText = label && label !== "NEW" ? label : "NEW";
 
   const qr = await extractQrPath(reportUrl);
-  const qrPath = qr
-    ? `<path fill="#1C1C1E" transform="translate(${QR_X},${QR_Y}) scale(${qr.scale.toFixed(5)})" d="${qr.d}"/>`
+  const qrEl = qr
+    ? `<path fill="#1a1a1a" transform="translate(${QX},${QY}) scale(${qr.scale.toFixed(5)})" d="${qr.d}"/>`
     : "";
 
-  const logoEl = LOGO_DATA
-    ? `<image href="${LOGO_DATA}" xlink:href="${LOGO_DATA}" x="${LOGO_X}" y="${LOGO_Y}" width="${LOGO_IMG_W}" height="${LOGO_IMG_H}" xmlns:xlink="http://www.w3.org/1999/xlink"/>`
-    : `<text x="${LOGO_W / 2}" y="${H / 2 + 5}" text-anchor="middle" font-size="18" fill="#D93636">&#9679;</text>`;
+  // Score section center
+  const sc = LW + Math.round(SW / 2);
 
-  return `<svg xmlns="http://www.w3.org/2000/svg" width="${TOTAL}" height="${H}" role="img" aria-label="TrustStar ${scoreText} ${labelText}">
-  <clipPath id="r"><rect width="${TOTAL}" height="${H}" rx="6" fill="#fff"/></clipPath>
-  <g clip-path="url(#r)">
-    <rect width="${LOGO_W}" height="${H}" fill="#1C1C1E"/>
-    <rect x="${LOGO_W}" width="${SCORE_W}" height="${H}" fill="${color}"/>
-    <rect x="${LOGO_W + SCORE_W}" width="${QR_W}" height="${H}" fill="#FFFFFF"/>
+  // Brand icon: small hexagon with "TS" monogram
+  const iconX = 12;
+  const iconCX = iconX + 10;  // center of 20×20 icon
+  const iconCY = H / 2;
+
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" role="img" aria-label="TrustStar ${scoreText} ${labelText}">
+  <defs>
+    <clipPath id="clip"><rect width="${W}" height="${H}" rx="6"/></clipPath>
+    <linearGradient id="brand" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#1e293b"/>
+      <stop offset="100%" stop-color="#0f172a"/>
+    </linearGradient>
+    <linearGradient id="score" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="${cfg.bg}"/>
+      <stop offset="100%" stop-color="${cfg.bg}" stop-opacity="0.88"/>
+    </linearGradient>
+  </defs>
+
+  <g clip-path="url(#clip)">
+    <rect width="${LW}" height="${H}" fill="url(#brand)"/>
+    <rect x="${LW}" width="${SW}" height="${H}" fill="url(#score)"/>
+    <rect x="${LW + SW}" width="${QW}" height="${H}" fill="#f8fafc"/>
+    <!-- Divider lines -->
+    <line x1="${LW}" y1="0" x2="${LW}" y2="${H}" stroke="rgba(255,255,255,0.08)" stroke-width="1"/>
+    <line x1="${LW + SW}" y1="0" x2="${LW + SW}" y2="${H}" stroke="rgba(0,0,0,0.06)" stroke-width="1"/>
   </g>
-  <rect width="${TOTAL}" height="${H}" rx="6" fill="none" stroke="#D1D5DB" stroke-width="1"/>
-  ${logoEl}
-  <g font-family="Verdana,Geneva,DejaVu Sans,sans-serif" text-anchor="middle">
-    <text x="${SC}" y="14" font-size="7" font-weight="600" fill="#FFFFFF" fill-opacity="0.7" letter-spacing="0.5">TRUSTSTAR</text>
-    <text x="${SC}" y="27" font-size="14" font-weight="800" fill="#FFFFFF">${scoreText}</text>
-    <text x="${SC}" y="37" font-size="8" font-weight="600" fill="#FFFFFF" fill-opacity="0.9">${labelText}</text>
-  </g>
-  ${qrPath}
+
+  <!-- Border -->
+  <rect width="${W}" height="${H}" rx="6" fill="none" stroke="rgba(0,0,0,0.18)" stroke-width="1"/>
+
+  <!-- Brand: hexagon icon -->
+  <polygon points="${iconCX},${iconCY - 10} ${iconCX + 8.7},${iconCY - 5} ${iconCX + 8.7},${iconCY + 5} ${iconCX},${iconCY + 10} ${iconCX - 8.7},${iconCY + 5} ${iconCX - 8.7},${iconCY - 5}"
+    fill="none" stroke="#D93636" stroke-width="1.5"/>
+  <text x="${iconCX}" y="${iconCY + 4}" text-anchor="middle"
+    font-family="Verdana,Geneva,sans-serif" font-size="7.5" font-weight="800" fill="#D93636">TS</text>
+
+  <!-- Brand: name -->
+  <text x="${iconX + 24}" y="${H / 2 + 4}"
+    font-family="Verdana,Geneva,sans-serif" font-size="10" font-weight="700" fill="#f1f5f9"
+    letter-spacing="0.2">TrustStar</text>
+
+  <!-- Score section -->
+  <text x="${sc}" y="${H / 2 - 2}"
+    text-anchor="middle" font-family="Verdana,Geneva,sans-serif"
+    font-size="16" font-weight="800" fill="#ffffff">${scoreText}</text>
+  <text x="${sc}" y="${H / 2 + 13}"
+    text-anchor="middle" font-family="Verdana,Geneva,sans-serif"
+    font-size="8.5" font-weight="600" fill="${cfg.light}" letter-spacing="0.4">${labelText}</text>
+
+  <!-- QR -->
+  ${qrEl}
 </svg>`;
 }
 

@@ -7,16 +7,16 @@ const BASE = "https://truststar.co";
 
 // ─── Static SVG previews (no QR — live badge includes QR) ────────────────────
 
-function badgePreviewSvg(score: number, label: string, color: string): string {
-  // matches API layout: 176×40, logo section 48px, score 88px, no QR in static preview
-  const W = 136; const H = 40; const LW = 48; const SW = 88;
+function badgePreviewSvg(score: number, label: string, color: string, light: string): string {
+  const W = 176; const H = 40; const LW = 96; const SW = 80;
   const sc = LW + Math.round(SW / 2);
-  return `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}"><clipPath id="r${label}"><rect width="${W}" height="${H}" rx="6" fill="#fff"/></clipPath><g clip-path="url(#r${label})"><rect width="${LW}" height="${H}" fill="#1C1C1E"/><rect x="${LW}" width="${SW}" height="${H}" fill="${color}"/></g><rect width="${W}" height="${H}" rx="6" fill="none" stroke="#D1D5DB" stroke-width="1"/><text x="${Math.round(LW/2)}" y="${Math.round(H/2)+7}" text-anchor="middle" font-family="Verdana,sans-serif" font-size="20" fill="#D93636">&#9679;</text><g font-family="Verdana,Geneva,DejaVu Sans,sans-serif" text-anchor="middle"><text x="${sc}" y="14" font-size="7" font-weight="600" fill="#FFFFFF" fill-opacity="0.7" letter-spacing="0.5">TRUSTSTAR</text><text x="${sc}" y="27" font-size="14" font-weight="800" fill="#FFFFFF">${score}</text><text x="${sc}" y="37" font-size="8" font-weight="600" fill="#FFFFFF" fill-opacity="0.9">${label}</text></g></svg>`;
+  const ix = 22; const iy = H / 2;
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}"><defs><clipPath id="c${label}"><rect width="${W}" height="${H}" rx="6"/></clipPath></defs><g clip-path="url(#c${label})"><rect width="${LW}" height="${H}" fill="#0f172a"/><rect x="${LW}" width="${SW}" height="${H}" fill="${color}"/><line x1="${LW}" y1="0" x2="${LW}" y2="${H}" stroke="rgba(255,255,255,0.08)" stroke-width="1"/></g><rect width="${W}" height="${H}" rx="6" fill="none" stroke="rgba(0,0,0,0.18)" stroke-width="1"/><polygon points="${ix},${iy-10} ${ix+8.7},${iy-5} ${ix+8.7},${iy+5} ${ix},${iy+10} ${ix-8.7},${iy+5} ${ix-8.7},${iy-5}" fill="none" stroke="#D93636" stroke-width="1.5"/><text x="${ix}" y="${iy+4}" text-anchor="middle" font-family="Verdana,sans-serif" font-size="7.5" font-weight="800" fill="#D93636">TS</text><text x="${ix+24}" y="${iy+4}" font-family="Verdana,sans-serif" font-size="10" font-weight="700" fill="#f1f5f9">TrustStar</text><text x="${sc}" y="${iy-2}" text-anchor="middle" font-family="Verdana,sans-serif" font-size="16" font-weight="800" fill="#fff">${score}</text><text x="${sc}" y="${iy+13}" text-anchor="middle" font-family="Verdana,sans-serif" font-size="8.5" font-weight="600" fill="${light}" letter-spacing="0.4">${label}</text></svg>`;
 }
 
-function safeSvg():       string { return badgePreviewSvg(87, "SAFE",      "#16A34A"); }
-function cautionSvg():    string { return badgePreviewSvg(62, "CAUTION",   "#D97706"); }
-function dangerousSvg():  string { return badgePreviewSvg(23, "DANGEROUS", "#DC2626"); }
+function safeSvg():      string { return badgePreviewSvg(87, "SAFE",      "#16A34A", "#BBF7D0"); }
+function cautionSvg():   string { return badgePreviewSvg(62, "CAUTION",   "#D97706", "#FDE68A"); }
+function dangerousSvg(): string { return badgePreviewSvg(23, "DANGEROUS", "#DC2626", "#FECACA"); }
 
 // ─── Copy button ──────────────────────────────────────────────────────────────
 
