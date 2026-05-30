@@ -518,36 +518,10 @@ export default function BadgePage() {
           </p>
 
           <div style={{ display: "flex", gap: 16, flexWrap: "wrap", alignItems: "center" }}>
-            {/* TrustStar itself */}
-            <a
-              href={`${BASE}/report/truststar-app/truststar`}
-              target="_blank"
-              rel="noopener noreferrer"
-              style={{ display: "inline-flex", flexDirection: "column", alignItems: "flex-start", gap: 6, textDecoration: "none" }}
-            >
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={`${BASE}/api/badge/truststar-app/truststar`}
-                alt="TrustStar"
-                style={{ display: "block" }}
-              />
-              <span style={{ fontSize: 11, color: "var(--text-tertiary)", fontFamily: "var(--font-ibm-mono), monospace" }}>
-                truststar-app/truststar
-              </span>
-            </a>
+            <span style={{ fontSize: 13, color: "var(--text-tertiary)" }}>
+              Badge examples will appear here once the repository is public.
+            </span>
           </div>
-
-          <p style={{ marginTop: 20, fontSize: 12, color: "var(--text-tertiary)" }}>
-            Using the badge in your project?{" "}
-            <a
-              href="https://github.com/truststar-app/truststar/issues"
-              target="_blank"
-              rel="noopener noreferrer"
-              style={{ color: "var(--text-secondary)", textDecoration: "underline" }}
-            >
-              Open an issue to get listed here.
-            </a>
-          </p>
         </section>
 
         {/* CTA */}

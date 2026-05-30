@@ -232,10 +232,6 @@ export default async function ReportPage({
               <Link href="/how-it-works" style={{ color: "var(--accent)", textDecoration: "none", fontWeight: 500 }}>
                 Check our methodology
               </Link>
-              {" "}or{" "}
-              <a href="https://github.com/truststar-app/truststar/issues" target="_blank" rel="noopener noreferrer" style={{ color: "var(--accent)", textDecoration: "none", fontWeight: 500 }}>
-                open an issue on GitHub
-              </a>
               .
             </div>
           </div>

@@ -3,8 +3,6 @@
 import Image from "next/image";
 import Link from "next/link";
 
-const GH = "https://github.com/truststar-app/truststar";
-
 export default function Footer() {
   return (
     <footer
@@ -66,7 +64,9 @@ export default function Footer() {
         </FooterCol>
 
         <FooterCol title="Open Source">
-          <FooterLink href={GH} external>GitHub</FooterLink>
+          <span style={{ display: "block", fontSize: 13, color: "var(--text-tertiary)", padding: "2px 0" }}>
+            Coming soon
+          </span>
         </FooterCol>
       </div>
 
@@ -82,27 +82,8 @@ export default function Footer() {
         }}
       >
         <span style={{ fontSize: 12, color: "var(--text-tertiary)" }}>
-          © 2026 TrustStar — Open source under MIT.
+          © 2026 TrustStar
         </span>
-        <a
-          href={GH}
-          target="_blank"
-          rel="noopener noreferrer"
-          style={{
-            fontSize: 12,
-            color: "var(--text-tertiary)",
-            textDecoration: "none",
-            transition: "color 0.12s",
-          }}
-          onMouseEnter={(e) => {
-            (e.currentTarget as HTMLElement).style.color = "var(--accent)";
-          }}
-          onMouseLeave={(e) => {
-            (e.currentTarget as HTMLElement).style.color = "var(--text-tertiary)";
-          }}
-        >
-          GitHub
-        </a>
       </div>
     </footer>
   );

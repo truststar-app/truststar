@@ -3,8 +3,6 @@
 import { useState } from "react";
 import Link from "next/link";
 
-const GH = "https://github.com/truststar-app/truststar";
-
 const labelStyle: React.CSSProperties = {
   display: "block",
   fontSize: 11,
@@ -461,8 +459,8 @@ export default function HowItWorksPage() {
             margin: "0 auto 28px",
           }}
         >
-          Every scoring algorithm is open source. Read the code, run the
-          benchmarks, and verify the results yourself.
+          Every scoring algorithm will be open source. The repository will be
+          published soon — follow along on the waitlist.
         </p>
         <div
           style={{
@@ -472,30 +470,20 @@ export default function HowItWorksPage() {
             flexWrap: "wrap",
           }}
         >
-          <a
-            href={GH}
-            target="_blank"
-            rel="noopener noreferrer"
+          <span
             style={{
               padding: "10px 22px",
               fontSize: 14,
               fontWeight: 600,
-              color: "#fff",
-              background: "var(--accent)",
+              color: "var(--text-secondary)",
+              background: "var(--bg-surface)",
+              border: "1px solid var(--border)",
               borderRadius: 6,
-              textDecoration: "none",
-              transition: "background 0.15s",
               display: "inline-block",
             }}
-            onMouseEnter={(e) =>
-              ((e.currentTarget as HTMLElement).style.background = "var(--accent-hover)")
-            }
-            onMouseLeave={(e) =>
-              ((e.currentTarget as HTMLElement).style.background = "var(--accent)")
-            }
           >
-            View on GitHub
-          </a>
+            Open source — coming soon
+          </span>
           <Link
             href="/"
             style={{
@@ -838,14 +826,7 @@ export default function HowItWorksPage() {
           <StatCard num="94%" label="Code Scan" sub="19 repos, 8 iterations" />
         </div>
         <p style={{ marginTop: 16, fontSize: 13, color: "var(--text-tertiary)", textAlign: "center" }}>
-          <a
-            href={`${GH}/tree/main/scripts`}
-            target="_blank"
-            rel="noopener noreferrer"
-            style={{ color: "var(--text-secondary)", textDecoration: "underline" }}
-          >
-            View benchmark scripts on GitHub
-          </a>
+          Benchmark scripts will be published with the open source release.
         </p>
       </section>
 
@@ -1064,25 +1045,6 @@ export default function HowItWorksPage() {
             >
               Send via email
             </button>
-            <a
-              href={`${GH}/issues`}
-              target="_blank"
-              rel="noopener noreferrer"
-              style={{
-                fontSize: 13,
-                color: "var(--text-secondary)",
-                textDecoration: "none",
-                transition: "color 0.12s",
-              }}
-              onMouseEnter={(e) =>
-                ((e.currentTarget as HTMLElement).style.color = "var(--text-primary)")
-              }
-              onMouseLeave={(e) =>
-                ((e.currentTarget as HTMLElement).style.color = "var(--text-secondary)")
-              }
-            >
-              Or open a GitHub issue
-            </a>
           </div>
         </form>
       </section>
