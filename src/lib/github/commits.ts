@@ -4,6 +4,10 @@ import type { RepoInfo } from "../types";
 const GITHUB_API_BASE = "https://api.github.com";
 
 async function githubFetchPublic<T>(path: string): Promise<T> {
+  // NEW #4: SSRF guard — mirror the check in githubFetch/githubFetchWithStarredAt
+  if (path.startsWith("http") && !path.startsWith(GITHUB_API_BASE)) {
+    throw new Error(`Blocked: request to non-GitHub host`);
+  }
   const url = path.startsWith("http") ? path : `${GITHUB_API_BASE}${path}`;
   const res = await fetch(url, {
     headers: { Accept: "application/vnd.github+json" },
@@ -64,7 +68,7 @@ export async function fetchRecentCommitData(
       page++;
     }
   } catch (err) {
-    console.error(`[commits] fetch failed for ${owner}/${repo}:`, err);
+    console.error(`[commits] fetch failed for ${JSON.stringify(owner)}/${JSON.stringify(repo)}:`, err instanceof Error ? err.message : "unknown");
   }
 
 

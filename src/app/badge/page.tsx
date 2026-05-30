@@ -8,10 +8,10 @@ const BASE = "https://truststar.co";
 // ─── Static SVG previews (no QR — live badge includes QR) ────────────────────
 
 function badgePreviewSvg(score: number, label: string, color: string, light: string): string {
-  const W = 176; const H = 40; const LW = 96; const SW = 80;
+  const W = 176; const H = 40; const LW = 104; const SW = 72;
   const sc = LW + Math.round(SW / 2);
   const iy = H / 2;
-  return `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}"><defs><clipPath id="c${label}"><rect width="${W}" height="${H}" rx="6"/></clipPath></defs><g clip-path="url(#c${label})"><rect width="${LW}" height="${H}" fill="#0f172a"/><rect x="${LW}" width="${SW}" height="${H}" fill="${color}"/><line x1="${LW}" y1="0" x2="${LW}" y2="${H}" stroke="rgba(255,255,255,0.08)" stroke-width="1"/></g><rect width="${W}" height="${H}" rx="6" fill="none" stroke="rgba(0,0,0,0.18)" stroke-width="1"/><text x="12" y="${iy+6}" font-family="Verdana,sans-serif" font-size="18" fill="#D93636">&#9733;</text><text x="32" y="${iy+4}" font-family="Verdana,sans-serif" font-size="10" font-weight="700" fill="#f1f5f9">TrustStar</text><text x="${sc}" y="${iy-2}" text-anchor="middle" font-family="Verdana,sans-serif" font-size="16" font-weight="800" fill="#fff">${score}</text><text x="${sc}" y="${iy+13}" text-anchor="middle" font-family="Verdana,sans-serif" font-size="8.5" font-weight="600" fill="${light}" letter-spacing="0.4">${label}</text></svg>`;
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}"><defs><clipPath id="c${label}"><rect width="${W}" height="${H}" rx="6"/></clipPath></defs><g clip-path="url(#c${label})"><rect width="${LW}" height="${H}" fill="#0f172a"/><rect x="${LW}" width="${SW}" height="${H}" fill="${color}"/><line x1="${LW}" y1="0" x2="${LW}" y2="${H}" stroke="rgba(255,255,255,0.08)" stroke-width="1"/></g><rect width="${W}" height="${H}" rx="6" fill="none" stroke="rgba(0,0,0,0.18)" stroke-width="1"/><text x="13" y="${iy+6}" font-family="Verdana,sans-serif" font-size="18" fill="#D93636">&#9733;</text><text x="33" y="${iy+4}" font-family="Verdana,sans-serif" font-size="10" font-weight="700" fill="#f1f5f9" letter-spacing="0.3">TrustStar</text><text x="${sc}" y="${iy-2}" text-anchor="middle" font-family="Verdana,sans-serif" font-size="16" font-weight="800" fill="#fff">${score}</text><text x="${sc}" y="${iy+13}" text-anchor="middle" font-family="Verdana,sans-serif" font-size="8.5" font-weight="600" fill="${light}" letter-spacing="0.5">${label}</text></svg>`;
 }
 
 function safeSvg():      string { return badgePreviewSvg(87, "SAFE",      "#16A34A", "#BBF7D0"); }
@@ -506,22 +506,6 @@ export default function BadgePage() {
             >
               Analyze your repo first →
             </Link>
-          </div>
-        </section>
-
-        {/* Trusted by */}
-        <section style={{ marginBottom: 40 }}>
-          <h2 style={{ fontSize: 18, fontWeight: 700, letterSpacing: "-0.4px", color: "var(--text-primary)", marginBottom: 8 }}>
-            Join projects that display their trust score
-          </h2>
-          <p style={{ fontSize: 14, color: "var(--text-secondary)", marginBottom: 20 }}>
-            Add your badge to be part of the transparency movement.
-          </p>
-
-          <div style={{ display: "flex", gap: 16, flexWrap: "wrap", alignItems: "center" }}>
-            <span style={{ fontSize: 13, color: "var(--text-tertiary)" }}>
-              Badge examples will appear here once the repository is public.
-            </span>
           </div>
         </section>
 

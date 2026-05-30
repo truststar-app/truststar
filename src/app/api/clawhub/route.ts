@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { rateLimit, getClientIp } from "@/lib/rate-limit";
 import {
   fetchTopDownloads,
   fetchTopStars,
@@ -9,10 +10,17 @@ import {
 } from "@/lib/clawhub/client";
 
 export async function GET(request: NextRequest) {
+  // H-3: Rate limit this endpoint
+  if (!(await rateLimit(getClientIp(request), 30, 60_000))) {
+    return NextResponse.json({ error: "Too many requests" }, { status: 429 });
+  }
+
   const { searchParams } = new URL(request.url);
   const view = searchParams.get("view");
   const limit = Math.min(parseInt(searchParams.get("limit") ?? "50", 10), 100);
-  const q = searchParams.get("q") ?? "";
+  // L-5: Cap q length to prevent oversized cache keys and upstream URL abuse
+  const rawQ = searchParams.get("q") ?? "";
+  const q = rawQ.slice(0, 100);
 
   try {
     switch (view) {
@@ -33,7 +41,7 @@ export async function GET(request: NextRequest) {
         return NextResponse.json({ error: "Invalid view parameter" }, { status: 400 });
     }
   } catch (err) {
-    console.error("[clawhub proxy]", err);
+    console.error("[clawhub proxy]", err instanceof Error ? err.message : "unknown");
     return NextResponse.json(
       { error: "Failed to fetch from ClawHub API" },
       { status: 502 }

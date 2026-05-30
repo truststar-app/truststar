@@ -28,7 +28,7 @@ interface NpmLatest {
 }
 
 export async function GET(req: Request) {
-  if (!rateLimit(getClientIp(req), 30, 60_000)) {
+  if (!(await rateLimit(getClientIp(req), 30, 60_000))) {
     return NextResponse.json({ error: "Too many requests. Please try again in a minute." }, { status: 429 });
   }
   const hit = cache.get("npm");

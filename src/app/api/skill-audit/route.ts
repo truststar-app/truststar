@@ -1,19 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { rateLimit, getClientIp } from "@/lib/rate-limit";
-import { fetchSkillData } from "@/lib/skill-audit/fetcher";
-import { parseSkillMdOptional } from "@/lib/skill-audit/parser";
-import { analyzeNetwork } from "@/lib/skill-audit/analyzers/network";
-import { analyzeFilesystem } from "@/lib/skill-audit/analyzers/filesystem";
-import { analyzeExecution } from "@/lib/skill-audit/analyzers/execution";
-import { analyzeObfuscation } from "@/lib/skill-audit/analyzers/obfuscation";
-import { analyzeDependencies } from "@/lib/skill-audit/analyzers/dependencies";
-import { computeSkillSafetyScore } from "@/lib/skill-audit/engine";
+import { skillCache, SKILL_CACHE_TTL, getSkillResultCached } from "@/lib/skill-audit/pipeline";
 import type { SkillSafetyScore } from "@/lib/skill-audit/types";
-import type { TrustScore } from "@/lib/types";
 import { addAudit } from "@/lib/recent-audits";
 
-const cache = new Map<string, { data: SkillSafetyScore; cachedAt: number }>();
-const CACHE_TTL = 10 * 60 * 1000;
+// H-4: Only allow valid GitHub slug characters
+const SLUG_RE = /^[a-zA-Z0-9._-]{1,100}$/;
 
 function parseSlug(input: string): { owner: string; repo: string } | null {
   const urlMatch = input.match(/github\.com\/([^/]+)\/([^/\s?#]+)/);
@@ -33,81 +25,10 @@ function timeout(ms: number): Promise<never> {
   );
 }
 
-async function fetchPopularityScore(
-  owner: string,
-  repo: string
-): Promise<number> {
-  try {
-    const baseUrl =
-      process.env.NEXT_PUBLIC_BASE_URL
-      ?? (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "https://truststar.co");
-    const response = await fetch(`${baseUrl}/api/analyze`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ owner, repo }),
-    });
-    if (!response.ok) return 50;
-    const data = (await response.json()) as TrustScore;
-    return data.score ?? 50;
-  } catch {
-    return 50;
-  }
-}
-
-async function runPipeline(
-  owner: string,
-  repo: string
-): Promise<SkillSafetyScore> {
-  const input = `${owner}/${repo}`;
-  const fetchedData = await fetchSkillData(input);
-
-  const skillMdFile = fetchedData.files.find(
-    (f) =>
-      f.path.toUpperCase() === "SKILL.MD" ||
-      f.path.toUpperCase().endsWith("/SKILL.MD")
-  );
-
-  const parsedSkillMd = parseSkillMdOptional(skillMdFile?.content ?? null);
-
-  const [
-    networkFindings,
-    filesystemFindings,
-    executionFindings,
-    obfuscationFindings,
-    dependencyFindings,
-  ] = await Promise.all([
-    Promise.resolve(analyzeNetwork(fetchedData.files)),
-    Promise.resolve(analyzeFilesystem(fetchedData.files)),
-    Promise.resolve(analyzeExecution(fetchedData.files)),
-    Promise.resolve(analyzeObfuscation(fetchedData.files)),
-    Promise.resolve(analyzeDependencies(fetchedData.files)),
-  ]);
-
-  const allFindings = [
-    ...networkFindings,
-    ...filesystemFindings,
-    ...executionFindings,
-    ...obfuscationFindings,
-    ...dependencyFindings,
-  ];
-
-  const popularityScore = await fetchPopularityScore(owner, repo);
-
-  const slug = `${owner}/${repo}`;
-  return computeSkillSafetyScore({
-    slug,
-    repoUrl: `https://github.com/${owner}/${repo}`,
-    fetchedData,
-    parsedSkillMd,
-    allFindings,
-    popularityScore,
-  });
-}
-
 export async function POST(
   request: NextRequest
 ): Promise<NextResponse<SkillSafetyScore | { error: string; details?: string }>> {
-  if (!rateLimit(getClientIp(request), 30, 60_000)) {
+  if (!(await rateLimit(getClientIp(request), 30, 60_000))) {
     return NextResponse.json(
       { error: "Too many requests. Please try again in a minute." },
       { status: 429 }
@@ -128,6 +49,11 @@ export async function POST(
       );
     }
 
+    // M-1: Guard input length before regex matching
+    if (rawInput.length > 500) {
+      return NextResponse.json({ error: "Input too long" }, { status: 400 });
+    }
+
     const parsed = parseSlug(rawInput);
     if (!parsed) {
       return NextResponse.json(
@@ -140,19 +66,25 @@ export async function POST(
     }
 
     const { owner, repo } = parsed;
-    const cacheKey = `${owner}/${repo}`.toLowerCase();
 
-    const cached = cache.get(cacheKey);
-    if (cached && Date.now() - cached.cachedAt < CACHE_TTL) {
+    // H-4: Validate slug format
+    if (!SLUG_RE.test(owner) || !SLUG_RE.test(repo)) {
+      return NextResponse.json(
+        { error: "Invalid owner or repo name" },
+        { status: 400 }
+      );
+    }
+
+    const cacheKey = `${owner}/${repo}`.toLowerCase();
+    const cached = skillCache.get(cacheKey);
+    if (cached && Date.now() - cached.cachedAt < SKILL_CACHE_TTL) {
       return NextResponse.json(cached.data);
     }
 
     const result = await Promise.race([
-      runPipeline(owner, repo),
+      getSkillResultCached(owner, repo),
       timeout(24000),
     ]);
-
-    cache.set(cacheKey, { data: result, cachedAt: Date.now() });
 
     addAudit({
       id: crypto.randomUUID(),
@@ -165,7 +97,7 @@ export async function POST(
 
     return NextResponse.json(result);
   } catch (error) {
-    console.error("Skill audit error:", error);
+    console.error("Skill audit error:", error instanceof Error ? error.message : "unknown");
 
     if (error instanceof Error) {
       if (error.message.includes("not found")) {

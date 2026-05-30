@@ -78,8 +78,7 @@ async function ghFetch<T>(path: string): Promise<T> {
   }
 
   if (!response.ok) {
-    const body = await response.text();
-    throw new Error(`GitHub API error ${response.status} on ${path}: ${body}`);
+    throw new Error(`GitHub API error ${response.status} on ${path}`);
   }
 
   return response.json() as Promise<T>;

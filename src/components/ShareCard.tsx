@@ -78,9 +78,6 @@ function CopyButton({ text }: { text: string }) {
 }
 
 interface ShareCardProps {
-  url: string;
-  filename: string;
-  analyzedAt?: string;
   score?: number;
   label?: string;
   badge?: { owner: string; repo: string };

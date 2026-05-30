@@ -18,10 +18,28 @@ const STEPS = [
   "Aggregating Trust Score…",
 ];
 
+const SECURITY_TIPS = [
+  { title: "Enable 2FA", body: "Activate two-factor authentication on your GitHub account — it's the single most effective way to prevent unauthorized access." },
+  { title: "Pin your Actions", body: "Reference third-party GitHub Actions by a full commit SHA rather than a mutable tag to prevent supply-chain hijacking." },
+  { title: "Use Dependabot", body: "Enable Dependabot alerts and security updates to automatically detect and patch vulnerable dependencies." },
+  { title: "Never commit secrets", body: "Keep API keys and tokens out of your repository. Use GitHub Actions Secrets or a secrets manager instead." },
+  { title: "Protect your main branch", body: "Enable branch protection rules on `main` to require pull request reviews and status checks before merging." },
+  { title: "Enable secret scanning", body: "GitHub's secret scanning automatically flags accidentally committed credentials — enable it in your repo's Security settings." },
+  { title: "Sign your commits", body: "GPG-sign your commits to prove authorship and make it harder for attackers to impersonate contributors." },
+  { title: "Use CODEOWNERS", body: "Add a CODEOWNERS file to require mandatory reviews from designated owners before sensitive code can be merged." },
+  { title: "Run CodeQL", body: "GitHub's built-in CodeQL analysis detects common security vulnerabilities in your code automatically on every push." },
+  { title: "Audit OAuth apps", body: "Regularly review and revoke OAuth app access and personal access tokens you no longer use in your account settings." },
+];
+
 function LoadingOverlay() {
   const [step, setStep] = useState(0);
+  const [tipIndex, setTipIndex] = useState(() => Math.floor(Math.random() * SECURITY_TIPS.length));
   useEffect(() => {
     const id = setInterval(() => setStep((s) => (s + 1) % STEPS.length), 1800);
+    return () => clearInterval(id);
+  }, []);
+  useEffect(() => {
+    const id = setInterval(() => setTipIndex((i) => (i + 1) % SECURITY_TIPS.length), 15000);
     return () => clearInterval(id);
   }, []);
 
@@ -89,6 +107,29 @@ function LoadingOverlay() {
               </p>
             </div>
           </div>
+        </div>
+      </div>
+
+      {/* Security tip — bottom of overlay */}
+      <div
+        style={{
+          position: "absolute",
+          bottom: 24,
+          left: "50%",
+          transform: "translateX(-50%)",
+          width: "100%",
+          maxWidth: 480,
+          padding: "0 24px",
+        }}
+      >
+        <div style={{ display: "flex", alignItems: "flex-start", gap: 8 }}>
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--text-tertiary)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" style={{ flexShrink: 0, marginTop: 1 }}>
+            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+          </svg>
+          <p style={{ fontSize: 11, color: "var(--text-tertiary)", lineHeight: 1.55 }}>
+            <span style={{ fontWeight: 600, color: "var(--text-secondary)" }}>Security tip —</span>{" "}
+            {SECURITY_TIPS[tipIndex].body}
+          </p>
         </div>
       </div>
     </div>
@@ -478,9 +519,6 @@ export default function ReportClientPage({ owner, repo }: { owner: string; repo:
 
         {/* Badge */}
         <ShareCard
-          url={`https://truststar.co/report/${owner}/${repo}`}
-          filename={`${owner}-${repo}`}
-          analyzedAt={report.analyzedAt}
           score={report.score}
           label={report.label}
           badge={{ owner, repo }}
@@ -520,6 +558,55 @@ export default function ReportClientPage({ owner, repo }: { owner: string; repo:
               </Link>
             </div>
           </div>
+        </div>
+
+        {/* Misclassification contact */}
+        <div
+          style={{
+            marginTop: 24,
+            background: "var(--bg-surface)",
+            border: "1px solid var(--border)",
+            borderRadius: "var(--radius-lg)",
+            padding: "16px 20px",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            gap: 16,
+            flexWrap: "wrap",
+          }}
+        >
+          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--text-tertiary)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" style={{ flexShrink: 0 }}>
+              <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+            </svg>
+            <p style={{ fontSize: 13, color: "var(--text-secondary)", lineHeight: 1.5 }}>
+              Think this repo was <strong style={{ color: "var(--text-primary)" }}>misclassified</strong>?
+              Our algorithm isn&apos;t perfect — let us know and we&apos;ll review it.
+            </p>
+          </div>
+          <a
+            href={`mailto:support@truststar.co?subject=Misclassification%20report%3A%20${owner}%2F${repo}&body=Repository%3A%20https%3A%2F%2Fgithub.com%2F${owner}%2F${repo}%0ATrust%20Score%3A%20${report.score}%20(${report.label})%0A%0AReason%20for%20dispute%3A%20`}
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 6,
+              fontSize: 12,
+              fontWeight: 600,
+              color: "var(--accent)",
+              textDecoration: "none",
+              padding: "7px 14px",
+              borderRadius: "var(--radius)",
+              border: "1px solid var(--accent-muted)",
+              background: "var(--accent-subtle)",
+              flexShrink: 0,
+              whiteSpace: "nowrap",
+            }}
+          >
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/>
+            </svg>
+            Contact support
+          </a>
         </div>
 
         {/* Back */}

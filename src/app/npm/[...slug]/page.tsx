@@ -3,26 +3,49 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import type { ReactNode } from "react";
 import type { Metadata } from "next";
-import type { NpmCheckResult, NpmSignal } from "@/lib/npm/analyzer";
-import ShareCard from "@/components/ShareCard";
+import { analyzeNpmPackage, type NpmCheckResult, type NpmSignal } from "@/lib/npm/analyzer";
+import { addAudit } from "@/lib/recent-audits";
 
-const BASE = process.env.NEXT_PUBLIC_BASE_URL
-  ?? (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "https://truststar.co");
 const SITE = "https://truststar.co";
+
+const MAX_CACHE_SIZE = 200;
+const npmCache = new Map<string, { data: NpmCheckResult; cachedAt: number }>();
+const NPM_CACHE_TTL = 10 * 60 * 1000;
+
+function roughScore(result: NpmCheckResult): number {
+  const warnings = result.signals.filter((s) => s.type === "warning").length;
+  const neutrals = result.signals.filter((s) => s.type === "neutral").length;
+  return Math.max(0, Math.min(100, 100 - warnings * 18 - neutrals * 4));
+}
 
 // ─── Data fetching (cached per request) ───────────────────────────────────────
 
 const getNpmReport = cache(async (packageName: string): Promise<NpmCheckResult | null> => {
   try {
-    const res = await fetch(`${BASE}/api/npm-check`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ package: packageName }),
-      next: { revalidate: 600 },
+    const cached = npmCache.get(packageName);
+    if (cached && Date.now() - cached.cachedAt < NPM_CACHE_TTL) return cached.data;
+
+    const result = await analyzeNpmPackage(packageName);
+
+    if (npmCache.size >= MAX_CACHE_SIZE) {
+      const oldest = npmCache.keys().next().value;
+      if (oldest) npmCache.delete(oldest);
+    }
+    npmCache.set(packageName, { data: result, cachedAt: Date.now() });
+
+    const score = roughScore(result);
+    const label: "SAFE" | "SUSPICIOUS" | "DANGEROUS" =
+      score >= 70 ? "SAFE" : score >= 40 ? "SUSPICIOUS" : "DANGEROUS";
+    addAudit({
+      id: crypto.randomUUID(),
+      type: "npm-check",
+      slug: packageName,
+      score,
+      label,
+      analyzedAt: new Date().toISOString(),
     });
-    if (res.status === 404) return null;
-    if (!res.ok) return null;
-    return res.json() as Promise<NpmCheckResult>;
+
+    return result;
   } catch {
     return null;
   }
@@ -939,13 +962,6 @@ export default async function NpmReportPage({
             TrustStar is free and open source. Please use responsibly to keep the service available for everyone.
           </div>
         </div>
-
-        {/* QR share */}
-        <ShareCard
-          url={`https://truststar.co/npm/${packageName}`}
-          filename={packageName.replace(/\//g, "-")}
-          analyzedAt={report.analyzedAt}
-        />
 
         {/* Back */}
         <div style={{ marginTop: 24, textAlign: "center" }}>

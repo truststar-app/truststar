@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { rateLimit, getClientIp } from "@/lib/rate-limit";
 
 type GHItem = {
   full_name: string;
@@ -8,8 +9,14 @@ type GHItem = {
 };
 
 export async function GET(req: NextRequest) {
+  // H-3: Rate limit this endpoint
+  if (!(await rateLimit(getClientIp(req), 30, 60_000))) {
+    return NextResponse.json({ items: [] }, { status: 429 });
+  }
+
   const q = req.nextUrl.searchParams.get("q") ?? "";
-  if (q.length < 3) {
+  // L-3: Min 3 chars, max 100 chars
+  if (q.length < 3 || q.length > 100) {
     return NextResponse.json({ items: [] });
   }
 

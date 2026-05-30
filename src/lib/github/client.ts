@@ -37,6 +37,10 @@ export async function githubFetch<T>(
   endpoint: string,
   options: FetchOptions = {}
 ): Promise<T> {
+  // C-2: Prevent SSRF — full URLs must resolve to the GitHub API host only
+  if (endpoint.startsWith("http") && !endpoint.startsWith(GITHUB_API_BASE)) {
+    throw new Error(`Blocked: request to non-GitHub host`);
+  }
   const url = endpoint.startsWith("http")
     ? endpoint
     : `${GITHUB_API_BASE}${endpoint}`;
@@ -60,8 +64,8 @@ export async function githubFetch<T>(
       cache: options.cache ?? "no-store",
     });
     if (!retry.ok) {
-      const body = await retry.text();
-      throw new Error(`GitHub API error ${retry.status} on ${endpoint}: ${body}`);
+      // H-5: Don't log raw API body — may contain sensitive details
+      throw new Error(`GitHub API error ${retry.status} on ${endpoint}`);
     }
     return retry.json() as Promise<T>;
   }
@@ -84,10 +88,8 @@ export async function githubFetch<T>(
   }
 
   if (!response.ok) {
-    const body = await response.text();
-    throw new Error(
-      `GitHub API error ${response.status} on ${endpoint}: ${body}`
-    );
+    // H-5: Don't include raw API body in error — may contain sensitive details
+    throw new Error(`GitHub API error ${response.status} on ${endpoint}`);
   }
 
   return response.json() as Promise<T>;
@@ -96,6 +98,9 @@ export async function githubFetch<T>(
 export async function githubFetchWithStarredAt<T>(
   endpoint: string
 ): Promise<T> {
+  if (endpoint.startsWith("http") && !endpoint.startsWith(GITHUB_API_BASE)) {
+    throw new Error(`Blocked: request to non-GitHub host`);
+  }
   const url = endpoint.startsWith("http")
     ? endpoint
     : `${GITHUB_API_BASE}${endpoint}`;
@@ -135,8 +140,7 @@ export async function githubFetchWithStarredAt<T>(
   }
 
   if (!response.ok) {
-    const body = await response.text();
-    throw new Error(`GitHub API error ${response.status}: ${body}`);
+    throw new Error(`GitHub API error ${response.status}`);
   }
 
   return response.json() as Promise<T>;
@@ -153,7 +157,7 @@ export async function fetchStargazers(
       `https://api.github.com/repos/${owner}/${repo}/stargazers?per_page=100&page=${page}`,
       {
         headers: {
-          Authorization: `token ${process.env.GITHUB_TOKEN}`,
+          Authorization: `Bearer ${process.env.GITHUB_TOKEN}`,
           Accept: "application/vnd.github.v3.star+json",
         },
       }

@@ -25,11 +25,13 @@ type ReportData = {
 
 async function fetchReport(owner: string, repo: string): Promise<ReportData | null> {
   try {
-    const res = await fetch(`${BASE}/api/analyze`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ owner, repo }),
-    });
+    // H-5: Use GET (cache-only) — avoids triggering a full GitHub analysis on every
+    // social-share crawl. Returns 404 if not yet analyzed; OG image falls back to
+    // a generic "unanalyzed" state instead of consuming GitHub API quota.
+    const res = await fetch(
+      `${BASE}/api/analyze?owner=${encodeURIComponent(owner)}&repo=${encodeURIComponent(repo)}`,
+      { next: { revalidate: 300 } }
+    );
     if (!res.ok) return null;
     return res.json() as Promise<ReportData>;
   } catch {

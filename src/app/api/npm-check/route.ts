@@ -3,6 +3,8 @@ import { analyzeNpmPackage, type NpmCheckResult } from "@/lib/npm/analyzer";
 import { addAudit } from "@/lib/recent-audits";
 import { rateLimit, getClientIp } from "@/lib/rate-limit";
 
+// H-2: Cap cache to prevent OOM from unique package-name flood
+const MAX_CACHE_SIZE = 200;
 const cache = new Map<string, { data: NpmCheckResult; cachedAt: number }>();
 const CACHE_TTL = 10 * 60 * 1000;
 
@@ -25,7 +27,7 @@ function roughScore(result: NpmCheckResult): number {
 export async function POST(
   request: NextRequest
 ): Promise<NextResponse<NpmCheckResult | { error: string; details?: string }>> {
-  if (!rateLimit(getClientIp(request), 30, 60_000)) {
+  if (!(await rateLimit(getClientIp(request), 30, 60_000))) {
     return NextResponse.json(
       { error: "Too many requests. Please try again in a minute." },
       { status: 429 }
@@ -60,6 +62,10 @@ export async function POST(
       timeout(25_000),
     ]);
 
+    if (cache.size >= MAX_CACHE_SIZE) {
+      const oldest = cache.keys().next().value;
+      if (oldest) cache.delete(oldest);
+    }
     cache.set(packageName, { data: result, cachedAt: Date.now() });
 
     const score = roughScore(result);

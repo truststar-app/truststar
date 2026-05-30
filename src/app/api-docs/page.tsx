@@ -27,8 +27,8 @@ const ENDPOINTS: Endpoint[] = [
     path: "/api/analyze",
     description: "Analyze a GitHub repository's trust signals — fake star detection, account quality, temporal behavior, and project health.",
     bodyExample: `{
-  "repoUrl": "https://github.com/owner/repo",
-  "force": true
+  "owner": "expressjs",
+  "repo": "express"
 }`,
     responseExample: `{
   "repo": "express",
@@ -38,18 +38,27 @@ const ENDPOINTS: Endpoint[] = [
   "dimensions": {
     "accounts": 99,
     "temporal": 87,
-    "health": 70
+    "health": 70,
+    "authenticity": 82
   },
   "signals": {
     "newAccountsRatio": 0.02,
     "velocityScore": 0.04,
     "recentStarsRatio": 0.08,
-    "forkStarRatio": 0.34
+    "forkStarRatio": 0.34,
+    "lockstepScore": 0.01,
+    "zScorePeak": 1.2,
+    "noRepoRatio": 0.06,
+    "noFollowersRatio": 0.09,
+    "noAvatarRatio": 0.04,
+    "activeContributorsRatio": 0.68,
+    "commitFrequency": 3.4,
+    "issueResolutionRatio": 0.72
   },
   "sampleSize": 200,
   "analyzedAt": "2026-05-26T10:00:00.000Z"
 }`,
-    tryBody: JSON.stringify({ repoUrl: "https://github.com/expressjs/express" }, null, 2),
+    tryBody: JSON.stringify({ owner: "expressjs", repo: "express" }, null, 2),
   },
   {
     method: "POST",
@@ -136,7 +145,7 @@ function MethodBadge({ method }: { method: "POST" | "GET" }) {
         borderRadius: 4,
         fontSize: 11,
         fontWeight: 700,
-        fontFamily: "var(--font-mono, monospace)",
+        fontFamily: "var(--font-ibm-mono, monospace)",
         letterSpacing: "0.5px",
         background: isPost ? "#F0FDF4" : "#EFF6FF",
         color: isPost ? "#16A34A" : "#2563EB",
@@ -201,7 +210,7 @@ function CodeBlock({ code }: { code: string }) {
           padding: "14px 16px",
           overflowX: "auto",
           fontSize: 12,
-          fontFamily: "var(--font-mono, 'JetBrains Mono', monospace)",
+          fontFamily: "var(--font-ibm-mono, 'JetBrains Mono', monospace)",
           lineHeight: 1.6,
           color: "var(--text-primary)",
           margin: 0,
@@ -309,7 +318,7 @@ function TryItPanel({ endpoint }: { endpoint: Endpoint }) {
                 rows={4}
                 style={{
                   width: "100%",
-                  fontFamily: "var(--font-mono, monospace)",
+                  fontFamily: "var(--font-ibm-mono, monospace)",
                   fontSize: 12,
                   padding: "10px 12px",
                   border: "1px solid var(--border)",
@@ -387,7 +396,7 @@ function EndpointCard({ endpoint }: { endpoint: Endpoint }) {
         <code
           style={{
             fontSize: 14,
-            fontFamily: "var(--font-mono, monospace)",
+            fontFamily: "var(--font-ibm-mono, monospace)",
             color: "var(--text-primary)",
             fontWeight: 500,
           }}

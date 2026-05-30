@@ -4,10 +4,9 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 import type { Metadata } from "next";
 import type { SkillSafetyScore, SkillFinding } from "@/lib/skill-audit/types";
-import ShareCard from "@/components/ShareCard";
+import { getSkillResultCached } from "@/lib/skill-audit/pipeline";
+import { addAudit } from "@/lib/recent-audits";
 
-const BASE = process.env.NEXT_PUBLIC_BASE_URL
-  ?? (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "https://truststar.co");
 const SITE = "https://truststar.co";
 
 const getSkillReport = cache(async (
@@ -15,21 +14,20 @@ const getSkillReport = cache(async (
   repo: string
 ): Promise<SkillSafetyScore | { error: string; details?: string } | null> => {
   try {
-    const response = await fetch(`${BASE}/api/skill-audit`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ slug: `${owner}/${repo}` }),
-      next: { revalidate: 600 },
+    const result = await getSkillResultCached(owner, repo);
+    addAudit({
+      id: crypto.randomUUID(),
+      type: "skill-audit",
+      slug: `${owner}/${repo}`,
+      score: result.score,
+      label: result.label,
+      analyzedAt: new Date().toISOString(),
     });
-
-    const data = await response.json();
-
-    if (!response.ok) {
-      return data as { error: string; details?: string };
-    }
-
-    return data as SkillSafetyScore;
-  } catch {
+    return result;
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : "";
+    if (msg.includes("not found")) return { error: "Repository not found", details: "Check the slug or GitHub URL" };
+    if (msg.includes("rate limit")) return { error: "GitHub rate limit reached", details: "Please try again in a few minutes" };
     return null;
   }
 });
@@ -58,7 +56,7 @@ export async function generateMetadata({
 
   const description = report
     ? `Static security analysis for ${repoSlug}. ${report.findings.length} finding(s) detected across ${report.metadata.files.length} file(s). Score: ${report.score} ${report.label}. Scanned by TrustStar.`
-    : `Static security analysis for ${repoSlug}. X findings detected. Scanned by TrustStar.`;
+    : `Static security analysis for ${repoSlug}. Scanned by TrustStar.`;
 
   return {
     title,
@@ -312,31 +310,8 @@ export default async function SkillReportPage({
                 Run Trust Score →
               </Link>
             </div>
-            <div style={{ background: "var(--bg-base)", border: "1px solid var(--border)", borderRadius: 8, padding: 16 }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--text-secondary)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><line x1="16.5" y1="9.4" x2="7.5" y2="4.21"/><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
-                <span style={{ fontSize: 13, fontWeight: 600, color: "var(--text-primary)" }}>Check npm package</span>
-              </div>
-              <p style={{ fontSize: 12, color: "var(--text-secondary)", lineHeight: 1.6, marginBottom: 14 }}>
-                Cross-reference downloads, stars, and maintainer signals for the npm package.
-              </p>
-              <Link
-                href={`/npm/${repo}`}
-                className="btn-outline"
-                style={{ display: "inline-flex", alignItems: "center", fontSize: 12, fontWeight: 500, padding: "7px 14px", borderRadius: "var(--radius)", background: "none", color: "var(--text-secondary)", textDecoration: "none", border: "1px solid var(--border)" }}
-              >
-                Run npm Check →
-              </Link>
-            </div>
           </div>
         </div>
-
-        {/* QR share */}
-        <ShareCard
-          url={`https://truststar.co/skill/${owner}/${repo}`}
-          filename={`${owner}-${repo}`}
-          analyzedAt={report.analyzedAt}
-        />
       </div>
     </main>
   );
@@ -702,7 +677,7 @@ function MetadataPanel({ report }: { report: SkillSafetyScore }) {
           marginBottom: badges.length > 0 ? 14 : 0,
         }}
       >
-        <MetaRow label="Nom" value={meta.name || report.slug} />
+        <MetaRow label="Name" value={meta.name || report.slug} />
         <MetaRow label="Stars" value={String(meta.stars)} />
         <MetaRow label="Author" value={meta.author} />
         <MetaRow label="Forks" value={String(meta.forks)} />

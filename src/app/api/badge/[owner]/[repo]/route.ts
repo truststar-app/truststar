@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
-import QRCode from "qrcode";
 import { getCached } from "@/lib/trust-score-cache";
 import { getLatestAuditForSlug } from "@/lib/recent-audits";
 import { rateLimit, getClientIp } from "@/lib/rate-limit";
 
-const BASE = process.env.NEXT_PUBLIC_BASE_URL ?? "https://truststar.co";
+// H-4
+const SLUG_RE = /^[a-zA-Z0-9._-]{1,100}$/;
 
 const STATUS_COLORS: Record<string, { bg: string; light: string }> = {
   SAFE:       { bg: "#16A34A", light: "#BBF7D0" },
@@ -13,43 +13,22 @@ const STATUS_COLORS: Record<string, { bg: string; light: string }> = {
   DANGEROUS:  { bg: "#DC2626", light: "#FECACA" },
 };
 
-// Layout — 220 × 40px
-const LW = 96;   // brand section
-const SW = 80;   // score section
-const QW = 44;   // QR section
-const W  = LW + SW + QW;  // 220
+// Layout — 176 × 40px
+const LW = 104;  // brand section
+const SW = 72;   // score section
+const W  = LW + SW;  // 176
 const H  = 40;
+const SC = LW + Math.round(SW / 2);
 
-// QR: 32×32 centered in QW×H
-const QS   = 32;
-const QX   = LW + SW + Math.round((QW - QS) / 2);
-const QY   = Math.round((H - QS) / 2);
-
-async function extractQrPath(url: string): Promise<{ d: string; scale: number } | null> {
-  try {
-    const svg = await QRCode.toString(url, { type: "svg", margin: 0, errorCorrectionLevel: "L" });
-    const vb = svg.match(/viewBox="0 0 (\d+)/);
-    const n  = vb ? parseInt(vb[1]) : 37;
-    const pd = svg.match(/<path[^>]+d="([^"]+)"/);
-    if (!pd) return null;
-    return { d: pd[1], scale: QS / n };
-  } catch {
-    return null;
-  }
+function escapeXml(s: string): string {
+  return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 }
 
-async function buildSvg(score: number | null, label: string | null, reportUrl: string): Promise<string> {
+function buildSvg(score: number | null, label: string | null): string {
   const cfg       = STATUS_COLORS[label ?? ""] ?? { bg: "#6B7280", light: "#E5E7EB" };
-  const scoreText = score !== null ? String(score) : "—";
-  const labelText = label && label !== "NEW" ? label : "NEW";
-
-  const qr = await extractQrPath(reportUrl);
-  const qrEl = qr
-    ? `<path fill="#1a1a1a" transform="translate(${QX},${QY}) scale(${qr.scale.toFixed(5)})" d="${qr.d}"/>`
-    : "";
-
-  // Score section center
-  const sc = LW + Math.round(SW / 2);
+  // H-6: Escape XML entities before interpolation into SVG
+  const scoreText = escapeXml(score !== null ? String(score) : "—");
+  const labelText = escapeXml(label && label !== "NEW" ? label : "NEW");
 
   return `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" role="img" aria-label="TrustStar ${scoreText} ${labelText}">
   <defs>
@@ -63,27 +42,16 @@ async function buildSvg(score: number | null, label: string | null, reportUrl: s
       <stop offset="100%" stop-color="${cfg.bg}" stop-opacity="0.88"/>
     </linearGradient>
   </defs>
-
   <g clip-path="url(#clip)">
     <rect width="${LW}" height="${H}" fill="url(#brand)"/>
     <rect x="${LW}" width="${SW}" height="${H}" fill="url(#score)"/>
-    <rect x="${LW + SW}" width="${QW}" height="${H}" fill="#f8fafc"/>
     <line x1="${LW}" y1="0" x2="${LW}" y2="${H}" stroke="rgba(255,255,255,0.08)" stroke-width="1"/>
-    <line x1="${LW + SW}" y1="0" x2="${LW + SW}" y2="${H}" stroke="rgba(0,0,0,0.06)" stroke-width="1"/>
   </g>
-
   <rect width="${W}" height="${H}" rx="6" fill="none" stroke="rgba(0,0,0,0.18)" stroke-width="1"/>
-
-  <!-- Brand: star + name -->
-  <text x="12" y="${H / 2 + 6}" font-family="Verdana,Geneva,sans-serif" font-size="18" fill="#D93636">&#9733;</text>
-  <text x="32" y="${H / 2 + 4}" font-family="Verdana,Geneva,sans-serif" font-size="10" font-weight="700" fill="#f1f5f9" letter-spacing="0.2">TrustStar</text>
-
-  <!-- Score + label -->
-  <text x="${sc}" y="${H / 2 - 2}" text-anchor="middle" font-family="Verdana,Geneva,sans-serif" font-size="16" font-weight="800" fill="#ffffff">${scoreText}</text>
-  <text x="${sc}" y="${H / 2 + 13}" text-anchor="middle" font-family="Verdana,Geneva,sans-serif" font-size="8.5" font-weight="600" fill="${cfg.light}" letter-spacing="0.4">${labelText}</text>
-
-  <!-- QR -->
-  ${qrEl}
+  <text x="13" y="${H / 2 + 6}" font-family="Verdana,Geneva,sans-serif" font-size="18" fill="#D93636">&#9733;</text>
+  <text x="33" y="${H / 2 + 4}" font-family="Verdana,Geneva,sans-serif" font-size="10" font-weight="700" fill="#f1f5f9" letter-spacing="0.3">TrustStar</text>
+  <text x="${SC}" y="${H / 2 - 2}" text-anchor="middle" font-family="Verdana,Geneva,sans-serif" font-size="16" font-weight="800" fill="#ffffff">${scoreText}</text>
+  <text x="${SC}" y="${H / 2 + 13}" text-anchor="middle" font-family="Verdana,Geneva,sans-serif" font-size="8.5" font-weight="600" fill="${cfg.light}" letter-spacing="0.5">${labelText}</text>
 </svg>`;
 }
 
@@ -91,12 +59,16 @@ export async function GET(
   req: NextRequest,
   { params }: { params: Promise<{ owner: string; repo: string }> }
 ) {
-  if (!rateLimit(getClientIp(req), 60, 60_000)) {
+  if (!(await rateLimit(getClientIp(req), 60, 60_000))) {
     return new NextResponse("Too many requests", { status: 429 });
   }
 
   const { owner, repo } = await params;
-  const reportUrl = `${BASE}/report/${owner}/${repo}`;
+
+  // H-4: Validate slug format
+  if (!SLUG_RE.test(owner) || !SLUG_RE.test(repo)) {
+    return new NextResponse("Invalid owner or repo", { status: 400 });
+  }
 
   const cached = getCached(owner, repo);
   let score: number | null = null;
@@ -113,12 +85,14 @@ export async function GET(
     }
   }
 
-  const svg = await buildSvg(score, label, reportUrl);
+  const svg = buildSvg(score, label);
 
   return new NextResponse(svg, {
     headers: {
       "Content-Type": "image/svg+xml",
-      "Cache-Control": "public, max-age=3600, stale-while-revalidate=86400",
+      // M-7: Explicit nosniff on SVG to prevent rendering as HTML
+      "X-Content-Type-Options": "nosniff",
+      "Cache-Control": "public, max-age=900, stale-while-revalidate=3600",
     },
   });
 }

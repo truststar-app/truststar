@@ -194,7 +194,7 @@ export default function Header() {
           </Link>
           <nav className="hidden lg:flex" style={{ alignItems: "center", gap: 1 }}>
             {navLink("/", "Analyze")}
-            {navLink("/discover", "Discover", true)}
+            {navLink("/discover", "Discover")}
             {navLink("/recent", "Recent")}
             {navLink("/how-it-works", "How it Works")}
             {navLink("/api-docs", "API")}
@@ -232,11 +232,11 @@ export default function Header() {
 
             <div style={moreDropdownStyle} onClick={(e) => e.stopPropagation()}>
               <DropdownItem href="/" icon={<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>} iconRed title="Trust Score" desc="GitHub fake star detection" />
-              <DropdownItem href="/npm/express" icon={<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="16.5" y1="9.4" x2="7.5" y2="4.21"/><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>} title="npm Check" desc="Downloads vs stars consistency" />
-              <DropdownItem href="/skill/expressjs/express" icon={<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>} title="Code Scan" desc="Static security analysis" badge="NEW" />
+              <DropdownItem href="/?mode=npm" icon={<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="16.5" y1="9.4" x2="7.5" y2="4.21"/><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>} title="npm Check" desc="Downloads vs stars consistency" />
+              <DropdownItem href="/?mode=skill" icon={<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>} title="Code Scan" desc="Static security analysis" badge="NEW" />
               <DropdownDivider />
               <DropdownItem href="/badge" icon={<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>} title="Badge" desc="Embed your trust score" />
-              <DropdownItem href="/recent" icon={<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M16.24 7.76a6 6 0 0 1 0 8.49m-8.48-.01a6 6 0 0 1 0-8.49m11.31-2.82a10 10 0 0 1 0 14.14m-14.14 0a10 10 0 0 1 0-14.14"/><circle cx="12" cy="12" r="2"/></svg>} title="Recent Audits" desc="Live community feed" />
+              <DropdownItem href="/about" icon={<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>} title="About" desc="The story behind TrustStar" />
               <DropdownItem href="/how-it-works#contact" icon={<MailIcon />} title="Contact" desc="Get in touch" />
               <DropdownDivider />
               <DropdownItem href="https://github.com/truststar-app/truststar" icon={<GitHubIcon />} title="GitHub" desc="Open source — contribute" />
@@ -258,7 +258,7 @@ export default function Header() {
             onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = "var(--accent-hover)"; }}
             onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = "var(--accent)"; }}
           >
-            Get updates
+            Stay updated
           </button>
         </div>
 
@@ -308,6 +308,7 @@ export default function Header() {
             {mobileNavLink("/api-docs", "API")}
             <div style={{ height: 1, background: "var(--border)", margin: "8px 0" }} />
             {mobileNavLink("/badge", "Badge")}
+            {mobileNavLink("/about", "About")}
             {mobileNavLink("/how-it-works#contact", "Contact")}
             {mobileNavLink("https://github.com/truststar-app/truststar", "GitHub", true)}
           </nav>
@@ -324,7 +325,7 @@ export default function Header() {
                 cursor: "pointer", fontFamily: "inherit",
               }}
             >
-              Get updates
+              Stay updated
             </button>
           </div>
         </div>

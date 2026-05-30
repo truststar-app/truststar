@@ -721,6 +721,10 @@ export default function DiscoverPage() {
 
         {/* ── OpenClaw Skills ─────────────────────────────────────────────── */}
         {mainTab === "clawhub" && (<>
+          <p style={{ fontSize: 13, color: "var(--text-secondary)", lineHeight: 1.6, marginBottom: 16, maxWidth: 560 }}>
+            <a href="https://clawhub.ai" target="_blank" rel="noopener noreferrer" style={{ color: "var(--text-primary)", fontWeight: 600, textDecoration: "none" }}>OpenClaw</a>
+            {" "}is an open marketplace for Claude AI skills — small, composable tools that extend Claude&apos;s capabilities. Each skill can be scanned for security risks via our Code Scan engine.
+          </p>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", borderBottom: "1px solid var(--border)", gap: 16, flexWrap: isMobile ? "wrap" : "nowrap" }}>
             <div style={{ display: "flex", overflowX: "auto", WebkitOverflowScrolling: "touch" as React.CSSProperties["WebkitOverflowScrolling"] }}>
               {CLAW_SUBTABS.map(st => {
@@ -750,7 +754,7 @@ export default function DiscoverPage() {
                   <Sk w="90%" h={13} />
                 </div>
               )) : clawError ? (
-                <ErrState message="ClawHub data temporarily unavailable. Try GitHub Trending or npm Popular." onRetry={() => setClawRetry(n => n + 1)} />
+                <ErrState message="OpenClaw data temporarily unavailable. Try GitHub Trending or npm Popular." onRetry={() => setClawRetry(n => n + 1)} />
               ) : clawSkills.length === 0 ? (
                 <EmptyState message={clawDebounced ? `No skills found for "${clawDebounced}"` : "No skills found."} />
               ) : clawSkills.map(skill => <ClCard key={skill.slug} skill={skill} />)}
@@ -759,7 +763,7 @@ export default function DiscoverPage() {
             <div style={{ background: "var(--bg-surface)", border: "1px solid var(--border)", borderTop: "none", borderRadius: "0 0 10px 10px", overflow: "hidden", boxShadow: "var(--shadow-sm)" }}>
               <ClHeader tab={isTablet} />
               {clawLoading ? Array.from({ length: 8 }).map((_, i) => <ClRowSk key={i} i={i} tab={isTablet} />) : clawError ? (
-                <ErrState message="ClawHub data temporarily unavailable. Try GitHub Trending or npm Popular." onRetry={() => setClawRetry(n => n + 1)} />
+                <ErrState message="OpenClaw data temporarily unavailable. Try GitHub Trending or npm Popular." onRetry={() => setClawRetry(n => n + 1)} />
               ) : clawSkills.length === 0 ? (
                 <EmptyState message={clawDebounced ? `No skills found for "${clawDebounced}"` : "No skills found."} />
               ) : clawSkills.map((skill, i) => <ClRow key={skill.slug} skill={skill} index={i} isLast={i === clawSkills.length - 1} tab={isTablet} />)}

@@ -2,8 +2,14 @@ import { NextResponse } from "next/server";
 import { rateLimit, getClientIp } from "@/lib/rate-limit";
 
 interface CacheEntry { data: unknown; ts: number }
+
+// M-4: Cap in-memory cache
+const MAX_CACHE_SIZE = 200;
 const cache = new Map<string, CacheEntry>();
 const CACHE_TTL = 30 * 60 * 1000;
+
+// M-3: Only allow safe language strings
+const LANGUAGE_RE = /^[a-zA-Z0-9#+.\-]{1,30}$/;
 
 interface RawRepo {
   id: number;
@@ -20,13 +26,21 @@ interface RawRepo {
 }
 
 export async function GET(req: Request) {
-  if (!rateLimit(getClientIp(req), 30, 60_000)) {
+  if (!(await rateLimit(getClientIp(req), 30, 60_000))) {
     return NextResponse.json({ error: "Too many requests. Please try again in a minute." }, { status: 429 });
   }
 
   const { searchParams } = new URL(req.url);
-  const period = searchParams.get("period") || "month";
+  // L-4: Validate period against known values
+  const VALID_PERIODS = ["week", "month", "quarter"];
+  const rawPeriod = searchParams.get("period");
+  const period = rawPeriod && VALID_PERIODS.includes(rawPeriod) ? rawPeriod : "month";
   const language = searchParams.get("language") || "";
+
+  // M-3: Validate language parameter
+  if (language && !LANGUAGE_RE.test(language)) {
+    return NextResponse.json({ error: "Invalid language parameter" }, { status: 400 });
+  }
 
   const cacheKey = `${period}:${language}`;
   const hit = cache.get(cacheKey);
@@ -48,7 +62,7 @@ export async function GET(req: Request) {
       `https://api.github.com/search/repositories?q=${encodeURIComponent(query)}&sort=stars&order=desc&per_page=30`,
       {
         headers: {
-          Authorization: `token ${process.env.GITHUB_TOKEN}`,
+          Authorization: `Bearer ${process.env.GITHUB_TOKEN}`,
           Accept: "application/vnd.github.v3+json",
         },
       }
@@ -77,6 +91,11 @@ export async function GET(req: Request) {
       total: raw.total_count ?? 0,
     };
 
+    // M-4: Evict oldest entry if cache is full
+    if (cache.size >= MAX_CACHE_SIZE) {
+      const oldest = cache.keys().next().value;
+      if (oldest) cache.delete(oldest);
+    }
     cache.set(cacheKey, { data: result, ts: Date.now() });
     return NextResponse.json(result);
   } catch {

@@ -77,7 +77,7 @@ export default function NotFound() {
         </Link>
 
         <Link
-          href="/"
+          href="/recent"
           style={{
             display: "inline-flex",
             alignItems: "center",
@@ -101,7 +101,7 @@ export default function NotFound() {
             (e.currentTarget as HTMLElement).style.color = "var(--text-secondary)";
           }}
         >
-          Analyze a project →
+          Recent Audits →
         </Link>
       </div>
     </main>

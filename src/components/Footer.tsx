@@ -52,8 +52,8 @@ export default function Footer() {
 
         <FooterCol title="Product">
           <FooterLink href="/">Trust Score</FooterLink>
-          <FooterLink href="/npm/express">npm Check</FooterLink>
-          <FooterLink href="/skill/expressjs/express">Code Scan</FooterLink>
+          <FooterLink href="/?mode=npm">npm Check</FooterLink>
+          <FooterLink href="/?mode=skill">Code Scan</FooterLink>
           <FooterLink href="/badge">Badge</FooterLink>
         </FooterCol>
 
@@ -65,7 +65,10 @@ export default function Footer() {
           <FooterLink href="/how-it-works#contact">Contact</FooterLink>
         </FooterCol>
 
-        <FooterCol title="Open Source">
+        <FooterCol title="Legal">
+          <FooterLink href="/about">About</FooterLink>
+          <FooterLink href="/privacy">Privacy</FooterLink>
+          <FooterLink href="/terms">Terms</FooterLink>
           <FooterLink href={GH} external>GitHub</FooterLink>
         </FooterCol>
       </div>
@@ -84,25 +87,6 @@ export default function Footer() {
         <span style={{ fontSize: 12, color: "var(--text-tertiary)" }}>
           © 2026 TrustStar — Open source under MIT.
         </span>
-        <a
-          href={GH}
-          target="_blank"
-          rel="noopener noreferrer"
-          style={{
-            fontSize: 12,
-            color: "var(--text-tertiary)",
-            textDecoration: "none",
-            transition: "color 0.12s",
-          }}
-          onMouseEnter={(e) => {
-            (e.currentTarget as HTMLElement).style.color = "var(--accent)";
-          }}
-          onMouseLeave={(e) => {
-            (e.currentTarget as HTMLElement).style.color = "var(--text-tertiary)";
-          }}
-        >
-          GitHub
-        </a>
       </div>
     </footer>
   );

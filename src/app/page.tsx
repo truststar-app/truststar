@@ -4,140 +4,6 @@ import React, { useState, useRef, useEffect, useCallback, FormEvent, KeyboardEve
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 
-// ─── Waitlist Section ──────────────────────────────────────────────────────────
-
-function WaitlistSection() {
-  const [email, setEmail] = useState("");
-  const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
-  const [errorMsg, setErrorMsg] = useState("");
-
-  async function handleSubmit(e: FormEvent) {
-    e.preventDefault();
-    const val = email.trim().toLowerCase();
-    if (!val || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val)) {
-      setErrorMsg("Please enter a valid email address.");
-      return;
-    }
-    setStatus("loading");
-    setErrorMsg("");
-    try {
-      const res = await fetch("/api/waitlist", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: val }),
-      });
-      if (res.ok) {
-        setStatus("success");
-        setEmail("");
-      } else {
-        const data = (await res.json()) as { error?: string };
-        setErrorMsg(data.error ?? "Something went wrong. Please try again.");
-        setStatus("error");
-      }
-    } catch {
-      setErrorMsg("Network error. Please try again.");
-      setStatus("error");
-    }
-  }
-
-  return (
-    <section
-      style={{
-        padding: "72px 24px",
-        background: "var(--bg-surface)",
-        borderTop: "1px solid var(--border)",
-        textAlign: "center",
-      }}
-    >
-      <div style={{ maxWidth: 480, margin: "0 auto" }}>
-        {status === "success" ? (
-          <div>
-            <div style={{
-              width: 48, height: 48, borderRadius: "50%",
-              background: "var(--safe-bg)", border: "1px solid #BBF7D0",
-              display: "flex", alignItems: "center", justifyContent: "center",
-              margin: "0 auto 16px",
-            }}>
-              <svg width="22" height="22" viewBox="0 0 22 22" fill="none" aria-hidden="true">
-                <path d="M4 11l5.5 5.5L18 7" stroke="var(--safe)" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
-            </div>
-            <p style={{ fontWeight: 700, fontSize: 20, color: "var(--text-primary)", marginBottom: 6, letterSpacing: "-0.4px" }}>
-              You&apos;re in!
-            </p>
-            <p style={{ fontSize: 14, color: "var(--text-secondary)" }}>We&apos;ll keep you posted.</p>
-          </div>
-        ) : (
-          <>
-            <h2 style={{ fontWeight: 700, fontSize: "clamp(20px, 3vw, 26px)", color: "var(--text-primary)", marginBottom: 10, letterSpacing: "-0.5px" }}>
-              Stay in the loop
-            </h2>
-            <p style={{ fontSize: 15, color: "var(--text-secondary)", lineHeight: 1.65, marginBottom: 28, maxWidth: 400, margin: "0 auto 28px" }}>
-              Get alerted when we detect suspicious activity on trending repos.
-            </p>
-
-            <form onSubmit={handleSubmit}>
-              <div style={{ display: "flex", gap: 8, maxWidth: 420, margin: "0 auto" }}>
-                <input
-                  type="email"
-                  value={email}
-                  onChange={(e) => { setEmail(e.target.value); setErrorMsg(""); }}
-                  placeholder="you@example.com"
-                  disabled={status === "loading"}
-                  style={{
-                    flex: 1, padding: "10px 14px", fontSize: 14,
-                    border: `1px solid ${errorMsg ? "var(--accent)" : "var(--border)"}`,
-                    borderRadius: "var(--radius)",
-                    background: "var(--bg-base)",
-                    color: "var(--text-primary)",
-                    fontFamily: "inherit",
-                    outline: "none",
-                    transition: "border-color 0.15s",
-                    minWidth: 0,
-                  }}
-                  onFocus={(e) => { if (!errorMsg) (e.currentTarget as HTMLElement).style.borderColor = "var(--accent)"; }}
-                  onBlur={(e) => { if (!errorMsg) (e.currentTarget as HTMLElement).style.borderColor = "var(--border)"; }}
-                />
-                <button
-                  type="submit"
-                  disabled={status === "loading"}
-                  style={{
-                    padding: "10px 20px", fontSize: 14, fontWeight: 600,
-                    background: "var(--accent)", color: "#fff",
-                    border: "none", borderRadius: "var(--radius)",
-                    cursor: status === "loading" ? "not-allowed" : "pointer",
-                    opacity: status === "loading" ? 0.7 : 1,
-                    fontFamily: "inherit",
-                    whiteSpace: "nowrap",
-                    flexShrink: 0,
-                    transition: "background 0.15s",
-                    boxShadow: "0 1px 3px rgba(217,54,54,0.2)",
-                  }}
-                  onMouseEnter={(e) => {
-                    if (status !== "loading") (e.currentTarget as HTMLElement).style.background = "var(--accent-hover)";
-                  }}
-                  onMouseLeave={(e) => {
-                    (e.currentTarget as HTMLElement).style.background = "var(--accent)";
-                  }}
-                >
-                  {status === "loading" ? "..." : "Get updates"}
-                </button>
-              </div>
-              {errorMsg && (
-                <p style={{ marginTop: 8, fontSize: 12, color: "var(--accent)", maxWidth: 420, margin: "8px auto 0" }}>{errorMsg}</p>
-              )}
-            </form>
-
-            <p style={{ marginTop: 14, fontSize: 11, color: "var(--text-tertiary)" }}>
-              No spam. Unsubscribe anytime.
-            </p>
-          </>
-        )}
-      </div>
-    </section>
-  );
-}
-
 // ─── Phrase marquee ────────────────────────────────────────────────────────────
 
 type PhraseItem = { text: string; type: "question" | "stat"; size: number };
@@ -390,8 +256,22 @@ function PreviewBlock({ mode }: { mode: Mode }) {
 
 // ─── Loading Overlay ───────────────────────────────────────────────────────────
 
+const SECURITY_TIPS = [
+  "Activate two-factor authentication on your GitHub account — it's the single most effective way to prevent unauthorized access.",
+  "Reference third-party GitHub Actions by a full commit SHA rather than a mutable tag to prevent supply-chain hijacking.",
+  "Enable Dependabot alerts and security updates to automatically detect and patch vulnerable dependencies.",
+  "Keep API keys and tokens out of your repository. Use GitHub Actions Secrets or a secrets manager instead.",
+  "Enable branch protection rules on `main` to require pull request reviews and status checks before merging.",
+  "GitHub's secret scanning automatically flags accidentally committed credentials — enable it in your repo's Security settings.",
+  "GPG-sign your commits to prove authorship and make it harder for attackers to impersonate contributors.",
+  "Add a CODEOWNERS file to require mandatory reviews from designated owners before sensitive code can be merged.",
+  "GitHub's built-in CodeQL analysis detects common security vulnerabilities in your code automatically on every push.",
+  "Regularly review and revoke OAuth app access and personal access tokens you no longer use in your account settings.",
+];
+
 function LoadingOverlay({ mode }: { mode: Mode }) {
   const [step, setStep] = useState(0);
+  const [tipIndex, setTipIndex] = useState(() => Math.floor(Math.random() * SECURITY_TIPS.length));
 
   const steps: Record<Mode, string[]> = {
     repo: [
@@ -424,6 +304,10 @@ function LoadingOverlay({ mode }: { mode: Mode }) {
     );
     return () => clearInterval(id);
   }, [currentSteps.length]);
+  useEffect(() => {
+    const id = setInterval(() => setTipIndex((i) => (i + 1) % SECURITY_TIPS.length), 8000);
+    return () => clearInterval(id);
+  }, []);
 
   return (
     <div
@@ -478,17 +362,27 @@ function LoadingOverlay({ mode }: { mode: Mode }) {
             <div style={{ display: "flex", alignItems: "flex-start", gap: 10 }}>
               <span style={{ flexShrink: 0, marginTop: 2, color: "var(--text-tertiary)", display: "flex" }}>
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                  <polyline points="20 12 20 22 4 22 4 12"/><rect x="2" y="7" width="20" height="5"/>
-                  <line x1="12" y1="22" x2="12" y2="7"/>
-                  <path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z"/>
-                  <path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"/>
+                  <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
                 </svg>
               </span>
               <p style={{ fontSize: 12, lineHeight: 1.6, color: "var(--text-secondary)" }}>
-                <strong>Free service</strong> — Please use responsibly to preserve API quotas for everyone.
+                <strong>Unexpected score?</strong> — Check our{" "}
+                <a href="/how-it-works" style={{ color: "var(--accent)", textDecoration: "underline" }}>methodology</a>{" "}
+                or <a href="mailto:support@truststar.co" style={{ color: "var(--accent)", textDecoration: "underline" }}>contact us</a>.
               </p>
             </div>
           </div>
+        </div>
+
+        {/* Security tip */}
+        <div style={{ display: "flex", alignItems: "flex-start", gap: 8, marginTop: 20, padding: "0 4px" }}>
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--text-tertiary)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" style={{ flexShrink: 0, marginTop: 2 }}>
+            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+          </svg>
+          <p style={{ fontSize: 11, color: "var(--text-tertiary)", lineHeight: 1.55 }}>
+            <span style={{ fontWeight: 600, color: "var(--text-secondary)" }}>Security tip —</span>{" "}
+            {SECURITY_TIPS[tipIndex]}
+          </p>
         </div>
       </div>
     </div>
@@ -509,6 +403,12 @@ export default function HomePage() {
   const router = useRouter();
   const [url, setUrl] = useState("");
   const [mode, setMode] = useState<Mode>("repo");
+
+  // Support deep-linking: /?mode=npm or /?mode=skill pre-selects the tab
+  useEffect(() => {
+    const m = new URLSearchParams(window.location.search).get("mode");
+    if (m === "npm" || m === "skill") setMode(m);
+  }, []);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -639,7 +539,7 @@ export default function HomePage() {
     if (!parsed) {
       setError(
         mode === "skill"
-          ? "Invalid slug. Example: dbalve/fast-io"
+          ? "Invalid slug. Example: vercel/next.js"
           : "Invalid URL. Example: expressjs/express"
       );
       return;
@@ -666,7 +566,7 @@ export default function HomePage() {
 
   const PLACEHOLDERS: Record<Mode, string> = isMobile
     ? { repo: "owner/repo", npm: "package name", skill: "owner/repo" }
-    : { repo: "github.com/owner/repo or owner/repo", npm: "package name — e.g. express, lodash", skill: "owner/repo — e.g. dbalve/fast-io" };
+    : { repo: "github.com/owner/repo or owner/repo", npm: "package name — e.g. express, lodash", skill: "owner/repo — e.g. vercel/next.js" };
 
   return (
     <>
@@ -757,7 +657,7 @@ export default function HomePage() {
               </h1>
             </div>
 
-            <p style={{ fontSize: 16, color: "var(--text-secondary)", lineHeight: 1.6, whiteSpace: "nowrap" as const, margin: "0 auto 24px" }}>
+            <p style={{ fontSize: 16, color: "var(--text-secondary)", lineHeight: 1.6, margin: "0 auto 24px" }}>
               Verify any open source project before you depend on it.
             </p>
 
@@ -777,7 +677,7 @@ export default function HomePage() {
                           color: mode === m ? "#fff" : "var(--text-secondary)",
                         }}
                       >
-                        {m === "repo" ? "Repo" : m === "npm" ? "npm" : "Code"}
+                        {m === "repo" ? "Repo" : m === "npm" ? "npm" : "Code Scan"}
                       </button>
                     ))}
                   </div>
@@ -843,13 +743,13 @@ export default function HomePage() {
                       alignItems: "center",
                       gap: 5,
                       fontSize: 11,
-                      color: preset !== "standard" ? "var(--accent)" : "var(--text-tertiary)",
+                      color: preset !== "standard" ? "var(--accent)" : "var(--text-secondary)",
                       background: "none",
                       border: "none",
                       cursor: "pointer",
                       fontFamily: "inherit",
                       padding: "2px 0",
-                      fontWeight: preset !== "standard" ? 600 : 400,
+                      fontWeight: preset !== "standard" ? 600 : 500,
                     }}
                   >
                     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M4.93 4.93a10 10 0 0 0 0 14.14"/></svg>

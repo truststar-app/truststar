@@ -3,6 +3,8 @@ const NPM_REGISTRY = "https://registry.npmjs.org";
 const CACHE_TTL = 10 * 60 * 1000;
 const TIMEOUT = 10_000;
 
+// NEW #3: Cap cache size to prevent OOM from many unique package URLs
+const MAX_CACHE_SIZE = 200;
 const cache = new Map<string, { data: unknown; cachedAt: number }>();
 
 async function timedFetch(url: string): Promise<Response> {
@@ -19,8 +21,12 @@ async function npmFetch<T>(url: string): Promise<T> {
   const hit = cache.get(url);
   if (hit && Date.now() - hit.cachedAt < CACHE_TTL) return hit.data as T;
   const res = await timedFetch(url);
-  if (!res.ok) throw new Error(`npm fetch ${res.status}: ${url}`);
+  if (!res.ok) throw new Error(`npm fetch ${res.status}`);
   const data = (await res.json()) as T;
+  if (cache.size >= MAX_CACHE_SIZE) {
+    const oldest = cache.keys().next().value;
+    if (oldest) cache.delete(oldest);
+  }
   cache.set(url, { data, cachedAt: Date.now() });
   return data;
 }

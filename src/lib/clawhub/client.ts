@@ -33,6 +33,8 @@ export type ClawHubStats = {
 
 // ─── Cache ────────────────────────────────────────────────────────────────────
 
+// M-4: Cap cache size to prevent OOM from unique search-query flood
+const MAX_CACHE_SIZE = 200;
 const cache = new Map<string, { data: unknown; at: number }>();
 
 function fromCache<T>(key: string): T | null {
@@ -42,6 +44,10 @@ function fromCache<T>(key: string): T | null {
 }
 
 function toCache(key: string, data: unknown): void {
+  if (cache.size >= MAX_CACHE_SIZE) {
+    const oldest = cache.keys().next().value;
+    if (oldest) cache.delete(oldest);
+  }
   cache.set(key, { data, at: Date.now() });
 }
 

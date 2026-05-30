@@ -96,8 +96,6 @@ body {
 .btn-outline { transition: color 0.15s, border-color 0.15s; }
 .btn-outline:hover { color: var(--accent) !important; border-color: var(--accent) !important; }
 
-.footer-link { transition: color 0.12s; }
-.footer-link:hover { color: var(--text-primary) !important; }
 
 .tbl-row-hover { transition: background 0.08s; cursor: pointer; }
 .tbl-row-hover:hover { background: var(--bg-hover) !important; }
@@ -206,10 +204,6 @@ body {
     height: 40px;
   }
 
-  .mini-mode-badges {
-    display: none !important;
-  }
-
   .search-bar-outer {
     max-width: 100%;
     min-height: 52px;
@@ -276,14 +270,6 @@ body {
   to { transform: rotate(360deg); }
 }
 
-.gradient-text {
-  background: linear-gradient(135deg, var(--accent) 0%, #E85D5D 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-  font-style: normal;
-}
-
 /* ─── Mode block entrance ─────────────────────────────────────────────────── */
 
 @keyframes mode-block-in {
@@ -309,50 +295,6 @@ body {
   to   { transform: translateX(0); }
 }
 
-/* ─── Scroll indicator bounce ─────────────────────────────────────────────── */
-
-@keyframes bounce-y {
-  0%, 100% { transform: translateY(0); }
-  50%       { transform: translateY(8px); }
-}
-
-.scroll-indicator-bounce {
-  animation: bounce-y 1.6s ease-in-out infinite;
-}
-
-/* ─── Mini cards grid (mode block) ───────────────────────────────────────── */
-
-.mini-cards-grid {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 10px;
-}
-
-@media (max-width: 640px) {
-  .mini-cards-grid {
-    grid-template-columns: repeat(2, 1fr);
-  }
-}
-
-/* ─── Mission cards grid ──────────────────────────────────────────────────── */
-
-.mission-cards-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 24px;
-}
-
-/* ─── Stats grid ──────────────────────────────────────────────────────────── */
-
-.stats-grid {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-}
-
-.stat-item-divider {
-  border-right: 1px solid var(--border);
-}
-
 /* ─── Go Further grid ────────────────────────────────────────────────────── */
 
 .go-further-grid {
@@ -369,38 +311,10 @@ body {
 
 /* ─── Live audits feed ────────────────────────────────────────────────────── */
 
-@keyframes audit-fadein {
-  from { opacity: 0; transform: translateY(-4px); }
-  to   { opacity: 1; transform: translateY(0); }
-}
-
-@keyframes live-dot-pulse {
-  0%, 100% { opacity: 1; transform: scale(1); }
-  50%       { opacity: 0.5; transform: scale(0.75); }
-}
-
-.live-dot {
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-  background: #16A34A;
-  display: inline-block;
-  flex-shrink: 0;
-  animation: live-dot-pulse 2s ease-in-out infinite;
-}
-
-.audit-fadein {
-  animation: audit-fadein 0.4s ease forwards;
-}
-
 /* ─── Reduced motion ──────────────────────────────────────────────────────── */
 
 @media (prefers-reduced-motion: reduce) {
   .phrase-marquee {
-    animation: none !important;
-  }
-
-  .scroll-indicator-bounce {
     animation: none !important;
   }
 
@@ -412,38 +326,8 @@ body {
 /* ─── Responsive ──────────────────────────────────────────────────────────── */
 
 @media (max-width: 900px) {
-  .mission-cards-grid {
-    grid-template-columns: 1fr;
-  }
-
   .phrase-row-mobile-hide {
     display: none;
-  }
-}
-
-@media (max-width: 640px) {
-  .stats-grid {
-    grid-template-columns: repeat(2, 1fr);
-    gap: 0;
-  }
-
-  .stat-item-divider {
-    border-right: none;
-  }
-
-  .stat-item {
-    border-bottom: 1px solid var(--border-subtle);
-    padding: 20px 16px !important;
-  }
-
-  /* Bottom row items (3rd and 4th) need no border-bottom */
-  .stats-grid .stat-item:nth-last-child(-n+2) {
-    border-bottom: none;
-  }
-
-  /* Add right border to left column items */
-  .stats-grid .stat-item:nth-child(odd) {
-    border-right: 1px solid var(--border-subtle);
   }
 }
 
