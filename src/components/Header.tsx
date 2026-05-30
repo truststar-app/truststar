@@ -239,6 +239,7 @@ export default function Header() {
               <DropdownItem href="/recent" icon={<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M16.24 7.76a6 6 0 0 1 0 8.49m-8.48-.01a6 6 0 0 1 0-8.49m11.31-2.82a10 10 0 0 1 0 14.14m-14.14 0a10 10 0 0 1 0-14.14"/><circle cx="12" cy="12" r="2"/></svg>} title="Recent Audits" desc="Live community feed" />
               <DropdownItem href="/how-it-works#contact" icon={<MailIcon />} title="Contact" desc="Get in touch" />
               <DropdownDivider />
+              <DropdownItem href="https://github.com/truststar-app/truststar" icon={<GitHubIcon />} title="GitHub" desc="Open source — contribute" />
             </div>
           </div>
 
@@ -308,6 +309,7 @@ export default function Header() {
             <div style={{ height: 1, background: "var(--border)", margin: "8px 0" }} />
             {mobileNavLink("/badge", "Badge")}
             {mobileNavLink("/how-it-works#contact", "Contact")}
+            {mobileNavLink("https://github.com/truststar-app/truststar", "GitHub", true)}
           </nav>
 
           {/* Waitlist CTA */}
