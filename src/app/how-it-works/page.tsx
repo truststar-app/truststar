@@ -853,13 +853,13 @@ export default function HowItWorksPage() {
             Built on peer-reviewed research
           </h2>
           <p style={{ fontSize: 14, color: "var(--text-secondary)", lineHeight: 1.75, marginBottom: 16 }}>
-            TrustStar&apos;s Authenticity engine is inspired by{" "}
-            <strong style={{ color: "var(--text-primary)" }}>StarScout</strong>, a peer-reviewed
-            detection system developed at Carnegie Mellon University, North Carolina State University,
-            and Socket Inc., published at ICSE 2026 — the top academic venue for software engineering.
+            TrustStar&apos;s Authenticity engine is grounded in peer-reviewed research by{" "}
+            <strong style={{ color: "var(--text-primary)" }}>He, Yang, Burckhardt, Kapravelos, Vasilescu, and Kästner</strong>,
+            from Carnegie Mellon University, North Carolina State University, and Socket Inc.,
+            published at ICSE 2026 — the top academic venue for software engineering.
           </p>
           <p style={{ fontSize: 14, color: "var(--text-secondary)", lineHeight: 1.75, marginBottom: 16 }}>
-            StarScout analyzed 20 terabytes of GitHub metadata — 6.7 billion events and 326 million
+            The research analyzed 20 terabytes of GitHub metadata — 6.7 billion events and 326 million
             stars from 2019 to 2024. Their findings:
           </p>
           <ul

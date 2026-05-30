@@ -38,14 +38,14 @@ export const metadata: Metadata = {
     siteName: "TrustStar",
     url: "https://truststar.co",
     type: "website",
-    images: ["https://truststar.co/14619e05-69a1-41be-86dc-5ecda5629b3a-removebg-preview.png"],
+    images: ["https://truststar.co/api/og"],
   },
   twitter: {
     card: "summary_large_image",
     title: "TrustStar — Trust starts with transparency",
     description:
       "TrustStar is the open-source trust engine for the open source ecosystem. Detect fake GitHub stars, analyze npm packages, and scan code for security risks.",
-    images: ["https://truststar.co/14619e05-69a1-41be-86dc-5ecda5629b3a-removebg-preview.png"],
+    images: ["https://truststar.co/api/og"],
   },
   metadataBase: new URL("https://truststar.co"),
 };

@@ -7,6 +7,7 @@ const BASE = process.env.NEXT_PUBLIC_BASE_URL ?? "https://truststar.co";
 
 const COLORS = {
   SAFE:       { fg: "#16A34A", bg: "#F0FDF4", bar: "#16A34A" },
+  CAUTION:    { fg: "#D97706", bg: "#FFFBEB", bar: "#D97706" },
   SUSPICIOUS: { fg: "#D97706", bg: "#FFFBEB", bar: "#D97706" },
   DANGEROUS:  { fg: "#DC2626", bg: "#FEF2F2", bar: "#DC2626" },
   NEW:        { fg: "#6B7280", bg: "#F4F4F5", bar: "#9CA3AF" },
@@ -116,6 +117,8 @@ export async function GET(
             <span style={{ fontSize: 14, color: "#6B6B76", lineHeight: 1.6 }}>
               {label === "SAFE"
                 ? "This repository shows healthy signals. Popularity appears organic."
+                : label === "CAUTION"
+                ? "Mixed signals detected. Worth a closer look before depending on it."
                 : label === "SUSPICIOUS"
                 ? "Some signals are concerning. Manual review recommended."
                 : label === "DANGEROUS"

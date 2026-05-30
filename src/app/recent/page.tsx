@@ -366,7 +366,7 @@ export default function RecentAuditsPage() {
               }}
             >
               <img
-                src="/14619e05-69a1-41be-86dc-5ecda5629b3a-removebg-preview.png"
+                src="/logo.png"
                 alt="TrustStar"
                 width={64}
                 height={64}
