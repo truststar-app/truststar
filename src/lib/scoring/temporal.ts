@@ -1,4 +1,5 @@
 import type { GitHubUserDetail } from "../types";
+import { T } from "./thresholds";
 
 // ─── Z-score on the star curve ───────────────────────────────────────────────
 
@@ -63,8 +64,7 @@ export function calculateVelocityScore(
   if (counts.length === 0) return 0;
 
   const maxDayCount = Math.max(...counts);
-  // Normalize: 0 = at or below average, 1 = 10x the average or more
-  return Math.min(1, Math.max(0, maxDayCount / (avgStarsPerDay * 10)));
+  return Math.min(1, Math.max(0, maxDayCount / (avgStarsPerDay * T.VELOCITY_MULTIPLIER)));
 }
 
 // ─── Concentration in densest 48h window ─────────────────────────────────────
@@ -108,9 +108,9 @@ export type RepoContext = {
 // A small repo with all stars in 48h is normal; a large repo with 25% in 48h is suspect.
 function concentrationPenalty(recentStarsRatio: number, totalStars: number): number {
   const threshold =
-    totalStars > 10000 ? 0.20 :
-    totalStars > 1000  ? 0.30 :
-    totalStars > 100   ? 0.50 :
+    totalStars > 10000 ? T.CONC_THRESHOLD_10K :
+    totalStars > 1000  ? T.CONC_THRESHOLD_1K  :
+    totalStars > 100   ? T.CONC_THRESHOLD_100 :
     2; // < 100 stars: never penalize concentration
 
   if (recentStarsRatio <= threshold) return 0;
@@ -141,9 +141,9 @@ export function scoreTemporal(
 
   // Each factor penalizes from 100 downward
   let score = 100;
-  score -= velocityScore * 40;                                                       // max -40 if peak is 10x+ avg
-  score -= concentrationPenalty(recentStarsRatio, repoContext.totalStars) * 35;     // adaptive: only above size threshold
-  score -= Math.min(zScorePeak / 10, 1) * 25;                                       // max -25 if z-score > 10
+  score -= velocityScore * T.VELOCITY_WEIGHT;
+  score -= concentrationPenalty(recentStarsRatio, repoContext.totalStars) * T.CONC_WEIGHT;
+  score -= Math.min(zScorePeak / T.ZSCORE_NORM, 1) * T.ZSCORE_WEIGHT;
 
   return {
     score: Math.max(0, Math.round(score)),

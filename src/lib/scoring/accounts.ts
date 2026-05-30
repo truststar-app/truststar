@@ -1,4 +1,5 @@
 import type { GitHubUserDetail } from "../types";
+import { T } from "./thresholds";
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
@@ -6,7 +7,7 @@ function isNewAccount(user: GitHubUserDetail): boolean {
   const createdAt = new Date(user.created_at).getTime();
   const starredAt = new Date(user.starred_at).getTime();
   const diffDays = (starredAt - createdAt) / (1000 * 60 * 60 * 24);
-  return diffDays < 30;
+  return diffDays < T.NEW_ACCOUNT_DAYS;
 }
 
 function hasNoRepos(user: GitHubUserDetail): boolean {
@@ -49,8 +50,7 @@ export function calculateLockstepScore(
 
       const similarity = intersection.length / minLen;
 
-      // Threshold: 80% repos in common = lockstep
-      if (similarity >= 0.8) {
+      if (similarity >= T.LOCKSTEP_SIMILARITY) {
         lockstepPairs++;
       }
     }

@@ -1,4 +1,5 @@
 import type { GitHubUserDetail } from "../types";
+import { T } from "./thresholds";
 
 export type AuthenticitySignals = {
   lowActivityRatio: number;
@@ -72,9 +73,9 @@ export function computeCoordLockstepScore(
 ): number {
   if (starredMap.size < 3) return 0;
 
-  const WINDOW_MS = 14 * 24 * 60 * 60 * 1000;
-  const MIN_SHARED = 3;   // ≥3 obscure repos in common (popular repos pre-filtered)
-  const MIN_CLUSTER = 4;  // ≥4 accounts in the cluster
+  const WINDOW_MS = T.LOCKSTEP_WINDOW_DAYS * 24 * 60 * 60 * 1000;
+  const MIN_SHARED = T.LOCKSTEP_MIN_SHARED;
+  const MIN_CLUSTER = T.LOCKSTEP_MIN_CLUSTER;
 
   const entries = Array.from(starredMap.entries());
   const inCluster = new Set<string>();
@@ -139,7 +140,7 @@ export function computeBurstLowActivityRatio(
   if (median === 0) return 0;
 
   const burstMonths = Array.from(monthly.values()).filter(
-    (e) => e.total > median * 3
+    (e) => e.total > median * T.BURST_MULTIPLIER
   );
   if (burstMonths.length === 0) return 0;
 
@@ -154,8 +155,8 @@ export function computeBurstLowActivityRatio(
 
 export function scoreAuthenticity(signals: AuthenticitySignals): number {
   const score =
-    (1 - signals.lowActivityRatio) * 40 +
-    (1 - signals.coordLockstepScore) * 35 +
-    (1 - signals.burstLowActivityRatio) * 25;
+    (1 - signals.lowActivityRatio)    * T.AUTH_LOW_ACTIVITY_WEIGHT +
+    (1 - signals.coordLockstepScore)  * T.AUTH_LOCKSTEP_WEIGHT +
+    (1 - signals.burstLowActivityRatio) * T.AUTH_BURST_WEIGHT;
   return Math.round(Math.max(0, Math.min(100, score)));
 }
