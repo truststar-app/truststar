@@ -18,87 +18,6 @@ const STEPS = [
   "Aggregating Trust Score…",
 ];
 
-type BgPhrase = { text: string; bold: boolean; size: number };
-type BgRow = { speed: number; rtl: boolean; phrases: BgPhrase[] };
-
-const BG_ROWS: BgRow[] = [
-  { speed: 120, rtl: false, phrases: [
-    { text: "Collecting stargazers", bold: false, size: 18 },
-    { text: "6 million fake stars on GitHub", bold: true, size: 22 },
-    { text: "Temporal pattern analysis", bold: false, size: 16 },
-    { text: "Z-score burst detection", bold: true, size: 20 },
-  ]},
-  { speed: 85, rtl: true, phrases: [
-    { text: "Account quality signals", bold: false, size: 20 },
-    { text: "Lockstep detection", bold: true, size: 17 },
-    { text: "Are these stars organic?", bold: false, size: 24 },
-    { text: "Velocity scoring", bold: true, size: 15 },
-  ]},
-  { speed: 145, rtl: false, phrases: [
-    { text: "Project health metrics", bold: false, size: 17 },
-    { text: "Supply chain risk analysis", bold: true, size: 21 },
-    { text: "Fork / star ratio", bold: false, size: 19 },
-    { text: "Commit frequency", bold: true, size: 16 },
-  ]},
-  { speed: 70, rtl: true, phrases: [
-    { text: "Authenticity scoring", bold: false, size: 22 },
-    { text: "Burst month sampling", bold: true, size: 18 },
-    { text: "Trust but verify.", bold: false, size: 28 },
-    { text: "Coordinated behaviour", bold: true, size: 16 },
-  ]},
-  { speed: 110, rtl: false, phrases: [
-    { text: "Stargazer profile depth", bold: false, size: 16 },
-    { text: "Low-activity account ratio", bold: true, size: 20 },
-    { text: "Open source ≠ safe source", bold: false, size: 23 },
-    { text: "Issue resolution rate", bold: true, size: 17 },
-  ]},
-  { speed: 95, rtl: true, phrases: [
-    { text: "Sampling strategy", bold: false, size: 19 },
-    { text: "One malicious dependency is all it takes.", bold: true, size: 15 },
-    { text: "Contributor diversity", bold: false, size: 18 },
-    { text: "Aggregating Trust Score…", bold: true, size: 22 },
-  ]},
-];
-
-function BgMarqueeRow({ row }: { row: BgRow }) {
-  const repeated = [...Array(8)].flatMap(() => row.phrases);
-  return (
-    <div style={{ overflow: "hidden" }}>
-      <div
-        className="phrase-marquee"
-        style={{
-          display: "flex",
-          alignItems: "center",
-          gap: 56,
-          width: "max-content",
-          animation: `${row.rtl ? "marquee-rtl" : "marquee-ltr"} ${row.speed}s linear infinite`,
-          willChange: "transform",
-          padding: "9px 0",
-        }}
-      >
-        {repeated.map((p, i) => (
-          <span
-            key={i}
-            style={{
-              fontSize: p.size,
-              fontWeight: p.bold ? 600 : 400,
-              fontFamily: "var(--font-ibm-sans), sans-serif",
-              color: p.bold
-                ? i % 2 === 0 ? "rgba(217,54,54,0.22)" : "rgba(217,54,54,0.17)"
-                : i % 2 === 0 ? "rgba(12,12,13,0.14)" : "rgba(12,12,13,0.10)",
-              whiteSpace: "nowrap",
-              flexShrink: 0,
-              letterSpacing: p.size > 20 ? "-0.4px" : "0",
-            }}
-          >
-            {p.text}
-          </span>
-        ))}
-      </div>
-    </div>
-  );
-}
-
 function LoadingOverlay() {
   const [step, setStep] = useState(0);
   useEffect(() => {
@@ -115,41 +34,13 @@ function LoadingOverlay() {
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
-        background: "rgba(250,250,250,0.82)",
-        backdropFilter: "blur(6px)",
-        WebkitBackdropFilter: "blur(6px)",
+        background: "rgba(250,250,250,0.96)",
+        backdropFilter: "blur(10px)",
+        WebkitBackdropFilter: "blur(10px)",
       }}
     >
-      {/* Scrolling background */}
       <div
-        style={{
-          position: "absolute",
-          inset: 0,
-          display: "flex",
-          flexDirection: "column",
-          justifyContent: "space-around",
-          pointerEvents: "none",
-          userSelect: "none",
-          overflow: "hidden",
-          maskImage: "linear-gradient(to bottom, transparent 0%, black 18%, black 82%, transparent 100%)",
-          WebkitMaskImage: "linear-gradient(to bottom, transparent 0%, black 18%, black 82%, transparent 100%)",
-        }}
-      >
-        {BG_ROWS.map((row, i) => (
-          <BgMarqueeRow key={i} row={row} />
-        ))}
-      </div>
-
-      {/* Foreground card */}
-      <div
-        style={{
-          position: "relative",
-          zIndex: 2,
-          maxWidth: 400,
-          width: "100%",
-          padding: "0 24px",
-          textAlign: "center",
-        }}
+        style={{ maxWidth: 400, width: "100%", padding: "0 24px", textAlign: "center" }}
         className="sa-fade-in"
       >
         <div
