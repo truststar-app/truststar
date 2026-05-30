@@ -50,7 +50,20 @@ export async function githubFetch<T>(
   });
 
   if (response.status === 401) {
-    throw new Error(`GitHubAuthError: invalid or expired token — ${endpoint}`);
+    // Token invalid/expired — retry unauthenticated (60 req/hour limit)
+    const retry = await fetch(url, {
+      headers: {
+        Accept: "application/vnd.github+json",
+        "X-GitHub-Api-Version": "2022-11-28",
+        ...options.headers,
+      },
+      cache: options.cache ?? "no-store",
+    });
+    if (!retry.ok) {
+      const body = await retry.text();
+      throw new Error(`GitHub API error ${retry.status} on ${endpoint}: ${body}`);
+    }
+    return retry.json() as Promise<T>;
   }
 
   if (response.status === 403) {
@@ -96,6 +109,18 @@ export async function githubFetchWithStarredAt<T>(
     headers: sentHeaders,
     cache: "no-store",
   });
+
+  if (response.status === 401) {
+    const retry = await fetch(url, {
+      headers: {
+        Accept: "application/vnd.github.v3.star+json",
+        "X-GitHub-Api-Version": "2022-11-28",
+      },
+      cache: "no-store",
+    });
+    if (!retry.ok) throw new Error(`GitHub API error ${retry.status}`);
+    return retry.json() as Promise<T>;
+  }
 
   if (response.status === 403) {
     const rateLimitRemaining = response.headers.get("X-RateLimit-Remaining");

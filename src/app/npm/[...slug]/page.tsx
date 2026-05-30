@@ -7,7 +7,7 @@ import type { NpmCheckResult, NpmSignal } from "@/lib/npm/analyzer";
 import ShareCard from "@/components/ShareCard";
 
 const BASE = process.env.NEXT_PUBLIC_BASE_URL
-  ?? (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "http://localhost:3000");
+  ?? (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "https://truststar.co");
 const SITE = "https://truststar.co";
 
 // ─── Data fetching (cached per request) ───────────────────────────────────────

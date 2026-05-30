@@ -8,7 +8,7 @@ import ShareCard from "@/components/ShareCard";
 import type { TrustScore, TrustLabel } from "@/lib/types";
 
 const BASE = process.env.NEXT_PUBLIC_BASE_URL
-  ?? (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "http://localhost:3000");
+  ?? (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "https://truststar.co");
 const SITE = "https://truststar.co";
 
 // ─── Data fetching (cached per request to share between generateMetadata + page) ─
