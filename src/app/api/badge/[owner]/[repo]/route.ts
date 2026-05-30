@@ -51,11 +51,6 @@ async function buildSvg(score: number | null, label: string | null, reportUrl: s
   // Score section center
   const sc = LW + Math.round(SW / 2);
 
-  // Brand icon: small hexagon with "TS" monogram
-  const iconX = 12;
-  const iconCX = iconX + 10;  // center of 20×20 icon
-  const iconCY = H / 2;
-
   return `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" role="img" aria-label="TrustStar ${scoreText} ${labelText}">
   <defs>
     <clipPath id="clip"><rect width="${W}" height="${H}" rx="6"/></clipPath>
@@ -73,32 +68,19 @@ async function buildSvg(score: number | null, label: string | null, reportUrl: s
     <rect width="${LW}" height="${H}" fill="url(#brand)"/>
     <rect x="${LW}" width="${SW}" height="${H}" fill="url(#score)"/>
     <rect x="${LW + SW}" width="${QW}" height="${H}" fill="#f8fafc"/>
-    <!-- Divider lines -->
     <line x1="${LW}" y1="0" x2="${LW}" y2="${H}" stroke="rgba(255,255,255,0.08)" stroke-width="1"/>
     <line x1="${LW + SW}" y1="0" x2="${LW + SW}" y2="${H}" stroke="rgba(0,0,0,0.06)" stroke-width="1"/>
   </g>
 
-  <!-- Border -->
   <rect width="${W}" height="${H}" rx="6" fill="none" stroke="rgba(0,0,0,0.18)" stroke-width="1"/>
 
-  <!-- Brand: hexagon icon -->
-  <polygon points="${iconCX},${iconCY - 10} ${iconCX + 8.7},${iconCY - 5} ${iconCX + 8.7},${iconCY + 5} ${iconCX},${iconCY + 10} ${iconCX - 8.7},${iconCY + 5} ${iconCX - 8.7},${iconCY - 5}"
-    fill="none" stroke="#D93636" stroke-width="1.5"/>
-  <text x="${iconCX}" y="${iconCY + 4}" text-anchor="middle"
-    font-family="Verdana,Geneva,sans-serif" font-size="7.5" font-weight="800" fill="#D93636">TS</text>
+  <!-- Brand: star + name -->
+  <text x="12" y="${H / 2 + 6}" font-family="Verdana,Geneva,sans-serif" font-size="18" fill="#D93636">&#9733;</text>
+  <text x="32" y="${H / 2 + 4}" font-family="Verdana,Geneva,sans-serif" font-size="10" font-weight="700" fill="#f1f5f9" letter-spacing="0.2">TrustStar</text>
 
-  <!-- Brand: name -->
-  <text x="${iconX + 24}" y="${H / 2 + 4}"
-    font-family="Verdana,Geneva,sans-serif" font-size="10" font-weight="700" fill="#f1f5f9"
-    letter-spacing="0.2">TrustStar</text>
-
-  <!-- Score section -->
-  <text x="${sc}" y="${H / 2 - 2}"
-    text-anchor="middle" font-family="Verdana,Geneva,sans-serif"
-    font-size="16" font-weight="800" fill="#ffffff">${scoreText}</text>
-  <text x="${sc}" y="${H / 2 + 13}"
-    text-anchor="middle" font-family="Verdana,Geneva,sans-serif"
-    font-size="8.5" font-weight="600" fill="${cfg.light}" letter-spacing="0.4">${labelText}</text>
+  <!-- Score + label -->
+  <text x="${sc}" y="${H / 2 - 2}" text-anchor="middle" font-family="Verdana,Geneva,sans-serif" font-size="16" font-weight="800" fill="#ffffff">${scoreText}</text>
+  <text x="${sc}" y="${H / 2 + 13}" text-anchor="middle" font-family="Verdana,Geneva,sans-serif" font-size="8.5" font-weight="600" fill="${cfg.light}" letter-spacing="0.4">${labelText}</text>
 
   <!-- QR -->
   ${qrEl}
