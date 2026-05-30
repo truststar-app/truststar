@@ -66,7 +66,7 @@ export type TrustScore = {
     accounts: number;
     temporal: number;
     health: number;
-    authenticity?: number;  // StarScout-inspired; optional for backward compat with cached results
+    authenticity?: number;  // optional for backward compat with cached results
   };
   signals: {
     // Account Quality

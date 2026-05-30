@@ -97,8 +97,6 @@ body {
 .btn-outline:hover { color: var(--accent) !important; border-color: var(--accent) !important; }
 
 
-.tbl-row-hover { transition: background 0.08s; cursor: pointer; }
-.tbl-row-hover:hover { background: var(--bg-hover) !important; }
 
 /* ─── Hero search bar ─────────────────────────────────────────────────────── */
 
@@ -408,9 +406,6 @@ body { overflow-x: hidden; }
     padding: 16px !important;
     margin-left: -4px !important;
     margin-right: -4px !important;
-  }
-  .preview-block .preview-bar-label {
-    font-size: 11px;
   }
 }
 

@@ -772,7 +772,7 @@ export default function DiscoverPage() {
 
           {!clawLoading && !clawError && clawSkills.length > 0 && (
             <p style={{ marginTop: 14, fontSize: 13, color: "var(--text-tertiary)", textAlign: "center" }}>
-              {clawDebounced ? `${clawSkills.length} result${clawSkills.length !== 1 ? "s" : ""} for "${clawDebounced}"` : `${clawSkills.length} skills · Live data from clawhub.ai`}
+              {clawDebounced ? `${clawSkills.length} result${clawSkills.length !== 1 ? "s" : ""} for "${clawDebounced}"` : `${clawSkills.length} skills · Live data from OpenClaw`}
             </p>
           )}
         </>)}

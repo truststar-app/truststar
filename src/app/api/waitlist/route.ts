@@ -42,6 +42,10 @@ export async function POST(request: NextRequest) {
 
 // H-2: Secret moved from query string to Authorization header
 export async function GET(request: NextRequest) {
+  if (!(await rateLimit(getClientIp(request), 20, 60_000))) {
+    return NextResponse.json({ error: "Too many requests" }, { status: 429 });
+  }
+
   const authHeader = request.headers.get("authorization");
   const secret = authHeader?.startsWith("Bearer ") ? authHeader.slice(7) : null;
   const envSecret = process.env.WAITLIST_SECRET;

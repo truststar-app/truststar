@@ -157,7 +157,7 @@ export async function fetchStargazers(
       `https://api.github.com/repos/${owner}/${repo}/stargazers?per_page=100&page=${page}`,
       {
         headers: {
-          Authorization: `Bearer ${process.env.GITHUB_TOKEN}`,
+          ...(process.env.GITHUB_TOKEN ? { Authorization: `Bearer ${process.env.GITHUB_TOKEN}` } : {}),
           Accept: "application/vnd.github.v3.star+json",
         },
       }
