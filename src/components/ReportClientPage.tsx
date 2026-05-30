@@ -28,39 +28,68 @@ function LoadingOverlay() {
   return (
     <div
       style={{
-        minHeight: "calc(100vh - var(--header-h))",
+        position: "fixed",
+        inset: 0,
+        zIndex: 200,
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
-        background: "var(--bg-base)",
+        background: "rgba(250,250,250,0.96)",
+        backdropFilter: "blur(10px)",
+        WebkitBackdropFilter: "blur(10px)",
       }}
     >
-      <div style={{ maxWidth: 400, width: "100%", padding: "0 24px", textAlign: "center" }}>
+      <div
+        style={{ maxWidth: 400, width: "100%", padding: "0 24px", textAlign: "center" }}
+        className="sa-fade-in"
+      >
         <div
           style={{
             width: 44,
             height: 44,
             borderRadius: "50%",
-            border: "2.5px solid var(--border)",
+            border: "2.5px solid var(--accent-muted)",
             borderTopColor: "var(--accent)",
-            animation: "spin 0.7s linear infinite",
             margin: "0 auto 24px",
           }}
+          className="sa-spin"
         />
-        <p
-          style={{
-            fontSize: 15,
-            fontWeight: 600,
-            color: "var(--text-primary)",
-            marginBottom: 8,
-            letterSpacing: "-0.2px",
-          }}
-        >
+        <h3 style={{ fontWeight: 600, fontSize: 16, color: "var(--text-primary)", marginBottom: 6, letterSpacing: "-0.3px" }}>
+          Analysis in progress…
+        </h3>
+        <p style={{ fontSize: 13, color: "var(--text-tertiary)", marginBottom: 32, minHeight: 20 }}>
           {STEPS[step]}
         </p>
-        <p style={{ fontSize: 13, color: "var(--text-tertiary)" }}>
-          This takes 10–30 seconds
-        </p>
+        <div style={{ display: "flex", flexDirection: "column", gap: 10, textAlign: "left" }}>
+          <div style={{ background: "var(--accent-subtle)", border: "1px solid var(--accent-muted)", borderRadius: "var(--radius-lg)", padding: "12px 14px" }}>
+            <div style={{ display: "flex", alignItems: "flex-start", gap: 10 }}>
+              <span style={{ flexShrink: 0, marginTop: 2, color: "var(--accent)", display: "flex" }}>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/>
+                </svg>
+              </span>
+              <p style={{ fontSize: 12, lineHeight: 1.6, color: "var(--accent-hover)" }}>
+                <strong>Objective analysis</strong> — All metrics are open source and auditable.{" "}
+                <a href="/how-it-works" style={{ color: "var(--accent)", textDecoration: "underline" }}>Check our methodology</a>.
+              </p>
+            </div>
+          </div>
+          <div style={{ background: "var(--bg-hover)", border: "1px solid var(--border)", borderRadius: "var(--radius-lg)", padding: "12px 14px" }}>
+            <div style={{ display: "flex", alignItems: "flex-start", gap: 10 }}>
+              <span style={{ flexShrink: 0, marginTop: 2, color: "var(--text-tertiary)", display: "flex" }}>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <polyline points="20 12 20 22 4 22 4 12"/><rect x="2" y="7" width="20" height="5"/>
+                  <line x1="12" y1="22" x2="12" y2="7"/>
+                  <path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z"/>
+                  <path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"/>
+                </svg>
+              </span>
+              <p style={{ fontSize: 12, lineHeight: 1.6, color: "var(--text-secondary)" }}>
+                <strong>Free service</strong> — Please use responsibly to preserve API quotas for everyone.
+              </p>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );
