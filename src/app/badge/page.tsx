@@ -5,17 +5,17 @@ import Link from "next/link";
 
 const BASE = "https://truststar.co";
 
-// ─── Static SVG previews ─────────────────────────────────────────────────────
+// ─── Static SVG previews (no QR — live badge includes QR) ────────────────────
 
-function safeSvg(): string {
-  return `<svg xmlns="http://www.w3.org/2000/svg" width="136" height="20"><linearGradient id="s" x2="0" y2="100%"><stop offset="0" stop-color="#bbb" stop-opacity=".1"/><stop offset="1" stop-opacity=".1"/></linearGradient><clipPath id="r"><rect width="136" height="20" rx="3" fill="#fff"/></clipPath><g clip-path="url(#r)"><rect width="76" height="20" fill="#555"/><rect x="76" width="60" height="20" fill="#16A34A"/><rect width="136" height="20" fill="url(#s)"/></g><g fill="#fff" text-anchor="middle" font-family="Verdana,Geneva,DejaVu Sans,sans-serif" font-size="11"><text x="38" y="15" fill="#010101" fill-opacity=".3">TrustStar</text><text x="38" y="14">TrustStar</text><text x="106" y="15" fill="#010101" fill-opacity=".3">SAFE 87</text><text x="106" y="14">SAFE 87</text></g></svg>`;
+function badgePreviewSvg(score: number, label: string, color: string): string {
+  const W = 164; const H = 36; const LW = 92; const SW = 72;
+  const sc = LW + Math.round(SW / 2);
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}"><clipPath id="r${label}"><rect width="${W}" height="${H}" rx="5" fill="#fff"/></clipPath><g clip-path="url(#r${label})"><rect width="${LW}" height="${H}" fill="#1C1C1E"/><rect x="${LW}" width="${SW}" height="${H}" fill="${color}"/></g><rect width="${W}" height="${H}" rx="5" fill="none" stroke="#D1D5DB" stroke-width="1"/><g font-family="Verdana,Geneva,DejaVu Sans,sans-serif"><text x="10" y="24" font-size="13" font-weight="700" fill="#D93636">&#9679;</text><text x="22" y="23" font-size="10" font-weight="700" fill="#FFFFFF">TrustStar</text><text x="${sc}" y="19" text-anchor="middle" font-size="13" font-weight="800" fill="#FFFFFF">${score}</text><text x="${sc}" y="29" text-anchor="middle" font-size="8" font-weight="600" fill="#FFFFFF" fill-opacity="0.9">${label}</text></g></svg>`;
 }
-function suspiciousSvg(): string {
-  return `<svg xmlns="http://www.w3.org/2000/svg" width="185" height="20"><linearGradient id="s" x2="0" y2="100%"><stop offset="0" stop-color="#bbb" stop-opacity=".1"/><stop offset="1" stop-opacity=".1"/></linearGradient><clipPath id="r"><rect width="185" height="20" rx="3" fill="#fff"/></clipPath><g clip-path="url(#r)"><rect width="76" height="20" fill="#555"/><rect x="76" width="109" height="20" fill="#D97706"/><rect width="185" height="20" fill="url(#s)"/></g><g fill="#fff" text-anchor="middle" font-family="Verdana,Geneva,DejaVu Sans,sans-serif" font-size="11"><text x="38" y="15" fill="#010101" fill-opacity=".3">TrustStar</text><text x="38" y="14">TrustStar</text><text x="131" y="15" fill="#010101" fill-opacity=".3">SUSPICIOUS 52</text><text x="131" y="14">SUSPICIOUS 52</text></g></svg>`;
-}
-function dangerousSvg(): string {
-  return `<svg xmlns="http://www.w3.org/2000/svg" width="172" height="20"><linearGradient id="s" x2="0" y2="100%"><stop offset="0" stop-color="#bbb" stop-opacity=".1"/><stop offset="1" stop-opacity=".1"/></linearGradient><clipPath id="r"><rect width="172" height="20" rx="3" fill="#fff"/></clipPath><g clip-path="url(#r)"><rect width="76" height="20" fill="#555"/><rect x="76" width="96" height="20" fill="#DC2626"/><rect width="172" height="20" fill="url(#s)"/></g><g fill="#fff" text-anchor="middle" font-family="Verdana,Geneva,DejaVu Sans,sans-serif" font-size="11"><text x="38" y="15" fill="#010101" fill-opacity=".3">TrustStar</text><text x="38" y="14">TrustStar</text><text x="124" y="15" fill="#010101" fill-opacity=".3">DANGEROUS 23</text><text x="124" y="14">DANGEROUS 23</text></g></svg>`;
-}
+
+function safeSvg():       string { return badgePreviewSvg(87, "SAFE",      "#16A34A"); }
+function cautionSvg():    string { return badgePreviewSvg(62, "CAUTION",   "#D97706"); }
+function dangerousSvg():  string { return badgePreviewSvg(23, "DANGEROUS", "#DC2626"); }
 
 // ─── Copy button ──────────────────────────────────────────────────────────────
 
@@ -308,9 +308,9 @@ export default function BadgePage() {
   ];
 
   const previews = [
-    { svg: safeSvg(),       label: "SAFE" },
-    { svg: suspiciousSvg(), label: "SUSPICIOUS" },
-    { svg: dangerousSvg(),  label: "DANGEROUS" },
+    { svg: safeSvg(),      label: "SAFE" },
+    { svg: cautionSvg(),   label: "CAUTION" },
+    { svg: dangerousSvg(), label: "DANGEROUS" },
   ];
 
   return (

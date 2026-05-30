@@ -1,45 +1,73 @@
 import { NextRequest, NextResponse } from "next/server";
+import QRCode from "qrcode";
 import { getCached } from "@/lib/trust-score-cache";
 import { getLatestAuditForSlug } from "@/lib/recent-audits";
 import { rateLimit, getClientIp } from "@/lib/rate-limit";
 
-// Approximate Verdana 11px character width
-function textPx(text: string): number {
-  return Math.ceil(text.length * 6.5) + 14;
-}
+const BASE = process.env.NEXT_PUBLIC_BASE_URL ?? "https://truststar.co";
 
 const STATUS_COLORS: Record<string, string> = {
-  SAFE:       "#22c55e",
-  CAUTION:    "#f59e0b",
-  SUSPICIOUS: "#f97316",
-  DANGEROUS:  "#ef4444",
+  SAFE:       "#16A34A",
+  CAUTION:    "#D97706",
+  SUSPICIOUS: "#D97706",
+  DANGEROUS:  "#DC2626",
 };
 
-function buildSvg(rightText: string, color: string): string {
-  const leftText  = "TrustStar";
-  const leftWidth = Math.max(72, textPx(leftText));
-  const rightWidth = Math.max(58, textPx(rightText));
-  const total = leftWidth + rightWidth;
-  const lc = Math.round(leftWidth / 2);
-  const rc = leftWidth + Math.round(rightWidth / 2);
+// Badge layout
+const LEFT_W  = 92;   // brand section
+const SCORE_W = 72;   // score + label section
+const QR_W    = 44;   // QR section
+const TOTAL   = LEFT_W + SCORE_W + QR_W;  // 208
+const H       = 36;
+const QR_SIZE = 28;
+const QR_X    = LEFT_W + SCORE_W + Math.round((QR_W - QR_SIZE) / 2);
+const QR_Y    = Math.round((H - QR_SIZE) / 2);
 
-  return `<svg xmlns="http://www.w3.org/2000/svg" width="${total}" height="20">
-  <linearGradient id="s" x2="0" y2="100%">
-    <stop offset="0" stop-color="#bbb" stop-opacity=".1"/>
-    <stop offset="1" stop-opacity=".1"/>
-  </linearGradient>
-  <clipPath id="r"><rect width="${total}" height="20" rx="3" fill="#fff"/></clipPath>
+async function extractQrPath(url: string): Promise<{ d: string; scale: number } | null> {
+  try {
+    const svg = await QRCode.toString(url, { type: "svg", margin: 0, errorCorrectionLevel: "L" });
+    const vb = svg.match(/viewBox="0 0 (\d+)/);
+    const n = vb ? parseInt(vb[1]) : 37;
+    const pd = svg.match(/<path[^>]+d="([^"]+)"/);
+    if (!pd) return null;
+    return { d: pd[1], scale: QR_SIZE / n };
+  } catch {
+    return null;
+  }
+}
+
+async function buildSvg(
+  score: number | null,
+  label: string | null,
+  reportUrl: string
+): Promise<string> {
+  const color     = STATUS_COLORS[label ?? ""] ?? "#9CA3AF";
+  const scoreText = score !== null ? String(score) : "—";
+  const labelText = label && label !== "NEW" ? label : "NEW";
+
+  const qr = await extractQrPath(reportUrl);
+  const qrPath = qr
+    ? `<path fill="#1C1C1E" transform="translate(${QR_X},${QR_Y}) scale(${qr.scale.toFixed(5)})" d="${qr.d}"/>`
+    : "";
+
+  // Score center x
+  const sc = LEFT_W + Math.round(SCORE_W / 2);
+
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${TOTAL}" height="${H}" role="img" aria-label="TrustStar ${scoreText} ${labelText}">
+  <clipPath id="r"><rect width="${TOTAL}" height="${H}" rx="5" fill="#fff"/></clipPath>
   <g clip-path="url(#r)">
-    <rect width="${leftWidth}" height="20" fill="#555"/>
-    <rect x="${leftWidth}" width="${rightWidth}" height="20" fill="${color}"/>
-    <rect width="${total}" height="20" fill="url(#s)"/>
+    <rect width="${LEFT_W}" height="${H}" fill="#1C1C1E"/>
+    <rect x="${LEFT_W}" width="${SCORE_W}" height="${H}" fill="${color}"/>
+    <rect x="${LEFT_W + SCORE_W}" width="${QR_W}" height="${H}" fill="#FFFFFF"/>
   </g>
-  <g fill="#fff" text-anchor="middle" font-family="Verdana,Geneva,DejaVu Sans,sans-serif" font-size="11">
-    <text x="${lc}" y="15" fill="#010101" fill-opacity=".3">${leftText}</text>
-    <text x="${lc}" y="14">${leftText}</text>
-    <text x="${rc}" y="15" fill="#010101" fill-opacity=".3">${rightText}</text>
-    <text x="${rc}" y="14">${rightText}</text>
+  <rect width="${TOTAL}" height="${H}" rx="5" fill="none" stroke="#D1D5DB" stroke-width="1"/>
+  <g font-family="Verdana,Geneva,DejaVu Sans,sans-serif">
+    <text x="10" y="24" font-size="13" font-weight="700" fill="#D93636">&#9679;</text>
+    <text x="22" y="23" font-size="10" font-weight="700" fill="#FFFFFF">TrustStar</text>
+    <text x="${sc}" y="19" text-anchor="middle" font-size="13" font-weight="800" fill="#FFFFFF">${scoreText}</text>
+    <text x="${sc}" y="29" text-anchor="middle" font-size="8" font-weight="600" fill="#FFFFFF" fill-opacity="0.9">${labelText}</text>
   </g>
+  ${qrPath}
 </svg>`;
 }
 
@@ -52,10 +80,9 @@ export async function GET(
   }
 
   const { owner, repo } = await params;
+  const reportUrl = `${BASE}/report/${owner}/${repo}`;
 
-  // 1. Check in-memory cache (hot path — same serverless instance)
   const cached = getCached(owner, repo);
-
   let score: number | null = null;
   let label: string | null = null;
 
@@ -63,7 +90,6 @@ export async function GET(
     score = cached.score;
     label = cached.label;
   } else {
-    // 2. Fall back to Redis / in-memory recent-audits (cross-instance persistence)
     const audit = await getLatestAuditForSlug(`${owner}/${repo}`, "trust-score");
     if (audit) {
       score = audit.score;
@@ -71,21 +97,7 @@ export async function GET(
     }
   }
 
-  let rightText: string;
-  let color: string;
-
-  if (score !== null && label !== null && label !== "NEW") {
-    rightText = `${score} · ${label}`;
-    color = STATUS_COLORS[label] ?? "#9CA3AF";
-  } else if (score !== null && label === "NEW") {
-    rightText = "new repo";
-    color = "#9CA3AF";
-  } else {
-    rightText = "not rated";
-    color = "#9CA3AF";
-  }
-
-  const svg = buildSvg(rightText, color);
+  const svg = await buildSvg(score, label, reportUrl);
 
   return new NextResponse(svg, {
     headers: {
