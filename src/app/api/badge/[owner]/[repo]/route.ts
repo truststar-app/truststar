@@ -15,11 +15,11 @@ const STATUS_COLORS: Record<string, string> = {
   DANGEROUS:  "#DC2626",
 };
 
-// Logo: read once at startup (50×57px webp, ~3KB)
+// Logo: read once at startup (50×57px PNG, ~6KB)
 function loadLogo(): string {
   try {
-    const buf = fs.readFileSync(path.join(process.cwd(), "public", "30px-logo.webp"));
-    return `data:image/webp;base64,${buf.toString("base64")}`;
+    const buf = fs.readFileSync(path.join(process.cwd(), "public", "badge-owl.png"));
+    return `data:image/png;base64,${buf.toString("base64")}`;
   } catch {
     return "";
   }
@@ -71,7 +71,7 @@ async function buildSvg(score: number | null, label: string | null, reportUrl: s
     : "";
 
   const logoEl = LOGO_DATA
-    ? `<image href="${LOGO_DATA}" x="${LOGO_X}" y="${LOGO_Y}" width="${LOGO_IMG_W}" height="${LOGO_IMG_H}"/>`
+    ? `<image href="${LOGO_DATA}" xlink:href="${LOGO_DATA}" x="${LOGO_X}" y="${LOGO_Y}" width="${LOGO_IMG_W}" height="${LOGO_IMG_H}" xmlns:xlink="http://www.w3.org/1999/xlink"/>`
     : `<text x="${LOGO_W / 2}" y="${H / 2 + 5}" text-anchor="middle" font-size="18" fill="#D93636">&#9679;</text>`;
 
   return `<svg xmlns="http://www.w3.org/2000/svg" width="${TOTAL}" height="${H}" role="img" aria-label="TrustStar ${scoreText} ${labelText}">
