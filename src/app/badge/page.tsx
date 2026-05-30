@@ -8,9 +8,10 @@ const BASE = "https://truststar.co";
 // ─── Static SVG previews (no QR — live badge includes QR) ────────────────────
 
 function badgePreviewSvg(score: number, label: string, color: string): string {
-  const W = 164; const H = 36; const LW = 92; const SW = 72;
+  // matches API layout: 176×40, logo section 48px, score 88px, no QR in static preview
+  const W = 136; const H = 40; const LW = 48; const SW = 88;
   const sc = LW + Math.round(SW / 2);
-  return `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}"><clipPath id="r${label}"><rect width="${W}" height="${H}" rx="5" fill="#fff"/></clipPath><g clip-path="url(#r${label})"><rect width="${LW}" height="${H}" fill="#1C1C1E"/><rect x="${LW}" width="${SW}" height="${H}" fill="${color}"/></g><rect width="${W}" height="${H}" rx="5" fill="none" stroke="#D1D5DB" stroke-width="1"/><g font-family="Verdana,Geneva,DejaVu Sans,sans-serif"><text x="10" y="24" font-size="13" font-weight="700" fill="#D93636">&#9679;</text><text x="22" y="23" font-size="10" font-weight="700" fill="#FFFFFF">TrustStar</text><text x="${sc}" y="19" text-anchor="middle" font-size="13" font-weight="800" fill="#FFFFFF">${score}</text><text x="${sc}" y="29" text-anchor="middle" font-size="8" font-weight="600" fill="#FFFFFF" fill-opacity="0.9">${label}</text></g></svg>`;
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}"><clipPath id="r${label}"><rect width="${W}" height="${H}" rx="6" fill="#fff"/></clipPath><g clip-path="url(#r${label})"><rect width="${LW}" height="${H}" fill="#1C1C1E"/><rect x="${LW}" width="${SW}" height="${H}" fill="${color}"/></g><rect width="${W}" height="${H}" rx="6" fill="none" stroke="#D1D5DB" stroke-width="1"/><text x="${Math.round(LW/2)}" y="${Math.round(H/2)+7}" text-anchor="middle" font-family="Verdana,sans-serif" font-size="20" fill="#D93636">&#9679;</text><g font-family="Verdana,Geneva,DejaVu Sans,sans-serif" text-anchor="middle"><text x="${sc}" y="14" font-size="7" font-weight="600" fill="#FFFFFF" fill-opacity="0.7" letter-spacing="0.5">TRUSTSTAR</text><text x="${sc}" y="27" font-size="14" font-weight="800" fill="#FFFFFF">${score}</text><text x="${sc}" y="37" font-size="8" font-weight="600" fill="#FFFFFF" fill-opacity="0.9">${label}</text></g></svg>`;
 }
 
 function safeSvg():       string { return badgePreviewSvg(87, "SAFE",      "#16A34A"); }
