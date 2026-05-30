@@ -6,23 +6,15 @@ import type { Metadata } from "next";
 import { ReanalyzeButton } from "@/components/ReanalyzeButton";
 import ShareCard from "@/components/ShareCard";
 import type { TrustScore, TrustLabel } from "@/lib/types";
+import { runAnalysis } from "@/lib/run-analysis";
 
-const BASE = process.env.NEXT_PUBLIC_BASE_URL
-  ?? (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "https://truststar.co");
 const SITE = "https://truststar.co";
 
 // ─── Data fetching (cached per request to share between generateMetadata + page) ─
 
 const getReport = cache(async (owner: string, repo: string): Promise<TrustScore | null> => {
   try {
-    const response = await fetch(`${BASE}/api/analyze`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ owner, repo }),
-      cache: "no-store",
-    });
-    if (!response.ok) return null;
-    return response.json() as Promise<TrustScore>;
+    return await runAnalysis(owner, repo);
   } catch {
     return null;
   }

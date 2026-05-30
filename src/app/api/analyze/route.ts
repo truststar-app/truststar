@@ -1,19 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
-import { fetchRepoInfo, fetchRecentCommitData } from "@/lib/github/commits";
-import { fetchStargazersWithDetails, fetchLockstepData, fetchAuthenticityData } from "@/lib/github/stargazers";
-import { fetchIssueStats } from "@/lib/github/issues";
-import { estimateLowActivityRatio } from "@/lib/scoring/authenticity";
-import { scoreTemporal } from "@/lib/scoring/temporal";
-import { computeTrustScore } from "@/lib/scoring/engine";
-import { getCached, setCached, trustScoreCache, CACHE_TTL_MS, cacheKey } from "@/lib/trust-score-cache";
-import { addAudit } from "@/lib/recent-audits";
+import { runAnalysis } from "@/lib/run-analysis";
+import { getCached } from "@/lib/trust-score-cache";
 import { rateLimit, getClientIp } from "@/lib/rate-limit";
 import type { TrustScore, ApiError } from "@/lib/types";
 
 export const maxDuration = 60;
 
 function parseGitHubUrl(input: string): { owner: string; repo: string } | null {
-  // Accepts: https://github.com/owner/repo or owner/repo
   const urlPattern = /github\.com\/([^/]+)\/([^/\s?#]+)/;
   const shortPattern = /^([^/]+)\/([^/\s]+)$/;
 
@@ -47,7 +40,6 @@ export async function POST(request: NextRequest): Promise<NextResponse<TrustScor
   try {
     const body = await request.json() as { url?: string; repoUrl?: string; owner?: string; repo?: string; force?: boolean };
 
-    // Input length guard
     const rawCheck = body.url ?? body.repoUrl ?? "";
     if (rawCheck.length > 500) {
       return NextResponse.json({ error: "Input too long" } as ApiError, { status: 400 });
@@ -56,7 +48,6 @@ export async function POST(request: NextRequest): Promise<NextResponse<TrustScor
     let owner: string;
     let repo: string;
 
-    // Resolve owner/repo from URL or direct fields (accepts both "url" and "repoUrl")
     const rawUrl = body.url ?? body.repoUrl;
     if (rawUrl) {
       const parsed = parseGitHubUrl(rawUrl);
@@ -78,83 +69,7 @@ export async function POST(request: NextRequest): Promise<NextResponse<TrustScor
       );
     }
 
-    // Cache check — skipped when force=true
-    if (!body.force) {
-      const cached = getCached(owner, repo);
-      if (cached) return NextResponse.json(cached);
-    }
-
-    // ── Parallel fetch of GitHub data ─────────────────────────────────────────
-
-    const [repoInfo, recentCommitData, issueStats] =
-      await Promise.all([
-        fetchRepoInfo(owner, repo),
-        fetchRecentCommitData(owner, repo),
-        fetchIssueStats(owner, repo),
-      ]);
-
-    // ── Fetch stargazers (sequential, depends on total) ───────────────────────
-
-    const { users, meta: samplingMeta } = await fetchStargazersWithDetails(
-      owner,
-      repo,
-      repoInfo.stargazers_count
-    );
-
-    // ── Lockstep (reduced sample) ─────────────────────────────────────────────
-
-    const starredMap = await fetchLockstepData(users, owner, repo);
-
-    // ── Authenticity signals ──────────────────────────────────────────────────
-    // Lockstep always computed (uses starredMap in memory).
-    // Events API only called when cheap proxies signal suspicion.
-
-    const simpleActivityRatio = estimateLowActivityRatio(users);
-    const noPublicRepoEstimate =
-      users.filter((u) => u.public_repos === 0).length / Math.max(users.length, 1);
-    const prelimTemporal = scoreTemporal(users, {
-      totalStars: repoInfo.stargazers_count,
-      createdAt: repoInfo.created_at,
-    });
-    const shouldFetchEvents =
-      simpleActivityRatio > 0.10 ||
-      noPublicRepoEstimate > 0.25 ||
-      prelimTemporal.signals.velocityScore > 0.3;
-
-    const authenticitySignals = await fetchAuthenticityData(
-      users,
-      starredMap,
-      shouldFetchEvents
-    );
-
-    // ── Score calculation ─────────────────────────────────────────────────────
-
-    const trustScore = computeTrustScore({
-      owner,
-      repo,
-      users,
-      starredMap,
-      repoInfo,
-      recentCommitData,
-      issueStats,
-      burstMonth: samplingMeta.burstMonth,
-      samplingMethod: samplingMeta.method,
-      burstGroupSize: samplingMeta.burstGroupSize,
-      baselineGroupSize: samplingMeta.baselineGroupSize,
-      authenticitySignals,
-    });
-
-    setCached(owner, repo, trustScore);
-
-    addAudit({
-      id: crypto.randomUUID(),
-      type: "trust-score",
-      slug: `${owner}/${repo}`,
-      score: trustScore.score,
-      label: trustScore.label,
-      analyzedAt: new Date().toISOString(),
-    });
-
+    const trustScore = await runAnalysis(owner, repo, { force: body.force });
     return NextResponse.json(trustScore);
 
   } catch (error) {
@@ -194,7 +109,6 @@ export async function GET(request: NextRequest): Promise<NextResponse<TrustScore
     );
   }
 
-  // Cache check only for GET
   const cached = getCached(owner, repo);
   if (cached) return NextResponse.json(cached);
 
