@@ -38,7 +38,7 @@ export async function POST(request: NextRequest): Promise<NextResponse<TrustScor
   }
 
   try {
-    const body = await request.json() as { url?: string; repoUrl?: string; owner?: string; repo?: string; force?: boolean };
+    const body = await request.json() as { url?: string; repoUrl?: string; owner?: string; repo?: string; force?: boolean; weights?: { accounts?: number; temporal?: number; health?: number; authenticity?: number } };
 
     const rawCheck = body.url ?? body.repoUrl ?? "";
     if (rawCheck.length > 500) {
@@ -69,7 +69,7 @@ export async function POST(request: NextRequest): Promise<NextResponse<TrustScor
       );
     }
 
-    const trustScore = await runAnalysis(owner, repo, { force: body.force });
+    const trustScore = await runAnalysis(owner, repo, { force: body.force, weights: body.weights });
     return NextResponse.json(trustScore);
 
   } catch (error) {

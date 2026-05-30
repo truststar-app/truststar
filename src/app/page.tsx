@@ -497,6 +497,14 @@ function LoadingOverlay({ mode }: { mode: Mode }) {
 
 // ─── Main Page ─────────────────────────────────────────────────────────────────
 
+type Preset = "standard" | "security" | "community" | "custom";
+const PRESETS: Record<Preset, { label: string; wa: number; wt: number; wh: number; wu: number }> = {
+  standard:  { label: "Standard",  wa: 26, wt: 23, wh: 26, wu: 25 },
+  security:  { label: "Security",  wa: 15, wt: 35, wh: 10, wu: 40 },
+  community: { label: "Community", wa: 35, wt: 20, wh: 30, wu: 15 },
+  custom:    { label: "Custom",    wa: 26, wt: 23, wh: 26, wu: 25 },
+};
+
 export default function HomePage() {
   const router = useRouter();
   const [url, setUrl] = useState("");
@@ -504,6 +512,17 @@ export default function HomePage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  // ── Scoring presets ───────────────────────────────────────────────────────
+  const [preset, setPreset] = useState<Preset>("standard");
+  const [showPresets, setShowPresets] = useState(false);
+  const [customW, setCustomW] = useState({ wa: 26, wt: 23, wh: 26, wu: 25 });
+
+  function getWeightsQuery(): string {
+    if (preset === "standard") return "";
+    const w = preset === "custom" ? customW : PRESETS[preset];
+    return `?wa=${w.wa}&wt=${w.wt}&wh=${w.wh}&wu=${w.wu}`;
+  }
 
   // ── Autocomplete state ────────────────────────────────────────────────────
   type RepoSuggestion = {
@@ -571,17 +590,8 @@ export default function HomePage() {
     setActiveIndex(-1);
     setSuggestions([]);
     setLoading(true);
-    fetch("/api/analyze", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ owner, repo }),
-    })
-      .then(() => router.push(`/report/${owner}/${repo}`))
-      .catch((err: unknown) => {
-        setError(err instanceof Error ? err.message : "An error occurred");
-        setLoading(false);
-      });
-  }, [router]);
+    router.push(`/report/${owner}/${repo}${getWeightsQuery()}`);
+  }, [router, getWeightsQuery]);
 
   function handleKeyDown(e: KeyboardEvent<HTMLInputElement>) {
     if (!showDropdown || suggestions.length === 0) return;
@@ -642,23 +652,7 @@ export default function HomePage() {
     }
 
     setLoading(true);
-    try {
-      const response = await fetch("/api/analyze", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ owner: parsed.owner, repo: parsed.repo }),
-      });
-
-      if (!response.ok) {
-        const data = (await response.json()) as { error: string };
-        throw new Error(data.error ?? "Unknown error");
-      }
-
-      router.push(`/report/${parsed.owner}/${parsed.repo}`);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "An error occurred");
-      setLoading(false);
-    }
+    router.push(`/report/${parsed.owner}/${parsed.repo}${getWeightsQuery()}`);
   }
 
   const [isMobile, setIsMobile] = useState(false);
@@ -837,6 +831,108 @@ export default function HomePage() {
                   </p>
                 )}
               </form>
+
+              {/* Scoring presets (repo mode only) */}
+              {mode === "repo" && (
+                <div style={{ marginTop: 10 }}>
+                  <button
+                    type="button"
+                    onClick={() => setShowPresets((v) => !v)}
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 5,
+                      fontSize: 11,
+                      color: preset !== "standard" ? "var(--accent)" : "var(--text-tertiary)",
+                      background: "none",
+                      border: "none",
+                      cursor: "pointer",
+                      fontFamily: "inherit",
+                      padding: "2px 0",
+                      fontWeight: preset !== "standard" ? 600 : 400,
+                    }}
+                  >
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M4.93 4.93a10 10 0 0 0 0 14.14"/></svg>
+                    {preset !== "standard" ? `Custom scoring: ${PRESETS[preset].label}` : "Customize scoring"}
+                    <span style={{ opacity: 0.5 }}>{showPresets ? "▲" : "▼"}</span>
+                  </button>
+
+                  {showPresets && (
+                    <div
+                      style={{
+                        marginTop: 10,
+                        background: "var(--bg-base)",
+                        border: "1px solid var(--border)",
+                        borderRadius: 10,
+                        padding: "14px 16px",
+                      }}
+                    >
+                      {/* Preset buttons */}
+                      <div style={{ display: "flex", gap: 6, marginBottom: 14, flexWrap: "wrap" }}>
+                        {(Object.keys(PRESETS) as Preset[]).map((p) => (
+                          <button
+                            key={p}
+                            type="button"
+                            onClick={() => {
+                              setPreset(p);
+                              if (p !== "custom") setCustomW(PRESETS[p]);
+                            }}
+                            style={{
+                              fontSize: 12,
+                              fontWeight: 500,
+                              padding: "5px 14px",
+                              borderRadius: 20,
+                              border: `1px solid ${preset === p ? "var(--accent)" : "var(--border)"}`,
+                              background: preset === p ? "var(--accent-subtle)" : "var(--bg-surface)",
+                              color: preset === p ? "var(--accent)" : "var(--text-secondary)",
+                              cursor: "pointer",
+                              fontFamily: "inherit",
+                              transition: "all 0.12s",
+                            }}
+                          >
+                            {PRESETS[p].label}
+                          </button>
+                        ))}
+                      </div>
+
+                      {/* Dimension weight display / sliders */}
+                      <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                        {[
+                          { key: "wa" as const, label: "Account Quality" },
+                          { key: "wt" as const, label: "Temporal Behavior" },
+                          { key: "wh" as const, label: "Project Health" },
+                          { key: "wu" as const, label: "Authenticity" },
+                        ].map(({ key, label }) => {
+                          const val = preset === "custom" ? customW[key] : PRESETS[preset][key];
+                          return (
+                            <div key={key} style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                              <span style={{ fontSize: 11, color: "var(--text-secondary)", width: 130, flexShrink: 0, textAlign: "left" }}>{label}</span>
+                              <input
+                                type="range"
+                                min={5}
+                                max={60}
+                                value={val}
+                                disabled={preset !== "custom"}
+                                onChange={(e) => setCustomW((prev) => ({ ...prev, [key]: Number(e.target.value) }))}
+                                style={{ flex: 1, accentColor: "var(--accent)", opacity: preset !== "custom" ? 0.5 : 1 }}
+                              />
+                              <span style={{ fontSize: 11, fontFamily: "var(--font-ibm-mono), monospace", color: "var(--text-secondary)", width: 32, textAlign: "right" }}>
+                                {val}%
+                              </span>
+                            </div>
+                          );
+                        })}
+                      </div>
+
+                      {preset !== "standard" && (
+                        <p style={{ marginTop: 10, fontSize: 10, color: "var(--text-tertiary)", lineHeight: 1.5 }}>
+                          Weights are normalized automatically. The score on the report will reflect this configuration.
+                        </p>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
 
               {/* Autocomplete dropdown */}
               {showDropdown && suggestions.length > 0 && (

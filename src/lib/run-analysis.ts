@@ -8,10 +8,17 @@ import { getCached, setCached } from "@/lib/trust-score-cache";
 import { addAudit } from "@/lib/recent-audits";
 import type { TrustScore } from "@/lib/types";
 
+export type DimensionWeights = {
+  accounts?: number;
+  temporal?: number;
+  health?: number;
+  authenticity?: number;
+};
+
 export async function runAnalysis(
   owner: string,
   repo: string,
-  options: { force?: boolean } = {}
+  options: { force?: boolean; weights?: DimensionWeights } = {}
 ): Promise<TrustScore> {
   if (!options.force) {
     const cached = getCached(owner, repo);
@@ -63,6 +70,7 @@ export async function runAnalysis(
     burstGroupSize: samplingMeta.burstGroupSize,
     baselineGroupSize: samplingMeta.baselineGroupSize,
     authenticitySignals,
+    weights: options.weights,
   });
 
   setCached(owner, repo, trustScore);

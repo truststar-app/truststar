@@ -143,6 +143,7 @@ export type EngineInput = {
   samplingMethod?: "stratified" | "default";
   burstGroupSize?: number;
   baselineGroupSize?: number;
+  weights?: { accounts?: number; temporal?: number; health?: number; authenticity?: number };
 };
 
 export function computeTrustScore(input: EngineInput): TrustScore {
@@ -188,11 +189,26 @@ export function computeTrustScore(input: EngineInput): TrustScore {
 
   // ── Weighted final score ─────────────────────────────────────────────────
 
+  const w = input.weights;
+  const raw = {
+    accounts:     (w?.accounts     ?? DIMENSION_WEIGHTS.accounts),
+    temporal:     (w?.temporal     ?? DIMENSION_WEIGHTS.temporal),
+    health:       (w?.health       ?? DIMENSION_WEIGHTS.health),
+    authenticity: (w?.authenticity ?? DIMENSION_WEIGHTS.authenticity),
+  };
+  const total = raw.accounts + raw.temporal + raw.health + raw.authenticity;
+  const wn = {
+    accounts:     raw.accounts     / total,
+    temporal:     raw.temporal     / total,
+    health:       raw.health       / total,
+    authenticity: raw.authenticity / total,
+  };
+
   const rawScore =
-    accountsResult.score * DIMENSION_WEIGHTS.accounts +
-    temporalResult.score * DIMENSION_WEIGHTS.temporal +
-    healthResult.score * DIMENSION_WEIGHTS.health +
-    authenticityScore * DIMENSION_WEIGHTS.authenticity;
+    accountsResult.score * wn.accounts +
+    temporalResult.score * wn.temporal +
+    healthResult.score * wn.health +
+    authenticityScore * wn.authenticity;
 
   const finalScore = Math.round(Math.max(0, Math.min(100, rawScore)));
   const baseLabel = resolveLabel(
