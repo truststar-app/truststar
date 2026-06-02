@@ -563,10 +563,6 @@ export default function HomePage() {
     return () => window.removeEventListener("resize", check);
   }, []);
 
-  useEffect(() => {
-    document.documentElement.style.overflow = "hidden";
-    return () => { document.documentElement.style.overflow = ""; };
-  }, []);
 
 
   const PLACEHOLDERS: Record<Mode, string> = isMobile
@@ -588,8 +584,7 @@ export default function HomePage() {
             flexDirection: "column",
             alignItems: "center",
             background: "var(--bg-base)",
-            height: "calc(100vh - var(--header-h, 48px) - 40px)",
-            overflow: "hidden",
+            minHeight: "calc(100vh - var(--header-h, 48px) - 40px)",
           }}
         >
           {/* Phrase marquee — absolute background */}
