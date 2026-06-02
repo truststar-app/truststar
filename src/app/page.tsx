@@ -563,6 +563,11 @@ export default function HomePage() {
     return () => window.removeEventListener("resize", check);
   }, []);
 
+  useEffect(() => {
+    document.documentElement.style.overflow = "hidden";
+    return () => { document.documentElement.style.overflow = ""; };
+  }, []);
+
 
   const PLACEHOLDERS: Record<Mode, string> = isMobile
     ? { repo: "owner/repo", npm: "package name", skill: "owner/repo" }
@@ -583,7 +588,8 @@ export default function HomePage() {
             flexDirection: "column",
             alignItems: "center",
             background: "var(--bg-base)",
-            minHeight: "calc(100vh - var(--header-h, 48px))",
+            height: "calc(100vh - var(--header-h, 48px) - 40px)",
+            overflow: "hidden",
           }}
         >
           {/* Phrase marquee — absolute background */}
