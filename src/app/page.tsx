@@ -579,12 +579,11 @@ export default function HomePage() {
           id="hero"
           style={{
             position: "relative",
-            overflow: "hidden",
             display: "flex",
             flexDirection: "column",
             alignItems: "center",
             background: "var(--bg-base)",
-            height: "calc(80vh - var(--header-h, 48px))",
+            minHeight: "calc(80vh - var(--header-h, 48px))",
           }}
         >
           {/* Phrase marquee — absolute background */}
@@ -610,11 +609,11 @@ export default function HomePage() {
 
           {/* Hero content */}
           <div
+            className="hero-content-wrap"
             style={{
               position: "relative",
               zIndex: 2,
               textAlign: "center",
-              padding: "0 24px 11vh",
               maxWidth: 960,
               width: "100%",
               flex: 1,
@@ -622,7 +621,7 @@ export default function HomePage() {
               alignItems: "center",
             }}
           >
-          <div style={{
+          <div className="hero-card" style={{
             textAlign: "center", maxWidth: 726, width: "100%", margin: "0 auto", flex: 1,
             background: "rgba(250,250,250,0.96)",
             backdropFilter: "blur(10px)",
