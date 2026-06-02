@@ -21,7 +21,7 @@ export default function Footer() {
     <footer className="footer-bar">
       <div className="footer-inner">
         <Link href="/" className="footer-brand">
-          <Image src="/30px-logo.webp" alt="TrustStar" width={18} height={18} />
+          <Image src="/30px-logo.webp" alt="TrustStar" width={14} height={14} />
           <span>TrustStar</span>
         </Link>
 
