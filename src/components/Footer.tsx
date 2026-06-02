@@ -1,3 +1,5 @@
+"use client";
+
 import Link from "next/link";
 
 const GH = "https://github.com/truststar-app/truststar";
