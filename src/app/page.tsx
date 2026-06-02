@@ -583,7 +583,7 @@ export default function HomePage() {
             flexDirection: "column",
             alignItems: "center",
             background: "var(--bg-base)",
-            minHeight: "calc(80vh - var(--header-h, 48px))",
+            minHeight: "calc(100vh - var(--header-h, 48px))",
           }}
         >
           {/* Phrase marquee — absolute background */}
